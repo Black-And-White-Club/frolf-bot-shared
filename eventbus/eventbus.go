@@ -161,6 +161,10 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		subjects = []string{
 			"score.>", // This captures all events prefixed with "score."
 		}
+	case "discord":
+		subjects = []string{
+			"discord.>", // This captures all events prefixed with "discord."
+		}
 	default:
 		return fmt.Errorf("unknown stream name: %s", streamName)
 	}
@@ -209,6 +213,8 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		streamName = "round"
 	case strings.HasPrefix(topic, "score."):
 		streamName = "score"
+	case strings.HasPrefix(topic, "discord."):
+		streamName = "discord"
 	default:
 		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
@@ -352,7 +358,7 @@ func sanitize(s string) string {
 
 func (eb *eventBus) createStreamsAndDLQs(ctx context.Context) error {
 	// Add the "leaderboard" stream to the list of streams to be created
-	streams := []string{"user", "leaderboard", "round", "score"}
+	streams := []string{"user", "leaderboard", "round", "score", "discord"}
 
 	for _, stream := range streams {
 		if err := eb.CreateStream(ctx, stream); err != nil {
