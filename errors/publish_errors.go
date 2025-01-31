@@ -15,6 +15,11 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 )
 
+// ErrorReporterInterface defines the methods that an ErrorReporter should implement.
+type ErrorReporterInterface interface {
+	ReportError(correlationID string, msg string, err error, ctx ...string)
+}
+
 // ErrorEventPayload defines the structure of an error event payload.
 type ErrorEventPayload struct {
 	CorrelationID string    `json:"correlation_id"`

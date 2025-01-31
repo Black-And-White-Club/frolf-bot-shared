@@ -8,3 +8,50 @@
 
 // Package mocks is a generated GoMock package.
 package mocks
+
+import (
+	reflect "reflect"
+
+	gomock "go.uber.org/mock/gomock"
+)
+
+// MockErrorReporterInterface is a mock of ErrorReporterInterface interface.
+type MockErrorReporterInterface struct {
+	ctrl     *gomock.Controller
+	recorder *MockErrorReporterInterfaceMockRecorder
+	isgomock struct{}
+}
+
+// MockErrorReporterInterfaceMockRecorder is the mock recorder for MockErrorReporterInterface.
+type MockErrorReporterInterfaceMockRecorder struct {
+	mock *MockErrorReporterInterface
+}
+
+// NewMockErrorReporterInterface creates a new mock instance.
+func NewMockErrorReporterInterface(ctrl *gomock.Controller) *MockErrorReporterInterface {
+	mock := &MockErrorReporterInterface{ctrl: ctrl}
+	mock.recorder = &MockErrorReporterInterfaceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockErrorReporterInterface) EXPECT() *MockErrorReporterInterfaceMockRecorder {
+	return m.recorder
+}
+
+// ReportError mocks base method.
+func (m *MockErrorReporterInterface) ReportError(correlationID, msg string, err error, ctx ...string) {
+	m.ctrl.T.Helper()
+	varargs := []any{correlationID, msg, err}
+	for _, a := range ctx {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "ReportError", varargs...)
+}
+
+// ReportError indicates an expected call of ReportError.
+func (mr *MockErrorReporterInterfaceMockRecorder) ReportError(correlationID, msg, err any, ctx ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{correlationID, msg, err}, ctx...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportError", reflect.TypeOf((*MockErrorReporterInterface)(nil).ReportError), varargs...)
+}
