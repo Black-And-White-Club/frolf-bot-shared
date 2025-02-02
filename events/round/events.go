@@ -11,7 +11,7 @@ const (
 	RoundStreamName       = "round"
 	UserStreamName        = "user"
 	LeaderboardStreamName = "leaderboard"
-	ScoreStreamName       = "score" // Consider moving this to scoreevents
+	ScoreStreamName       = "score"
 )
 
 // Round-related events
@@ -42,7 +42,7 @@ const (
 	RoundDeleteValidated    = "round.delete.validated"
 	RoundToDeleteFetched    = "round.to.delete.fetched"
 	RoundDeleteAuthorized   = "round.delete.authorized"
-	RoundDeleteUnauthorized = "round.delete.unauthorized" // NEW
+	RoundDeleteUnauthorized = "round.delete.unauthorized"
 	RoundDeleted            = "round.deleted"
 	RoundDeleteError        = "round.delete.error"
 
@@ -57,7 +57,7 @@ const (
 	RoundScoreUpdateValidated    = "round.score.update.validated"
 	RoundParticipantScoreUpdated = "round.participant.score.updated"
 	RoundAllScoresSubmitted      = "round.all.scores.submitted"
-	RoundNotAllScoresSubmitted   = "round.not.all.scores.submitted" // You might not need this one
+	RoundNotAllScoresSubmitted   = "round.not.all.scores.submitted"
 	RoundScoreUpdateError        = "round.score.update.error"
 
 	// --- Finalize Round ---
@@ -79,16 +79,14 @@ const (
 	RoundTagNumberNotFound = "round.tag.number.notfound"
 
 	// --- Communication with Other Modules ---
-	// Leaderboard
-	LeaderboardGetTagNumberRequest  = "leaderboard.get.tag.number.request"  // To be handled by the Leaderboard module
-	LeaderboardGetTagNumberResponse = "leaderboard.get.tag.number.response" // To be handled by the Leaderboard module
-	// Score Module
-	ProcessRoundScoresRequest = "score.process.scores.request" // To be handled by the Score module from Round module
+	LeaderboardGetTagNumberRequest  = "leaderboard.get.tag.number.request"
+	LeaderboardGetTagNumberResponse = "leaderboard.get.tag.number.response"
+	ProcessRoundScoresRequest       = "score.process.scores.request"
 
 	// --- User Authorization ---
-	RoundUserRoleCheckRequest = "round.user.role.check.request" // NEW
-	RoundUserRoleCheckResult  = "round.user.role.check.result"  // NEW
-	RoundUserRoleCheckError   = "round.user.role.check.error"   // NEW
+	RoundUserRoleCheckRequest = "round.user.role.check.request"
+	RoundUserRoleCheckResult  = "round.user.role.check.result"
+	RoundUserRoleCheckError   = "round.user.role.check.error"
 )
 
 // Round Events Payloads
@@ -120,7 +118,10 @@ type RoundStoredPayload struct {
 }
 
 type RoundScheduledPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID   string    `json:"round_id"`
+	StartTime time.Time `json:"start_time"`
+	Title     string    `json:"title"`
+	Location  string    `json:"location"`
 }
 
 type RoundCreatedPayload struct {
@@ -282,9 +283,7 @@ type RoundStateUpdatedPayload struct {
 
 // --- Start Round ---
 type RoundStartedPayload struct {
-	RoundID      string                `json:"round_id"`
-	State        roundtypes.RoundState `json:"state"`
-	Participants []Participant         `json:"participants"`
+	RoundID string `json:"round_id"`
 }
 
 // Participant represents a participant in a round with their tag number.
@@ -349,7 +348,6 @@ type RoundUserRoleCheckErrorPayload struct {
 }
 
 // --- Payloads for Tag Retrieval ---
-
 type GetTagNumberResponsePayload struct {
 	DiscordID string `json:"discord_id"`
 	TagNumber int    `json:"tag_number"`
