@@ -87,6 +87,9 @@ const (
 	RoundUserRoleCheckRequest = "round.user.role.check.request"
 	RoundUserRoleCheckResult  = "round.user.role.check.result"
 	RoundUserRoleCheckError   = "round.user.role.check.error"
+
+	// --- Rounds Updated ---
+	RoundsUpdated = "round.rounds.updated"
 )
 
 // Round Events Payloads
@@ -271,8 +274,12 @@ type ScoreModuleNotificationErrorPayload struct {
 
 // --- Round Reminders ---
 type RoundReminderPayload struct {
-	RoundID      string `json:"round_id"`
-	ReminderType string `json:"reminder_type"` // e.g., "one_hour", "thirty_minutes"
+	RoundID      string    `json:"round_id"`
+	ReminderType string    `json:"reminder_type"` // e.g., "1h", "30m"
+	RoundTitle   string    `json:"round_title"`
+	StartTime    time.Time `json:"start_time"`
+	Location     string    `json:"location"`
+	UserIDs      []string  `json:"user_ids"`
 }
 
 // --- Round State ---
