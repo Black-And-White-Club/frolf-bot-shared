@@ -196,7 +196,6 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		Subjects:  subjects,
 		Retention: jetstream.LimitsPolicy, // Default retention policy
 		Storage:   jetstream.FileStorage,  // Default storage type
-		Replicas:  3,                      // Default number of replicas
 	}
 
 	// Customize stream configuration based on stream name
@@ -204,7 +203,6 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 	case delayedMessagesStream:
 		streamCfg.MaxAge = 24 * time.Hour            // Auto-delete old messages
 		streamCfg.MaxMsgs = -1                       // Unlimited messages
-		streamCfg.Replicas = 3                       // High availability
 		streamCfg.Retention = jetstream.LimitsPolicy // Retain messages until consumed
 	default:
 		streamCfg.Duplicates = 5 * time.Minute // Default deduplication window for other streams
@@ -223,7 +221,6 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		if !streamSubjectsMatch(currentCfg.Subjects, subjects) ||
 			currentCfg.Retention != streamCfg.Retention ||
 			currentCfg.Storage != streamCfg.Storage ||
-			currentCfg.Replicas != streamCfg.Replicas ||
 			currentCfg.MaxAge != streamCfg.MaxAge {
 			_, err = eb.js.UpdateStream(ctx, streamCfg)
 			if err != nil {
