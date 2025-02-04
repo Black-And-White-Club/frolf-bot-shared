@@ -31,7 +31,7 @@ type eventBus struct {
 }
 
 const (
-	delayedMessagesStream  = "delayed.messages"
+	delayedMessagesStream  = "delayed"
 	delayedMessagesSubject = "delayed.message"
 	discordEventsSubject   = "discord.round.event"
 )
