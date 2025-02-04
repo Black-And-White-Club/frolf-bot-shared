@@ -20,27 +20,29 @@ import (
 )
 
 type eventBus struct {
-	publisher      message.Publisher
-	subscriber     message.Subscriber
-	js             jetstream.JetStream
-	natsConn       *nc.Conn
-	logger         *slog.Logger
-	createdStreams map[string]bool
-	streamMutex    sync.Mutex
+	publisher         message.Publisher
+	subscriber        message.Subscriber
+	js                jetstream.JetStream
+	natsConn          *nc.Conn
+	logger            *slog.Logger
+	createdStreams    map[string]bool
+	streamMutex       sync.Mutex
+	processedMessages map[string]bool
 }
+
+const (
+	delayedMessagesStream  = "delayed.messages"
+	delayedMessagesSubject = "delayed.message"
+	discordEventsSubject   = "discord.round.event"
+)
 
 // EventBus defines the interface for an event bus that can publish and subscribe to messages.
 type EventBus interface {
-	// Publish publishes a message to the specified topic.
-	// The payload will be marshaled into JSON.
 	Publish(topic string, messages ...*message.Message) error
-
-	// Subscribe subscribes to a topic and returns a channel of messages.
 	Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error)
-
-	// Close closes the underlying resources held by the EventBus implementation
-	// (e.g., publisher, subscriber connections).
 	Close() error
+	CreateOrUpdateStream(ctx context.Context, streamCfg jetstream.StreamConfig) (jetstream.Stream, error)
+	ProcessDelayedMessages(ctx context.Context)
 }
 
 func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (EventBus, error) {
@@ -70,7 +72,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (Even
 	// Create a Marshaller for the publisher
 	marshaller := &nats.NATSMarshaler{}
 
-	// Initialize the publisher with asynchronous JetStream publishing
+	// Initialize the publisher with JetStream and asynchronous publishing
 	publisher, err := nats.NewPublisher(
 		nats.PublisherConfig{
 			URL:       natsURL,
@@ -80,6 +82,19 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (Even
 				nc.Timeout(30 * time.Second),
 				nc.ReconnectWait(1 * time.Second),
 				nc.MaxReconnects(-1),
+			},
+			JetStream: nats.JetStreamConfig{
+				// **Enable JetStream and don't disable it**
+				Disabled:      false,
+				AutoProvision: true, // You might want to set this to false in production and manage streams manually
+				TrackMsgId:    true,
+				DurablePrefix: "durable",
+				// Set this to function to get more flexibility
+				DurableCalculator: func(durablePrefix, topic string) string {
+					// Create a sanitized version of the topic by replacing dots with underscores
+					sanitizedTopic := strings.ReplaceAll(topic, ".", "_")
+					return fmt.Sprintf("%s-%s", durablePrefix, sanitizedTopic)
+				},
 			},
 		},
 		watermillLogger,
@@ -114,12 +129,13 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (Even
 	}
 
 	eventBus := &eventBus{
-		publisher:      publisher,
-		js:             js,
-		natsConn:       natsConn,
-		logger:         logger,
-		createdStreams: make(map[string]bool),
-		subscriber:     subscriber,
+		publisher:         publisher,
+		js:                js,
+		natsConn:          natsConn,
+		logger:            logger,
+		createdStreams:    make(map[string]bool),
+		subscriber:        subscriber,
+		processedMessages: make(map[string]bool),
 	}
 
 	// Create streams and DLQ topics
@@ -128,10 +144,11 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (Even
 		return nil, fmt.Errorf("failed to create streams and DLQs: %w", err)
 	}
 
+	go eventBus.ProcessDelayedMessages(ctx)
+
 	return eventBus, nil
 }
 
-// CreateStream creates or updates a JetStream stream with deduplicated subjects.
 func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 	eb.logger.Info("Creating stream", slog.String("stream_name", streamName))
 	eb.streamMutex.Lock()
@@ -165,33 +182,58 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		subjects = []string{
 			"discord.>", // This captures all events prefixed with "discord."
 		}
+	case delayedMessagesStream:
+		subjects = []string{
+			delayedMessagesSubject,
+		}
 	default:
 		return fmt.Errorf("unknown stream name: %s", streamName)
+	}
+
+	// Define stream configuration with appropriate defaults
+	streamCfg := jetstream.StreamConfig{
+		Name:      streamName,
+		Subjects:  subjects,
+		Retention: jetstream.LimitsPolicy, // Default retention policy
+		Storage:   jetstream.FileStorage,  // Default storage type
+		Replicas:  3,                      // Default number of replicas
+	}
+
+	// Customize stream configuration based on stream name
+	switch streamName {
+	case delayedMessagesStream:
+		streamCfg.MaxAge = 24 * time.Hour            // Auto-delete old messages
+		streamCfg.MaxMsgs = -1                       // Unlimited messages
+		streamCfg.Replicas = 3                       // High availability
+		streamCfg.Retention = jetstream.LimitsPolicy // Retain messages until consumed
+	default:
+		streamCfg.Duplicates = 5 * time.Minute // Default deduplication window for other streams
 	}
 
 	// Check and create or update the stream
 	stream, err := eb.js.Stream(ctx, streamName)
 	if err == jetstream.ErrStreamNotFound {
-		_, err = eb.js.CreateStream(ctx, jetstream.StreamConfig{
-			Name:       streamName,
-			Subjects:   subjects,
-			Duplicates: 5 * time.Minute, // Deduplication window
-		})
+		_, err = eb.js.CreateStream(ctx, streamCfg)
 		if err != nil {
 			return fmt.Errorf("failed to create stream %s: %w", streamName, err)
 		}
 		eb.logger.Info("Stream created", slog.String("stream_name", streamName), slog.Any("subjects", subjects))
-	} else if err == nil && !streamSubjectsMatch(stream.CachedInfo().Config.Subjects, subjects) {
-		_, err = eb.js.UpdateStream(ctx, jetstream.StreamConfig{
-			Name:       streamName,
-			Subjects:   subjects,
-			Duplicates: 5 * time.Minute, // Deduplication window
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update stream %s: %w", streamName, err)
+	} else if err == nil {
+		currentCfg := stream.CachedInfo().Config
+		if !streamSubjectsMatch(currentCfg.Subjects, subjects) ||
+			currentCfg.Retention != streamCfg.Retention ||
+			currentCfg.Storage != streamCfg.Storage ||
+			currentCfg.Replicas != streamCfg.Replicas ||
+			currentCfg.MaxAge != streamCfg.MaxAge {
+			_, err = eb.js.UpdateStream(ctx, streamCfg)
+			if err != nil {
+				return fmt.Errorf("failed to update stream %s: %w", streamName, err)
+			}
+			eb.logger.Info("Stream updated", slog.String("stream_name", streamName), slog.Any("subjects", subjects))
+		} else {
+			eb.logger.Info("Stream config is up-to-date", slog.String("stream_name", streamName))
 		}
-		eb.logger.Info("Stream updated", slog.String("stream_name", streamName), slog.Any("subjects", subjects))
-	} else if err != nil {
+	} else {
 		return fmt.Errorf("failed to retrieve or create stream: %w", err)
 	}
 
@@ -229,12 +271,24 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		return nil, fmt.Errorf("stream not found: %w", err)
 	}
 
-	// Create or update a consumer for the stream, subscribing to the specific topic
-	cons, err := eb.js.CreateOrUpdateConsumer(ctx, streamName, jetstream.ConsumerConfig{
+	// Define consumer configuration
+	consumerConfig := jetstream.ConsumerConfig{
 		Durable:       consumerName,
-		FilterSubject: topic,                       // Subscribe to the exact topic
-		AckPolicy:     jetstream.AckExplicitPolicy, // Ensure explicit acknowledgment
-	})
+		FilterSubject: topic,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		MaxAckPending: 2048,
+		DeliverPolicy: jetstream.DeliverAllPolicy,
+	}
+
+	// Special handling for delayed messages
+	if topic == delayedMessagesSubject {
+		consumerConfig.DeliverPolicy = jetstream.DeliverByStartTimePolicy
+		startTime := time.Now().Add(-1 * time.Minute) // Start slightly in the past to catch any immediate messages
+		consumerConfig.OptStartTime = &startTime
+	}
+
+	// Create or update a consumer for the stream, subscribing to the specific topic
+	cons, err := eb.js.CreateOrUpdateConsumer(ctx, streamName, consumerConfig)
 	if err != nil {
 		eb.logger.Error("Failed to create or update consumer",
 			slog.String("stream", streamName),
@@ -266,18 +320,17 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	// Start a goroutine to handle JetStream messages
 	go func() {
 		eb.logger.Info("Starting consumer goroutine", slog.String("consumer_name", consumerName), slog.String("stream", streamName), slog.String("topic", topic))
-		defer close(messages) // Close messages channel when the goroutine exits
+		defer close(messages)
 
 		for {
 			jetStreamMsg, err := sub.Next()
 			if err != nil {
 				if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-					// This is expected when the consumer is stopped.
 					eb.logger.Info("Consumer messages iterator closed", slog.String("consumer", consumerName), slog.Any("error", err))
 				} else {
 					eb.logger.Error("Error receiving message from consumer", slog.String("consumer", consumerName), slog.Any("error", err))
 				}
-				return // Exit the goroutine if there is an error or the iterator is closed
+				return
 			}
 
 			// Convert JetStream message to Watermill message
@@ -315,7 +368,6 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 			// Send the message to the messages channel and handle acknowledgements
 			select {
 			case messages <- watermillMsg:
-				// Acknowledge the message after it has been successfully sent to the channel
 				if err := jetStreamMsg.Ack(); err != nil {
 					eb.logger.Error("Failed to acknowledge message", slog.String("message_id", watermillMsg.UUID), slog.Any("error", err))
 				}
@@ -325,7 +377,7 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 				if err := jetStreamMsg.Nak(); err != nil {
 					eb.logger.Error("Failed to Nack message", slog.String("message_id", watermillMsg.UUID), slog.Any("error", err))
 				}
-				return // Exit the goroutine if the context is cancelled
+				return
 			}
 		}
 	}()
@@ -357,8 +409,7 @@ func sanitize(s string) string {
 }
 
 func (eb *eventBus) createStreamsAndDLQs(ctx context.Context) error {
-	// Add the "leaderboard" stream to the list of streams to be created
-	streams := []string{"user", "leaderboard", "round", "score", "discord"}
+	streams := []string{"user", "leaderboard", "round", "score", "discord", delayedMessagesStream}
 
 	for _, stream := range streams {
 		if err := eb.CreateStream(ctx, stream); err != nil {
@@ -407,7 +458,40 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 		msg.Metadata.Set("topic", topic)
 		msg.Metadata.Set("Nats-Msg-Id", dedupKey)
 
-		err := eb.publisher.Publish(topic, msg)
+		// Check if this message is for delayed publishing
+		if executeAtStr := msg.Metadata.Get("Execute-At"); executeAtStr != "" {
+			eb.logger.Info("Publishing delayed message", "topic", topic, "message_id", msg.UUID, "execute_at", executeAtStr)
+
+			// Store original subject in metadata
+			msg.Metadata.Set("Original-Subject", topic)
+
+			// Publish to delayed messages stream
+			err := eb.publisher.Publish(delayedMessagesSubject, msg)
+			if err != nil {
+				return fmt.Errorf("failed to publish delayed message to topic %s: %w", delayedMessagesSubject, err)
+			}
+
+			eb.logger.Info("Delayed message published", "original_topic", topic, "message_id", msg.UUID, "execute_at", executeAtStr)
+			continue // Skip immediate publishing for this message
+		}
+
+		// Use JetStream publishing with specific options (e.g., MsgId)
+		jsMsg := &nc.Msg{
+			Subject: topic,
+			Data:    msg.Payload,
+			Header:  nc.Header{},
+		}
+
+		// Add Watermill message ID as Nats-Msg-Id header
+		jsMsg.Header.Set("Nats-Msg-Id", dedupKey)
+
+		// Add other metadata as headers
+		for k, v := range msg.Metadata {
+			jsMsg.Header.Add(k, v)
+		}
+
+		// Use JetStream to publish
+		_, err := eb.js.PublishMsg(context.Background(), jsMsg)
 		if err != nil {
 			return fmt.Errorf("failed to publish message to topic %s: %w", topic, err)
 		}
