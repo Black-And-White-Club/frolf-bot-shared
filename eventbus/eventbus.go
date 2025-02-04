@@ -43,6 +43,7 @@ type EventBus interface {
 	Close() error
 	CreateOrUpdateStream(ctx context.Context, streamCfg jetstream.StreamConfig) (jetstream.Stream, error)
 	ProcessDelayedMessages(ctx context.Context)
+	CancelScheduledMessage(ctx context.Context, roundID string) error
 }
 
 func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (EventBus, error) {
