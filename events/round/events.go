@@ -90,6 +90,10 @@ const (
 
 	// --- Rounds Updated ---
 	RoundsUpdated = "round.rounds.updated"
+
+	// --- Delayed Round Messages ---
+	DelayedMessagesSubject = "delayed.messages"
+	DiscordEventsSubject   = "discord.round.event"
 )
 
 // Round Events Payloads
@@ -279,18 +283,43 @@ type RoundReminderPayload struct {
 	RoundTitle   string    `json:"round_title"`
 	StartTime    time.Time `json:"start_time"`
 	Location     string    `json:"location"`
-	UserIDs      []string  `json:"user_ids"`
+}
+
+// --- Round Start ---
+type RoundStartedPayload struct {
+	RoundID   string    `json:"round_id"`
+	Title     string    `json:"title"`
+	Location  string    `json:"location"`
+	StartTime time.Time `json:"start_time"`
+}
+
+// --- Communication with Discord ---
+type DiscordReminderPayload struct {
+	RoundID      string   `json:"round_id"`
+	ReminderType string   `json:"reminder_type"`
+	RoundTitle   string   `json:"round_title"`
+	StartTime    string   `json:"start_time"`
+	Location     string   `json:"location"`
+	UserIDs      []string `json:"user_ids"` // Discord IDs to be notified
+}
+type DiscordRoundStartPayload struct {
+	RoundID      string                    `json:"round_id"`
+	Title        string                    `json:"title"`
+	Location     string                    `json:"location"`
+	StartTime    string                    `json:"start_time"`
+	Participants []DiscordRoundParticipant `json:"participants"`
+}
+
+type DiscordRoundParticipant struct {
+	DiscordID string `json:"discord_id"`
+	TagNumber int    `json:"tag_number"`
+	Score     *int   `json:"score"`
 }
 
 // --- Round State ---
 type RoundStateUpdatedPayload struct {
 	RoundID string                `json:"round_id"`
 	State   roundtypes.RoundState `json:"state"`
-}
-
-// --- Start Round ---
-type RoundStartedPayload struct {
-	RoundID string `json:"round_id"`
 }
 
 // Participant represents a participant in a round with their tag number.
