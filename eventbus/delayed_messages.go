@@ -22,18 +22,18 @@ func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
 		return
 	}
 
-	// ✅ Subscribe with a callback function (JetStream will call this function per message)
+	// Subscribe with a callback function (JetStream will call this function per message)
 	sub, err := consumer.Consume(func(jetStreamMsg jetstream.Msg) {
 		msgId := jetStreamMsg.Headers().Get("Nats-Msg-Id")
 
-		// ✅ **Check if message was already processed**
+		// **Check if message was already processed**
 		if _, exists := eb.processedMessages[msgId]; exists {
 			eb.logger.Warn("Skipping duplicate execution", "msg_id", msgId)
 			jetStreamMsg.Ack()
 			return
 		}
 
-		// ✅ **Extract Execution Time**
+		// **Extract Execution Time**
 		executeAtStr := jetStreamMsg.Headers().Get("Execute-At")
 		executeAt, err := time.Parse(time.RFC3339, executeAtStr)
 		if err != nil {
@@ -42,7 +42,7 @@ func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
 			return
 		}
 
-		// ✅ **Reschedule message if execution time hasn't arrived**
+		// **Reschedule message if execution time hasn't arrived**
 		delay := time.Until(executeAt)
 		if delay > 0 {
 			eb.logger.Info("Message not ready, rescheduling", "msg_id", msgId, "delay", delay)
@@ -50,10 +50,10 @@ func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
 			return
 		}
 
-		// ✅ **Mark message as processed**
+		// **Mark message as processed**
 		eb.processedMessages[msgId] = true
 
-		// ✅ **Republish message to correct subject**
+		// **Republish message to correct subject**
 		originalSubject := jetStreamMsg.Headers().Get("Original-Subject")
 		_, err = eb.js.Publish(ctx, originalSubject, jetStreamMsg.Data())
 		if err != nil {
@@ -62,7 +62,7 @@ func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
 			return
 		}
 
-		// ✅ **Acknowledge message**
+		// **Acknowledge message**
 		jetStreamMsg.Ack()
 		eb.logger.Info("Processed delayed message", "msg_id", msgId, "subject", originalSubject)
 	})
@@ -72,7 +72,7 @@ func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
 	}
 	defer sub.Stop()
 
-	// ✅ Wait until context is done before stopping the processor
+	// Wait until context is done before stopping the processor
 	<-ctx.Done()
 	eb.logger.Warn("Stopping delayed message processor due to context cancellation")
 }

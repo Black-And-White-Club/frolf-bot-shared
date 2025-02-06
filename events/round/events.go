@@ -89,8 +89,8 @@ const (
 	RoundUserRoleCheckError   = "round.user.role.check.error"
 
 	// --- Rounds Updated ---
-	RoundsUpdated = "round.rounds.updated"
-
+	RoundsUpdated       = "round.rounds.updated"
+	RoundScheduleUpdate = "round.schedule.update"
 	// --- Delayed Round Messages ---
 	DelayedMessagesSubject = "delayed.messages"
 	DiscordEventsSubject   = "discord.round.event"
