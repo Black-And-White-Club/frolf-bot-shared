@@ -259,6 +259,14 @@ type RoundScoreUpdateErrorPayload struct {
 	Error              string                     `json:"error"`
 }
 
+// RoundScheduleUpdatePayload is the payload for the round.schedule.update event.
+type RoundScheduleUpdatePayload struct {
+	RoundID   string    `json:"round_id"`
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	Location  string    `json:"location"`
+}
+
 // --- Finalize Round ---
 type RoundFinalizedPayload struct {
 	RoundID string `json:"round_id"`
