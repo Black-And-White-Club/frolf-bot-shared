@@ -147,6 +147,11 @@ type RoundCreatedPayload struct {
 	StartTime time.Time `json:"start_time"`
 }
 
+type RoundEventCreatedPayload struct {
+	RoundID        string `json:"round_id"`
+	DiscordEventID string `json:"discord_event_id"`
+}
+
 type RoundErrorPayload struct {
 	CorrelationID string                     `json:"correlation_id"`
 	Round         *RoundCreateRequestPayload `json:"round"`
