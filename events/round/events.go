@@ -27,6 +27,7 @@ const (
 	RoundError                   = "round.error"
 	RoundUpdateError             = "round.update.error"
 	RoundFinalizationError       = "round.finalization.error"
+	RoundDiscordEventIDUpdated   = "round.discord.event.id.updated"
 	ScoreModuleNotificationError = "score.module.notification.error"
 
 	// --- Update Round ---
@@ -148,6 +149,11 @@ type RoundCreatedPayload struct {
 }
 
 type RoundEventCreatedPayload struct {
+	RoundID        string `json:"round_id"`
+	DiscordEventID string `json:"discord_event_id"`
+}
+
+type RoundDiscordEventIDUpdatedPayload struct {
 	RoundID        string `json:"round_id"`
 	DiscordEventID string `json:"discord_event_id"`
 }
