@@ -136,7 +136,9 @@ type RoundStoredPayload struct {
 type RoundScheduledPayload struct {
 	RoundID          string    `json:"round_id"`
 	StartTime        time.Time `json:"start_time"`
+	EndTime          time.Time `json:"end_time"`
 	Title            string    `json:"title"`
+	Description      string    `json:"description"`
 	Location         string    `json:"location"`
 	DiscordEventID   string    `json:"discord_event_id"`
 	DiscordChannelID string    `json:"discord_channel_id"`
