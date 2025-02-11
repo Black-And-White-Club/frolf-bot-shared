@@ -3,7 +3,7 @@ package userevents
 import (
 	"time"
 
-	usertypes "github.com/Black-And-White-Club/frolf-bot/app/modules/user/domain/types"
+	usertypes "github.com/Black-And-White-Club/frolf-bot-shared/types/user"
 )
 
 // Stream names
