@@ -3,7 +3,7 @@ package roundevents
 import (
 	"time"
 
-	roundtypes "github.com/Black-And-White-Club/frolf-bot/app/modules/round/domain/types"
+	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 )
 
 // Stream names
