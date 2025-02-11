@@ -105,11 +105,11 @@ type RoundCreateRequestPayload struct {
 	Title            string                        `json:"title"`
 	Location         string                        `json:"location"`
 	EventType        *string                       `json:"event_type"`
-	DateTime         roundtypes.RoundTimeInput     `json:"date_time"`
+	DateTime         time.Time                     `json:"date_time"`
 	Participants     []roundtypes.ParticipantInput `json:"participants"`
 	DiscordChannelID string                        `json:"discord_channel_id"`
 	DiscordGuildID   string                        `json:"discord_guild_id"`
-	EndTime          roundtypes.RoundTimeInput     `json:"end_time,omitempty"`
+	EndTime          *time.Time                    `json:"end_time,omitempty"`
 }
 
 type RoundValidatedPayload struct {
@@ -119,7 +119,7 @@ type RoundValidatedPayload struct {
 
 type RoundDateTimeParsedPayload struct {
 	RoundCreateRequestPayload RoundCreateRequestPayload `json:"round_create_request_payload"`
-	StartTime                 *time.Time                `json:"start_time"`
+	StartTime                 time.Time                 `json:"start_time"`
 	EndTime                   *time.Time                `json:"end_time"`
 }
 
@@ -134,15 +134,15 @@ type RoundStoredPayload struct {
 }
 
 type RoundScheduledPayload struct {
-	RoundID          string    `json:"round_id"`
-	StartTime        time.Time `json:"start_time"`
-	EndTime          time.Time `json:"end_time"`
-	Title            string    `json:"title"`
-	Description      string    `json:"description"`
-	Location         string    `json:"location"`
-	DiscordEventID   string    `json:"discord_event_id"`
-	DiscordChannelID string    `json:"discord_channel_id"`
-	DiscordGuildID   string    `json:"discord_guild_id"`
+	RoundID          string     `json:"round_id"`
+	StartTime        time.Time  `json:"start_time"`
+	EndTime          *time.Time `json:"end_time"`
+	Title            string     `json:"title"`
+	Description      string     `json:"description"`
+	Location         string     `json:"location"`
+	DiscordEventID   string     `json:"discord_event_id"`
+	DiscordChannelID string     `json:"discord_channel_id"`
+	DiscordGuildID   string     `json:"discord_guild_id"`
 }
 
 type RoundCreatedPayload struct {
@@ -174,7 +174,7 @@ type RoundUpdateRequestPayload struct {
 	Title          *string    `json:"title,omitempty"`
 	Location       *string    `json:"location,omitempty"`
 	EventType      *string    `json:"event_type,omitempty"`
-	StartTime      *time.Time `json:"start_time,omitempty"`
+	StartTime      time.Time  `json:"start_time,omitempty"`
 	EndTime        *time.Time `json:"end_time,omitempty"`
 }
 
