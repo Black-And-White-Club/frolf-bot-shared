@@ -103,9 +103,10 @@ const (
 // --- Create Round ---
 type RoundCreateRequestPayload struct {
 	Title            string                        `json:"title"`
+	Description      *string                       `json:"description"`
 	Location         *string                       `json:"location"`
 	EventType        *string                       `json:"event_type"`
-	DateTime         *time.Time                    `json:"date_time"`
+	StartTime        *time.Time                    `json:"date_time"`
 	Participants     []roundtypes.ParticipantInput `json:"participants"`
 	DiscordChannelID *string                       `json:"discord_channel_id"`
 	DiscordGuildID   *string                       `json:"discord_guild_id"`
