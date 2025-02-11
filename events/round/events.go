@@ -109,12 +109,12 @@ type RoundCreateRequestPayload struct {
 	Participants     []roundtypes.ParticipantInput `json:"participants"`
 	DiscordChannelID string                        `json:"discord_channel_id"`
 	DiscordGuildID   string                        `json:"discord_guild_id"`
-	EndTime          *time.Time                    `json:"end_time,omitempty"` // Correctly a pointer
+	EndTime          *time.Time                    `json:"end_time,omitempty"`
 }
 
 type RoundValidatedPayload struct {
 	RoundCreateRequestPayload RoundCreateRequestPayload `json:"round_create_request_payload"`
-	EndTime                   *time.Time                `json:"end_time"` // Parsed end time
+	EndTime                   *time.Time                `json:"end_time"`
 }
 
 type RoundDateTimeParsedPayload struct {
@@ -174,7 +174,7 @@ type RoundUpdateRequestPayload struct {
 	Title          *string    `json:"title,omitempty"`
 	Location       *string    `json:"location,omitempty"`
 	EventType      *string    `json:"event_type,omitempty"`
-	StartTime      *time.Time `json:"start_time,omitempty"` //  <-- CHANGED HERE
+	StartTime      *time.Time `json:"start_time,omitempty"`
 	EndTime        *time.Time `json:"end_time,omitempty"`
 }
 
@@ -392,7 +392,7 @@ type RoundScoresNotificationPayload struct {
 
 type ParticipantScore struct {
 	DiscordID string  `json:"discord_id"`
-	TagNumber string  `json:"tag_number"` // Assuming you want to keep this as a string
+	TagNumber string  `json:"tag_number"`
 	Score     float64 `json:"score"`
 }
 
