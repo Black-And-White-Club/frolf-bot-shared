@@ -108,7 +108,7 @@ type RoundCreateRequestPayload struct {
 	Participants     []roundtypes.ParticipantInput `json:"participants"`
 	DiscordChannelID string                        `json:"discord_channel_id"`
 	DiscordGuildID   string                        `json:"discord_guild_id"`
-	EndTime          *roundtypes.RoundTimeInput    `json:"end_time,omitempty"`
+	EndTime          roundtypes.RoundTimeInput     `json:"end_time,omitempty"`
 }
 
 type RoundValidatedPayload struct {
