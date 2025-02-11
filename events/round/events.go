@@ -29,6 +29,7 @@ const (
 	RoundFinalizationError       = "round.finalization.error"
 	RoundDiscordEventIDUpdated   = "round.discord.event.id.updated"
 	ScoreModuleNotificationError = "score.module.notification.error"
+	RoundDiscordEventIDUpdate    = "round.discord.event.id.update"
 
 	// --- Update Round ---
 	RoundUpdateRequest   = "round.update.request"
