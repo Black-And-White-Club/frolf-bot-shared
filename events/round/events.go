@@ -173,6 +173,7 @@ type RoundUpdateRequestPayload struct {
 	RoundID        string     `json:"round_id" validate:"required"`
 	DiscordEventID string     `json:"discord_event_id" validate:"required"`
 	Title          *string    `json:"title,omitempty"`
+	Description    *string    `json:"description,omitempty"`
 	Location       *string    `json:"location,omitempty"`
 	EventType      *string    `json:"event_type,omitempty"`
 	StartTime      *time.Time `json:"start_time,omitempty"`
