@@ -1,15 +1,35 @@
 # filepath: /Users/jace/Documents/GitHub/frolf-bot-shared/Makefile
 
 MOCKS_DIR=./mocks
-EVENTBUS_FILE=./eventbus/eventbus.go
-ERRORS_FILE=./errors/publish_errors.go
-ROUND_TYPES=./types/round/types.go
-USER_TYPES=./types/user/types.go
-PACKAGE=github.com/Black-And-White-Club/frolf-bot-shared
 
-mocks:
+# Define variables for each interface file.
+# These paths are RELATIVE to the project root (where the Makefile is).
+EVENTBUS_FILE=eventbus/eventbus.go
+ERRORS_FILE=errors/publish_errors.go
+ROUND_TYPES=types/round/types.go
+USER_TYPES=types/user/types.go
+
+# Observability interfaces
+LOKI_FILE=observability/loki.go
+PROMETHEUS_FILE=observability/prometheus.go
+TEMPO_FILE=observability/tempo.go
+
+mocks: generate-mocks
+
+generate-mocks:
+	@echo "Generating mocks..."
 	mockgen -source=$(EVENTBUS_FILE) -destination=$(MOCKS_DIR)/eventbus_mock.go -package=mocks
 	mockgen -source=$(ERRORS_FILE) -destination=$(MOCKS_DIR)/publish_errors_mock.go -package=mocks
-	mockgen -source=$(ROUND_TYPES) -destination=$(MOCKS_DIR)/round_types_mock.go -package=mocks
 	mockgen -source=$(USER_TYPES) -destination=$(MOCKS_DIR)/user_types_mock.go -package=mocks
-.PHONY: mocks
+	mockgen -source=$(LOKI_FILE) -destination=$(MOCKS_DIR)/loki_mock.go -package=mocks
+	mockgen -source=$(PROMETHEUS_FILE) -destination=$(MOCKS_DIR)/prometheus_mock.go -package=mocks
+	mockgen -source=$(TEMPO_FILE) -destination=$(MOCKS_DIR)/tempo_mock.go -package=mocks
+	@echo "Mocks generated successfully."
+
+.PHONY: mocks generate-mocks
+
+clean:
+	@echo "Cleaning mock files..."
+	rm -f $(MOCKS_DIR)/*_mock.go
+	@echo "Mocks cleaned successfully."
+.PHONY: clean
