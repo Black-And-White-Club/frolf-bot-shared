@@ -9,30 +9,29 @@ import (
 	slogloki "github.com/samber/slog-loki/v3"
 )
 
-// Logger defines the interface for structured logging.  This is now *in* loki.go
+// Logger defines the interface for structured logging.
 type Logger interface {
-	Info(ctx context.Context, msg string, fields map[string]interface{})
-	Error(ctx context.Context, msg string, fields map[string]interface{})
-	Debug(ctx context.Context, msg string, fields map[string]interface{})
-	Warn(ctx context.Context, msg string, fields map[string]interface{})
-	Shutdown() // Add to the interface, for consistency
+	Debug(ctx context.Context, msg string, attrs ...slog.Attr)
+	Info(ctx context.Context, msg string, attrs ...slog.Attr)
+	Warn(ctx context.Context, msg string, attrs ...slog.Attr)
+	Error(ctx context.Context, msg string, attrs ...slog.Attr)
+	Shutdown()
 }
 
-// LokiLogger wraps a Loki handler for structured logging and implements the Logger interface.
+// LokiLogger wraps a Loki handler and implements the Logger interface.
 type LokiLogger struct {
 	handler *slogloki.LokiHandler
-	client  *loki.Client // Store the Loki client
+	client  *loki.Client
 }
 
-// NewLokiLogger initializes a Loki logger instance.
+// NewLokiLogger initializes a Loki logger instance. (Unchanged)
 func NewLokiLogger(url, tenantID, serviceName string) (*LokiLogger, error) {
-	// Create a new Loki client
 	config, err := loki.NewDefaultConfig(url)
 	if err != nil {
 		return nil, err
 	}
 	config.TenantID = tenantID
-	// config.ClientTimeout = 30 * time.Second // Example: Set a reasonable timeout. GOOD PRACTICE
+	// config.ClientTimeout = 30 * time.Second  // Good practice
 
 	client, err := loki.New(config)
 	if err != nil {
@@ -56,55 +55,45 @@ func NewLokiLogger(url, tenantID, serviceName string) (*LokiLogger, error) {
 	}, nil
 }
 
-// Shutdown ensures all logs are flushed before the app exits.  Good practice!
+// Shutdown ensures all logs are flushed.
 func (l *LokiLogger) Shutdown() {
 	if l.client != nil {
-		l.client.Stop() // Flush logs before exit
+		l.client.Stop()
 	}
 }
 
 // --- Implement the Logger interface methods ---
 
-func (l *LokiLogger) Info(ctx context.Context, message string, fields map[string]interface{}) {
-	l.logWithLoki(ctx, slog.LevelInfo, message, fields)
+func (l *LokiLogger) Debug(ctx context.Context, msg string, attrs ...slog.Attr) {
+	l.log(ctx, slog.LevelDebug, msg, attrs...)
 }
 
-func (l *LokiLogger) Error(ctx context.Context, message string, fields map[string]interface{}) {
-	l.logWithLoki(ctx, slog.LevelError, message, fields)
+func (l *LokiLogger) Info(ctx context.Context, msg string, attrs ...slog.Attr) {
+	l.log(ctx, slog.LevelInfo, msg, attrs...)
 }
 
-func (l *LokiLogger) Debug(ctx context.Context, message string, fields map[string]interface{}) {
-	l.logWithLoki(ctx, slog.LevelDebug, message, fields)
+func (l *LokiLogger) Warn(ctx context.Context, msg string, attrs ...slog.Attr) {
+	l.log(ctx, slog.LevelWarn, msg, attrs...)
 }
 
-func (l *LokiLogger) Warn(ctx context.Context, message string, fields map[string]interface{}) {
-	l.logWithLoki(ctx, slog.LevelWarn, message, fields)
+func (l *LokiLogger) Error(ctx context.Context, msg string, attrs ...slog.Attr) {
+	l.log(ctx, slog.LevelError, msg, attrs...)
 }
 
-// logWithLoki sends structured logs to Loki.  Internal helper function.
-func (l *LokiLogger) logWithLoki(ctx context.Context, level slog.Level, message string, fields map[string]interface{}) {
-	// Ensure ctx is not nil (good practice, you already had this)
+// log is a private helper function to avoid repetition.
+func (l *LokiLogger) log(ctx context.Context, level slog.Level, msg string, attrs ...slog.Attr) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	// Convert fields to structured attributes (you had this correctly)
-	attrs := make([]slog.Attr, 0, len(fields))
-	for key, value := range fields {
-		attrs = append(attrs, slog.Any(key, value))
-	}
-
-	// Create log record (you had this correctly)
 	record := slog.Record{
 		Time:    time.Now(),
 		Level:   level,
-		Message: message,
+		Message: msg,
 	}
-	record.AddAttrs(attrs...) // Keep AddAttrs
+	record.AddAttrs(attrs...)
 
-	// Send log to Loki
 	if err := l.handler.Handle(ctx, record); err != nil {
-		// CRITICAL: Handle errors from the handler!  Don't just ignore them.
-		slog.Error("Failed to send log to Loki", "error", err, "message", message, "fields", fields) //log it to default.
+		slog.Error("Failed to send log to Loki", slog.Any("error", err), slog.String("message", msg))
 	}
 }
