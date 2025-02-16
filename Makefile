@@ -1,6 +1,8 @@
 # filepath: /Users/jace/Documents/GitHub/frolf-bot-shared/Makefile
 
 MOCKS_DIR=./mocks
+OBSERVABILITY_MOCKS_DIR=observability/mocks
+EVENTBUS_MOCKS_DIR=eventbus/mocks
 
 # Define variables for each interface file.
 # These paths are RELATIVE to the project root (where the Makefile is).
@@ -18,12 +20,12 @@ mocks: generate-mocks
 
 generate-mocks:
 	@echo "Generating mocks..."
-	mockgen -source=$(EVENTBUS_FILE) -destination=$(MOCKS_DIR)/eventbus_mock.go -package=mocks
+	mockgen -source=$(EVENTBUS_FILE) -destination=$(EVENTBUS_MOCKS_DIR)/eventbus_mock.go -package=mocks
 	mockgen -source=$(ERRORS_FILE) -destination=$(MOCKS_DIR)/publish_errors_mock.go -package=mocks
 	mockgen -source=$(USER_TYPES) -destination=$(MOCKS_DIR)/user_types_mock.go -package=mocks
-	mockgen -source=$(LOKI_FILE) -destination=$(MOCKS_DIR)/loki_mock.go -package=mocks
-	mockgen -source=$(PROMETHEUS_FILE) -destination=$(MOCKS_DIR)/prometheus_mock.go -package=mocks
-	mockgen -source=$(TEMPO_FILE) -destination=$(MOCKS_DIR)/tempo_mock.go -package=mocks
+	mockgen -source=$(LOKI_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/loki_mock.go -package=mocks
+	mockgen -source=$(PROMETHEUS_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/prometheus_mock.go -package=mocks
+	mockgen -source=$(TEMPO_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/tempo_mock.go -package=mocks
 	@echo "Mocks generated successfully."
 
 .PHONY: mocks generate-mocks
