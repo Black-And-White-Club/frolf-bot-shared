@@ -353,7 +353,7 @@ type DiscordRoundStartPayload struct {
 }
 
 type DiscordRoundParticipant struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	TagNumber int    `json:"tag_number"`
 	Score     *int   `json:"score"`
 }
@@ -366,24 +366,24 @@ type RoundStateUpdatedPayload struct {
 
 // Participant represents a participant in a round with their tag number.
 type Participant struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	TagNumber int    `json:"tag_number"`
 }
 
 // --- Tag Retrieval ---
 type TagNumberRequestPayload struct {
-	DiscordID string        `json:"discord_id"`
+	DiscordID string        `json:"user_id"`
 	Timeout   time.Duration `json:"timeout"`
 }
 
 type RoundTagNumberFoundPayload struct {
 	RoundID   string `json:"round_id"`
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	TagNumber int    `json:"tag_number"`
 }
 
 type RoundTagNumberNotFoundPayload struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 }
 
 // --- Notify Score Module ---
@@ -393,7 +393,7 @@ type RoundScoresNotificationPayload struct {
 }
 
 type ParticipantScore struct {
-	DiscordID string  `json:"discord_id"`
+	DiscordID string  `json:"user_id"`
 	TagNumber string  `json:"tag_number"`
 	Score     float64 `json:"score"`
 }
@@ -406,13 +406,13 @@ type ProcessRoundScoresRequestPayload struct {
 
 // --- User Authorization ---
 type UserRoleCheckRequestPayload struct {
-	DiscordID     string `json:"discord_id"`
+	DiscordID     string `json:"user_id"`
 	RoundID       string `json:"round_id"`       // Context for the request
 	CorrelationID string `json:"correlation_id"` // To correlate with the response
 }
 
 type UserRoleCheckResultPayload struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	RoundID   string `json:"round_id"` // Context for the request
 	HasRole   bool   `json:"has_role"`
 	Error     string `json:"error"` // Error message if the check failed
@@ -420,14 +420,14 @@ type UserRoleCheckResultPayload struct {
 
 type RoundUserRoleCheckErrorPayload struct {
 	CorrelationID string `json:"correlation_id"`
-	DiscordID     string `json:"discord_id"`
+	DiscordID     string `json:"user_id"`
 	RoundID       string `json:"round_id"`
 	Error         string `json:"error"`
 }
 
 // --- Payloads for Tag Retrieval ---
 type GetTagNumberResponsePayload struct {
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	TagNumber int    `json:"tag_number"`
 	Error     string `json:"error,omitempty"` // Include an error string
 }

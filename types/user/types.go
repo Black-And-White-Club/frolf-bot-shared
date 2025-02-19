@@ -28,7 +28,7 @@ type User interface {
 type UserData struct {
 	ID int64 `json:"id"`
 	// Name      string       `json:"name"`
-	DiscordID DiscordID    `json:"discord_id"`
+	DiscordID DiscordID    `json:"user_id"`
 	Role      UserRoleEnum `json:"role"` // Use UserRoleEnum here
 }
 

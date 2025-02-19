@@ -28,7 +28,7 @@ type ProcessRoundScoresRequestPayload struct {
 // ParticipantScore represents a single score entry with DiscordID, TagNumber, and Score.
 // Changed Score to float64
 type ParticipantScore struct {
-	DiscordID string  `json:"discord_id"`
+	DiscordID string  `json:"user_id"`
 	TagNumber int     `json:"tag_number"`
 	Score     float64 `json:"score"`
 }
@@ -57,7 +57,7 @@ type ScoreUpdateErrorPayload struct {
 // ScoreUpdateSuccessPayload is the payload for the ScoreCorrectionSuccess event.
 type ScoreUpdateSuccessPayload struct {
 	RoundID   string `json:"round_id"`
-	DiscordID string `json:"discord_id"`
+	DiscordID string `json:"user_id"`
 	NewScore  int    `json:"new_score"`
 	TagNumber string `json:"tag_number"`
 }

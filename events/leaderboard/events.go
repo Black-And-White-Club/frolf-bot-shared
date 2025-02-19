@@ -54,28 +54,28 @@ type RoundFinalizedPayload struct {
 
 // TagAssignedPayload is the payload for the TagAssigned event.
 type TagAssignedPayload struct {
-	DiscordID    leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID    leaderboardtypes.DiscordID `json:"user_id"`
 	TagNumber    int                        `json:"tag_number"`
 	AssignmentID string                     `json:"assignment_id"`
 }
 
 // TagAvailablePayload is the payload for the TagAvailable event.
 type TagAvailablePayload struct {
-	DiscordID    leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID    leaderboardtypes.DiscordID `json:"user_id"`
 	TagNumber    int                        `json:"tag_number"`
 	AssignmentID string                     `json:"assignment_id"`
 }
 
 // TagUnavailablePayload is the payload for the TagUnavailable event.
 type TagUnavailablePayload struct {
-	DiscordID leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID leaderboardtypes.DiscordID `json:"user_id"`
 	TagNumber int                        `json:"tag_number"`
 	Reason    string                     `json:"reason"`
 }
 
 // TagAssignmentRequestedPayload is the payload for the TagAssignmentRequested event.
 type TagAssignmentRequestedPayload struct {
-	DiscordID  leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID  leaderboardtypes.DiscordID `json:"user_id"`
 	TagNumber  int                        `json:"tag_number"`
 	UpdateID   string                     `json:"update_id"`
 	Source     string                     `json:"source"`
@@ -109,7 +109,7 @@ type DeactivateOldLeaderboardPayload struct {
 
 // TagAssignmentFailedPayload is the payload for the TagAssignmentFailed event.
 type TagAssignmentFailedPayload struct {
-	DiscordID  leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID  leaderboardtypes.DiscordID `json:"user_id"`
 	TagNumber  int                        `json:"tag_number"`
 	UpdateID   string                     `json:"update_id"`
 	Source     string                     `json:"source"`
@@ -148,7 +148,7 @@ type GetLeaderboardRequestPayload struct{} // Empty, as no data is needed for th
 // LeaderboardEntry represents an entry on the leaderboard.
 type LeaderboardEntry struct {
 	TagNumber string                     `json:"tag_number"`
-	DiscordID leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID leaderboardtypes.DiscordID `json:"user_id"`
 }
 
 // GetLeaderboardResponsePayload is the payload for the GetLeaderboardResponse event.
@@ -158,7 +158,7 @@ type GetLeaderboardResponsePayload struct {
 
 // GetTagByDiscordIDRequestPayload is the payload for the GetTagByDiscordIDRequest event.
 type GetTagByDiscordIDRequestPayload struct {
-	DiscordID leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID leaderboardtypes.DiscordID `json:"user_id"`
 }
 
 // GetTagByDiscordIDResponsePayload is the payload for the GetTagByDiscordIDResponse event.
@@ -169,7 +169,7 @@ type GetTagByDiscordIDResponsePayload struct {
 // TagAvailabilityCheckRequestedPayload is the payload for the TagAvailabilityCheckRequested event.
 type TagAvailabilityCheckRequestedPayload struct {
 	TagNumber int                        `json:"tag_number"`
-	DiscordID leaderboardtypes.DiscordID `json:"discord_id"`
+	DiscordID leaderboardtypes.DiscordID `json:"user_id"`
 }
 
 // -- Helper Types --
