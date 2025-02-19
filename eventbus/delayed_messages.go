@@ -1,8 +1,8 @@
+// eventbus/delayed.go
 package eventbus
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -11,70 +11,70 @@ import (
 )
 
 func (eb *eventBus) ProcessDelayedMessages(ctx context.Context) {
-	// Ensure a durable consumer exists
-	consumer, err := eb.js.CreateOrUpdateConsumer(ctx, "DELAYED_MESSAGES", jetstream.ConsumerConfig{
+	// Ensure a durable consumer exists, subscribing to ALL delayed messages.
+	consumer, err := eb.js.CreateOrUpdateConsumer(ctx, delayedMessagesStream, jetstream.ConsumerConfig{
 		Durable:       "delayed_processor",
-		FilterSubject: "delayed.stream",
-		AckPolicy:     jetstream.AckExplicitPolicy, // Ensure explicit ACKs
+		FilterSubject: delayedMessagesSubject + ".>", // Subscribe to ALL delayed messages
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		DeliverPolicy: jetstream.DeliverByStartTimePolicy,
+		OptStartTime:  &[]time.Time{time.Now()}[0],
 	})
 	if err != nil {
-		eb.logger.Error("Failed to create/update consumer", "error", err)
+		eb.logger.ErrorContext(ctx, "Failed to create/update consumer", slog.Any("error", err))
 		return
 	}
 
-	// Subscribe with a callback function (JetStream will call this function per message)
 	sub, err := consumer.Consume(func(jetStreamMsg jetstream.Msg) {
-		msgId := jetStreamMsg.Headers().Get("Nats-Msg-Id")
-
-		// **Check if message was already processed**
-		if _, exists := eb.processedMessages[msgId]; exists {
-			eb.logger.Warn("Skipping duplicate execution", "msg_id", msgId)
-			jetStreamMsg.Ack()
-			return
-		}
-
-		// **Extract Execution Time**
 		executeAtStr := jetStreamMsg.Headers().Get("Execute-At")
 		executeAt, err := time.Parse(time.RFC3339, executeAtStr)
 		if err != nil {
-			eb.logger.Error("Invalid Execute-At timestamp, NAKing message", "msg_id", msgId, "error", err)
+			eb.logger.ErrorContext(ctx, "Invalid Execute-At timestamp, Terminating message", slog.Any("error", err))
+			jetStreamMsg.Term()
+			return
+		}
+
+		if time.Now().After(executeAt) {
+			wmMsg, err := eb.toWatermillMessage(ctx, jetStreamMsg)
+			if err != nil {
+				eb.logger.ErrorContext(ctx, "Error converting jetstream message to watermill", slog.Any("error", err))
+				jetStreamMsg.Term()
+				return
+			}
+
+			originalSubject := wmMsg.Metadata.Get("Original-Subject")
+			if originalSubject == "" {
+				eb.logger.ErrorContext(ctx, "Delayed message missing Original-Subject", slog.String("message_id", wmMsg.UUID))
+				jetStreamMsg.Term()
+				return
+			}
+
+			// Clear out the delay-related metadata
+			wmMsg.Metadata.Set("Execute-At", "")
+			wmMsg.Metadata.Set("Round-ID", "") // Clear Round-ID
+			wmMsg.Metadata.Set("Nats-Delay", "")
+
+			if err := eb.publisher.Publish(originalSubject, wmMsg); err != nil {
+				eb.logger.ErrorContext(ctx, "Failed to republish delayed message", slog.String("original_topic", originalSubject), slog.String("message_id", wmMsg.UUID), slog.Any("error", err))
+				jetStreamMsg.Nak() // Retry
+				return
+			}
+
+			jetStreamMsg.Ack()
+			eb.logger.InfoContext(ctx, "Processed delayed message", slog.String("subject", originalSubject), slog.String("message_id", wmMsg.UUID))
+
+		} else {
+			eb.logger.InfoContext(ctx, "Message not ready, Nacking", slog.String("delay", time.Until(executeAt).String()))
 			jetStreamMsg.Nak()
-			return
 		}
-
-		// **Reschedule message if execution time hasn't arrived**
-		delay := time.Until(executeAt)
-		if delay > 0 {
-			eb.logger.Info("Message not ready, rescheduling", "msg_id", msgId, "delay", delay)
-			jetStreamMsg.NakWithDelay(delay)
-			return
-		}
-
-		// **Mark message as processed**
-		eb.processedMessages[msgId] = true
-
-		// **Republish message to correct subject**
-		originalSubject := jetStreamMsg.Headers().Get("Original-Subject")
-		_, err = eb.js.Publish(ctx, originalSubject, jetStreamMsg.Data())
-		if err != nil {
-			eb.logger.Error("Failed to republish delayed message", "msg_id", msgId, "error", err)
-			jetStreamMsg.Nak() // Retry later
-			return
-		}
-
-		// **Acknowledge message**
-		jetStreamMsg.Ack()
-		eb.logger.Info("Processed delayed message", "msg_id", msgId, "subject", originalSubject)
 	})
 	if err != nil {
-		eb.logger.Error("Failed to start consumer", "error", err)
+		eb.logger.ErrorContext(ctx, "Failed to start consumer", slog.Any("error", err))
 		return
 	}
-	defer sub.Stop()
 
-	// Wait until context is done before stopping the processor
 	<-ctx.Done()
-	eb.logger.Warn("Stopping delayed message processor due to context cancellation")
+	eb.logger.WarnContext(ctx, "Stopping delayed message processor due to context cancellation")
+	sub.Stop()
 }
 
 func (eb *eventBus) CancelScheduledMessage(ctx context.Context, roundID string) error {
@@ -84,7 +84,7 @@ func (eb *eventBus) CancelScheduledMessage(ctx context.Context, roundID string) 
 		return fmt.Errorf("failed to access stream %s: %w", delayedMessagesStream, err)
 	}
 
-	// Construct the subject for the specific round
+	// Construct the subject for the specific round.  This is now correct.
 	subjectToDelete := fmt.Sprintf("%s.%s", delayedMessagesSubject, roundID)
 
 	// Purge messages on the specific subject
@@ -92,49 +92,6 @@ func (eb *eventBus) CancelScheduledMessage(ctx context.Context, roundID string) 
 		return fmt.Errorf("failed to purge messages for round %s: %w", roundID, err)
 	}
 
-	eb.logger.Info("Purged scheduled messages from delayed stream", "subject", subjectToDelete, "round_id", roundID)
+	eb.logger.InfoContext(ctx, "Cancelled scheduled message", slog.String("subject", subjectToDelete), slog.String("round_id", roundID))
 	return nil
-}
-
-// CreateOrUpdateStream creates or updates a JetStream stream with the given configuration.
-func (eb *eventBus) CreateOrUpdateStream(ctx context.Context, streamCfg jetstream.StreamConfig) (jetstream.Stream, error) {
-	eb.logger.Info("Creating/updating stream", slog.String("stream_name", streamCfg.Name))
-	eb.streamMutex.Lock()
-	defer eb.streamMutex.Unlock()
-
-	js, err := jetstream.New(eb.natsConn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to jetstream: %w", err)
-	}
-
-	stream, err := js.Stream(ctx, streamCfg.Name)
-	if err != nil {
-		if errors.Is(err, jetstream.ErrStreamNotFound) {
-			stream, err = js.CreateStream(ctx, streamCfg)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create stream %s: %w", streamCfg.Name, err)
-			}
-			eb.logger.Info("Stream created", slog.String("stream_name", streamCfg.Name), slog.Any("subjects", streamCfg.Subjects))
-		} else {
-			return nil, fmt.Errorf("failed to get stream %s: %w", streamCfg.Name, err)
-		}
-	} else {
-		eb.logger.Info("Stream found, checking config", slog.String("stream_name", streamCfg.Name))
-		currentCfg := stream.CachedInfo().Config
-		if !streamSubjectsMatch(currentCfg.Subjects, streamCfg.Subjects) ||
-			currentCfg.Retention != streamCfg.Retention ||
-			currentCfg.Storage != streamCfg.Storage ||
-			currentCfg.Replicas != streamCfg.Replicas {
-			_, err = js.UpdateStream(ctx, streamCfg)
-			if err != nil {
-				return nil, fmt.Errorf("failed to update stream %s: %w", streamCfg.Name, err)
-			}
-			eb.logger.Info("Stream updated", slog.String("stream_name", streamCfg.Name), slog.Any("subjects", streamCfg.Subjects))
-		} else {
-			eb.logger.Info("Stream config is up-to-date", slog.String("stream_name", streamCfg.Name))
-		}
-	}
-
-	eb.createdStreams[streamCfg.Name] = true
-	return stream, nil
 }

@@ -123,7 +123,7 @@ func (er *ErrorReporter) ReportError(correlationID string, msg string, err error
 	// Publish the error event
 	errorMsg := message.NewMessage(correlationID, payloadBytes)
 	errorMsg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-	if publishErr := er.EventBus.Publish(er.ErrorTopic, errorMsg); publishErr != nil {
+	if publishErr := er.EventBus.Publish(context.Background(), er.ErrorTopic, errorMsg); publishErr != nil {
 		er.Logger.Error("failed to publish error event", "error", publishErr)
 	}
 }

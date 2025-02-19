@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	message "github.com/ThreeDotsLabs/watermill/message"
-	jetstream "github.com/nats-io/nats.go/jetstream"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -70,21 +69,6 @@ func (mr *MockEventBusMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockEventBus)(nil).Close))
 }
 
-// CreateOrUpdateStream mocks base method.
-func (m *MockEventBus) CreateOrUpdateStream(ctx context.Context, streamCfg jetstream.StreamConfig) (jetstream.Stream, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateOrUpdateStream", ctx, streamCfg)
-	ret0, _ := ret[0].(jetstream.Stream)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateOrUpdateStream indicates an expected call of CreateOrUpdateStream.
-func (mr *MockEventBusMockRecorder) CreateOrUpdateStream(ctx, streamCfg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdateStream", reflect.TypeOf((*MockEventBus)(nil).CreateOrUpdateStream), ctx, streamCfg)
-}
-
 // ProcessDelayedMessages mocks base method.
 func (m *MockEventBus) ProcessDelayedMessages(ctx context.Context) {
 	m.ctrl.T.Helper()
@@ -98,22 +82,17 @@ func (mr *MockEventBusMockRecorder) ProcessDelayedMessages(ctx any) *gomock.Call
 }
 
 // Publish mocks base method.
-func (m *MockEventBus) Publish(topic string, messages ...*message.Message) error {
+func (m *MockEventBus) Publish(ctx context.Context, topic string, msg any) error {
 	m.ctrl.T.Helper()
-	varargs := []any{topic}
-	for _, a := range messages {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Publish", varargs...)
+	ret := m.ctrl.Call(m, "Publish", ctx, topic, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Publish indicates an expected call of Publish.
-func (mr *MockEventBusMockRecorder) Publish(topic any, messages ...any) *gomock.Call {
+func (mr *MockEventBusMockRecorder) Publish(ctx, topic, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{topic}, messages...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventBus)(nil).Publish), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventBus)(nil).Publish), ctx, topic, msg)
 }
 
 // Subscribe mocks base method.
