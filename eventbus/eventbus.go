@@ -38,7 +38,7 @@ const (
 
 // EventBus interface
 type EventBus interface {
-	Publish(ctx context.Context, topic string, msg interface{}) error
+	Publish(topic string, messages ...*message.Message) error
 	Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error)
 	Close() error
 	ProcessDelayedMessages(ctx context.Context)
@@ -143,8 +143,9 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger) (Even
 }
 
 // Publish publishes a message using Watermill's automatic marshaling.
-func (eb *eventBus) Publish(ctx context.Context, topic string, msg interface{}) error {
+func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 	// Ensure `marshaler` is set
+	ctx := messages[0].Context()
 	if eb.marshaler == nil {
 		return fmt.Errorf("eventBus marshaler is not set")
 	}
