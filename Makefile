@@ -10,6 +10,7 @@ EVENTBUS_FILE=eventbus/eventbus.go
 ERRORS_FILE=errors/publish_errors.go
 ROUND_TYPES=types/round/types.go
 USER_TYPES=types/user/types.go
+EVENTS_METADATA=events/metadata.go
 
 # Observability interfaces
 LOKI_FILE=observability/loki.go
@@ -26,6 +27,7 @@ generate-mocks:
 	mockgen -source=$(LOKI_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/loki_mock.go -package=mocks
 	mockgen -source=$(PROMETHEUS_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/prometheus_mock.go -package=mocks
 	mockgen -source=$(TEMPO_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/tempo_mock.go -package=mocks
+	mockgen -source=$(EVENTS_METADATA) -destination=$(MOCKS_DIR)/metadata_mock.go -package=mocks
 	@echo "Mocks generated successfully."
 
 .PHONY: mocks generate-mocks
