@@ -1,9 +1,8 @@
 package roundevents
 
 import (
-	"time"
-
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
+	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
 // Stream names
@@ -14,116 +13,151 @@ const (
 	ScoreStreamName       = "score"
 )
 
-// Round-related events
+// Event names - grouped by functionality
 const (
-	// --- Create Round ---
-	RoundCreateRequest           = "round.create.request"
-	RoundValidated               = "round.validated"
-	RoundDateTimeParsed          = "round.datetime.parsed"
-	RoundEntityCreated           = "round.entity.created"
-	RoundStored                  = "round.stored"
-	RoundScheduled               = "round.scheduled"
-	RoundCreated                 = "round.created"
-	RoundError                   = "round.error"
-	RoundUpdateError             = "round.update.error"
-	RoundFinalizationError       = "round.finalization.error"
-	RoundDiscordEventIDUpdated   = "round.discord.event.id.updated"
-	ScoreModuleNotificationError = "score.module.notification.error"
-	RoundDiscordEventIDUpdate    = "round.discord.event.id.update"
+	// Round Creation Events
+	RoundCreateRequest         = "round.create.request"
+	RoundValidated             = "round.validated"
+	RoundValidationFailed      = "discord.round.validation.failed"
+	RoundDateTimeParsed        = "round.datetime.parsed"
+	RoundEntityCreated         = "round.entity.created"
+	RoundStored                = "round.stored"
+	RoundScheduled             = "round.scheduled"
+	RoundCreated               = "discord.round.created"
+	RoundCreationFailed        = "discord.round.creation.failed"
+	RoundError                 = "round.error"
+	RoundCreatedEvent          = "discord.round.created"
+	RoundEventMessageIDUpdated = "round.discord.event.id.updated"
+	RoundEventMessageIDUpdate  = "round.discord.event.id.update"
+	RoundTraceEvent            = "round.trace.event"
 
-	// --- Update Round ---
-	RoundUpdateRequest   = "round.update.request"
-	RoundUpdateValidated = "round.update.validated"
-	RoundFetched         = "round.fetched"
-	RoundEntityUpdated   = "round.entity.updated"
-	RoundUpdated         = "round.updated"
-	RoundUpdateSuccess   = "round.update.success"
+	// Round Update Events
+	RoundUpdateRequest    = "round.update.request"
+	RoundUpdateValidated  = "round.update.validated"
+	RoundFetched          = "round.fetched"
+	RoundEntityUpdated    = "round.entity.updated"
+	RoundUpdateSuccess    = "round.update.success"
+	RoundUpdateError      = "round.update.error"
+	RoundUpdated          = "round.updated"
+	RoundScheduleUpdate   = "round.schedule.update"
+	RoundStateUpdated     = "round.state.updated"
+	RoundsUpdated         = "round.rounds.updated"
+	RoundUpdateReschedule = "round.update.reschedule"
 
-	// --- Delete Round ---
+	// Round Delete Events
 	RoundDeleteRequest      = "round.delete.request"
+	RoundDeleted            = "discord.round.deleted"
 	RoundDeleteValidated    = "round.delete.validated"
 	RoundToDeleteFetched    = "round.to.delete.fetched"
 	RoundDeleteAuthorized   = "round.delete.authorized"
 	RoundDeleteUnauthorized = "round.delete.unauthorized"
-	RoundDeleted            = "round.deleted"
 	RoundDeleteError        = "round.delete.error"
 
-	// --- Join Round ---
-	RoundParticipantJoinRequest   = "round.participant.join.request"
-	RoundParticipantJoinValidated = "round.participant.join.validated"
-	RoundParticipantJoinError     = "round.participant.join.error"
-	ParticipantJoined             = "round.participant.joined"
+	// Participant Events
+	RoundParticipantJoinRequest           = "round.participant.join.request"
+	RoundParticipantJoinValidated         = "round.participant.join.validated"
+	RoundParticipantJoinError             = "round.participant.join.error"
+	RoundParticipantDeclined              = "round.participant.declined"
+	RoundParticipantDeclinedResponse      = "discord.round.participant.declined"
+	RoundParticipantJoined                = "discord.round.participant.joined"
+	RoundParticipantRemovalRequest        = "round.participant.removal.request"
+	RoundParticipantRemoved               = "discord.round.participant.removed"
+	RoundParticipantJoinValidationRequest = "round.participant.join.validation.request"
+	RoundParticipantStatusError           = "round.participant.error"
+	RoundParticipantStatusFound           = "round.participant.found"
 
-	// --- Score Round ---
+	// Score Events
 	RoundScoreUpdateRequest      = "round.score.update.request"
 	RoundScoreUpdateValidated    = "round.score.update.validated"
 	RoundParticipantScoreUpdated = "round.participant.score.updated"
 	RoundAllScoresSubmitted      = "round.all.scores.submitted"
-	RoundNotAllScoresSubmitted   = "round.not.all.scores.submitted"
-	RoundScoreUpdateError        = "round.score.update.error"
+	RoundNotAllScoresSubmitted   = "discord.round.not.all.scores.submitted"
+	RoundScoreUpdateError        = "discord.round.score.update.error"
+	ProcessRoundScoresRequest    = "score.process.scores.request"
+	ScoreModuleNotificationError = "score.module.notification.error"
 
-	// --- Finalize Round ---
+	// Round Lifecycle Events
+	RoundStarted            = "round.started"
+	DiscordRoundStarted     = "discord.round.started"
 	RoundFinalized          = "round.finalized"
+	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
+	RoundReminder           = "round.reminder"
+	DiscordRoundReminder    = "discord.round.reminder"
+	DiscordRoundFinalized   = "discord.round.finalized"
 
-	// --- Round Reminders ---
-	RoundReminder = "round.reminder"
-
-	// --- Round State ---
-	RoundStateUpdated = "round.state.updated"
-
-	// --- Start Round ---
-	RoundStarted = "round.started"
-
-	// --- Tag Retrieval ---
-	RoundTagNumberRequest  = "round.tag.number.request"
-	RoundTagNumberFound    = "round.tag.number.found"
-	RoundTagNumberNotFound = "round.tag.number.notfound"
-
-	// --- Communication with Other Modules ---
+	// Tag Events
+	RoundTagNumberRequest           = "round.tag.number.request"
+	RoundTagNumberFound             = "round.tag.number.found"
+	RoundTagNumberNotFound          = "round.tag.number.not.found"
 	LeaderboardGetTagNumberRequest  = "leaderboard.get.tag.number.request"
-	LeaderboardGetTagNumberResponse = "leaderboard.get.tag.number.response"
-	ProcessRoundScoresRequest       = "score.process.scores.request"
+	LeaderboardGetTagNumberResponse = "round.get.tag.number.response"
 
-	// --- User Authorization ---
+	// Authorization Events
 	RoundUserRoleCheckRequest = "round.user.role.check.request"
 	RoundUserRoleCheckResult  = "round.user.role.check.result"
 	RoundUserRoleCheckError   = "round.user.role.check.error"
 
-	// --- Rounds Updated ---
-	RoundsUpdated       = "round.rounds.updated"
-	RoundScheduleUpdate = "round.schedule.update"
-	// --- Delayed Round Messages ---
-	DelayedMessagesSubject = "delayed.messages"
+	// Discord Events
 	DiscordEventsSubject   = "discord.round.event"
+	DelayedMessagesSubject = "delayed.messages"
 )
 
-// Round Events Payloads
+// Event Payloads - structured by extending base payloads where possible
 
-// --- Create Round ---
-type RoundCreateRequestPayload struct {
-	Title            string                        `json:"title"`
-	Description      *string                       `json:"description"`
-	Location         *string                       `json:"location"`
-	EventType        *string                       `json:"event_type"`
-	StartTime        *time.Time                    `json:"date_time"`
-	Participants     []roundtypes.ParticipantInput `json:"participants"`
-	DiscordChannelID *string                       `json:"discord_channel_id"`
-	DiscordGuildID   *string                       `json:"discord_guild_id"`
-	EndTime          *time.Time                    `json:"end_time,omitempty"`
+type CreateRoundRequestedPayload struct {
+	Title       roundtypes.Title       `json:"title"`
+	Description roundtypes.Description `json:"description"`
+	StartTime   string                 `json:"start_time"`
+	Location    roundtypes.Location    `json:"location"`
+	UserID      sharedtypes.DiscordID  `json:"user_id"`
+	ChannelID   string                 `json:"channel_id"`
+	Timezone    roundtypes.Timezone    `json:"timezone"`
 }
 
-type RoundValidatedPayload struct {
-	RoundCreateRequestPayload RoundCreateRequestPayload `json:"round_create_request_payload"`
-	EndTime                   *time.Time                `json:"end_time"`
+type RoundCreateRequestPayload struct {
+	roundtypes.BaseRoundPayload
+	Timezone roundtypes.Timezone `json:"timezone"`
 }
 
 type RoundDateTimeParsedPayload struct {
 	RoundCreateRequestPayload RoundCreateRequestPayload `json:"round_create_request_payload"`
-	StartTime                 *time.Time                `json:"start_time"`
-	EndTime                   *time.Time                `json:"end_time"`
+	StartTime                 *roundtypes.StartTime     `json:"start_time"`
 }
 
+type RoundScheduledPayload struct {
+	roundtypes.BaseRoundPayload
+	EventMessageID *roundtypes.EventMessageID `json:"discord_message_id"`
+}
+
+type RoundStartedPayload struct {
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	Title     roundtypes.Title      `json:"title"`
+	Location  *roundtypes.Location  `json:"location"`
+	StartTime *roundtypes.StartTime `json:"start_time"`
+	ChannelID string                `json:"channel_id"`
+}
+
+type RoundFinalizedEmbedUpdatePayload struct {
+	RoundID          sharedtypes.RoundID
+	Title            roundtypes.Title
+	StartTime        *roundtypes.StartTime
+	Location         *roundtypes.Location
+	Participants     []roundtypes.Participant
+	EventMessageID   *roundtypes.EventMessageID
+	DiscordChannelID string `json:"discord_channel_id,omitempty"`
+}
+
+// ---- Round Creation Payloads ----
+
+type RoundValidatedPayload struct {
+	CreateRoundRequestedPayload CreateRoundRequestedPayload `json:"round_create_request_payload"`
+}
+
+type RoundValidationFailedPayload struct {
+	UserID       sharedtypes.DiscordID `json:"user_id"`
+	ErrorMessage []string              `json:"error_messages"`
+}
 type RoundEntityCreatedPayload struct {
 	Round            roundtypes.Round `json:"round"`
 	DiscordChannelID string           `json:"discord_channel_id"`
@@ -134,50 +168,38 @@ type RoundStoredPayload struct {
 	Round roundtypes.Round `json:"round"`
 }
 
-type RoundScheduledPayload struct {
-	RoundID          string     `json:"round_id"`
-	StartTime        *time.Time `json:"start_time"`
-	EndTime          *time.Time `json:"end_time"`
-	Title            string     `json:"title"`
-	Description      *string    `json:"description"`
-	Location         *string    `json:"location"`
-	DiscordEventID   *string    `json:"discord_event_id"`
-	DiscordChannelID *string    `json:"discord_channel_id"`
-	DiscordGuildID   *string    `json:"discord_guild_id"`
+type RoundCreatedPayload struct {
+	roundtypes.BaseRoundPayload
+	ChannelID string `json:"channel_id"`
 }
 
-type RoundCreatedPayload struct {
-	RoundID   string     `json:"round_id"`
-	Name      string     `json:"name"`
-	StartTime *time.Time `json:"start_time"`
+type RoundCreationFailedPayload struct {
+	UserID       sharedtypes.DiscordID `json:"user_id"`
+	ErrorMessage string                `json:"error_message"`
+	ChannelID    string                `json:"channel_id"`
+	GuildID      string                `json:"guild_id"`
 }
 
 type RoundEventCreatedPayload struct {
-	RoundID        string `json:"round_id"`
-	DiscordEventID string `json:"discord_event_id"`
+	RoundID        sharedtypes.RoundID `json:"round_id"`
+	EventMessageID string              `json:"discord_message_id"`
 }
 
-type RoundDiscordEventIDUpdatedPayload struct {
-	RoundID        string `json:"round_id"`
-	DiscordEventID string `json:"discord_event_id"`
+type RoundEventMessageIDUpdatedPayload struct {
+	RoundID        sharedtypes.RoundID `json:"round_id"`
+	EventMessageID string              `json:"discord_message_id"`
 }
 
 type RoundErrorPayload struct {
-	CorrelationID string                     `json:"correlation_id"`
-	Round         *RoundCreateRequestPayload `json:"round"`
-	Error         string                     `json:"error"`
+	Round *RoundCreateRequestPayload `json:"round"`
+	Error string                     `json:"error"`
 }
 
-// --- Update Round ---
+// ---- Round Update Payloads ----
+
 type RoundUpdateRequestPayload struct {
-	RoundID        string     `json:"round_id" validate:"required"`
-	DiscordEventID string     `json:"discord_event_id" validate:"required"`
-	Title          *string    `json:"title,omitempty"`
-	Description    *string    `json:"description,omitempty"`
-	Location       *string    `json:"location,omitempty"`
-	EventType      *string    `json:"event_type,omitempty"`
-	StartTime      *time.Time `json:"start_time,omitempty"`
-	EndTime        *time.Time `json:"end_time,omitempty"`
+	roundtypes.BaseRoundPayload
+	EventType *roundtypes.EventType `json:"event_type,omitempty"`
 }
 
 type RoundUpdateValidatedPayload struct {
@@ -193,24 +215,32 @@ type RoundEntityUpdatedPayload struct {
 	Round roundtypes.Round `json:"round"`
 }
 
-type RoundUpdatedPayload struct {
-	RoundID string `json:"round_id"`
-}
-
 type RoundUpdateSuccessPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
 }
 
 type RoundUpdateErrorPayload struct {
-	CorrelationID      string                     `json:"correlation_id"`
 	RoundUpdateRequest *RoundUpdateRequestPayload `json:"round_update_request"`
 	Error              string                     `json:"error"`
 }
 
-// --- Delete Round ---
+type RoundScheduleUpdatePayload struct {
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	Title     roundtypes.Title      `json:"title"`
+	StartTime *roundtypes.StartTime `json:"start_time"`
+	Location  *roundtypes.Location  `json:"location"`
+}
+
+type RoundStateUpdatedPayload struct {
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	State   roundtypes.RoundState `json:"state"`
+}
+
+// ---- Round Delete Payloads ----
+
 type RoundDeleteRequestPayload struct {
-	RoundID                 string `json:"round_id" validate:"required"`
-	RequestingUserDiscordID string `json:"requesting_user_discord_id" validate:"required"`
+	RoundID              sharedtypes.RoundID   `json:"round_id" validate:"required"`
+	RequestingUserUserID sharedtypes.DiscordID `json:"requesting_user_user_id" validate:"required"`
 }
 
 type RoundDeleteValidatedPayload struct {
@@ -223,23 +253,34 @@ type RoundToDeleteFetchedPayload struct {
 }
 
 type RoundDeleteAuthorizedPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
 }
 
 type RoundDeletedPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID        sharedtypes.RoundID       `json:"round_id"`
+	EventMessageID roundtypes.EventMessageID `json:"discord_message_id"`
 }
 
 type RoundDeleteErrorPayload struct {
-	CorrelationID      string                     `json:"correlation_id"`
 	RoundDeleteRequest *RoundDeleteRequestPayload `json:"round_delete_request"`
 	Error              string                     `json:"error"`
 }
 
-// --- Join Round ---
+// ---- Participant Payloads ----
+
+type RoundParticipant struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Response  roundtypes.Response    `json:"response"`
+	Score     *sharedtypes.Score     `json:"score"`
+}
+
 type ParticipantJoinRequestPayload struct {
-	RoundID     string `json:"round_id"`
-	Participant string `json:"participant"` // Discord ID
+	RoundID    sharedtypes.RoundID    `json:"round_id"`
+	UserID     sharedtypes.DiscordID  `json:"user_id"`
+	Response   roundtypes.Response    `json:"response"`
+	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
+	JoinedLate *bool                  `json:"joined_late,omitempty"`
 }
 
 type ParticipantJoinValidatedPayload struct {
@@ -247,23 +288,61 @@ type ParticipantJoinValidatedPayload struct {
 }
 
 type RoundParticipantJoinErrorPayload struct {
-	CorrelationID          string                         `json:"correlation_id"`
 	ParticipantJoinRequest *ParticipantJoinRequestPayload `json:"participant_join_request"`
 	Error                  string                         `json:"error"`
+	EventMessageID         roundtypes.EventMessageID      `json:"discord_message_id"`
+}
+
+type ParticipantStatusRequestPayload struct {
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+}
+
+type ParticipantStatusFoundPayload struct {
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	Status  string                `json:"status"`
+}
+
+type ParticipantRemovalRequestPayload struct {
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+}
+
+type ParticipantRemovedPayload struct {
+	RoundID        sharedtypes.RoundID       `json:"round_id"`
+	UserID         sharedtypes.DiscordID     `json:"user_id"`
+	Response       roundtypes.Response       `json:"response"`
+	EventMessageID roundtypes.EventMessageID `json:"discord_message_id"`
+}
+
+type ParticipantJoinValidationRequestPayload struct {
+	RoundID  sharedtypes.RoundID   `json:"round_id"`
+	UserID   sharedtypes.DiscordID `json:"user_id"`
+	Response roundtypes.Response   `json:"response"`
 }
 
 type ParticipantJoinedPayload struct {
-	RoundID     string `json:"round_id"`
-	Participant string `json:"participant"`
-	TagNumber   int    `json:"tag_number,omitempty"`
-	Response    string `json:"response"`
+	RoundID               sharedtypes.RoundID       `json:"round_id"`
+	AcceptedParticipants  []roundtypes.Participant  `jsonb:"accepted_participants"`
+	DeclinedParticipants  []roundtypes.Participant  `jsonb:"declined_participants"`
+	TentativeParticipants []roundtypes.Participant  `jsonb:"tentative_participants"`
+	EventMessageID        roundtypes.EventMessageID `json:"discord_message_id"`
+	JoinedLate            *bool                     `json:"joined_late,omitempty"`
 }
 
-// --- Score Round ---
+type ParticipantDeclinedPayload struct {
+	RoundID        sharedtypes.RoundID       `json:"round_id"`
+	UserID         sharedtypes.DiscordID     `json:"user_id"`
+	EventMessageID roundtypes.EventMessageID `json:"discord_message_id"`
+}
+
+// ---- Score Payloads ----
+
 type ScoreUpdateRequestPayload struct {
-	RoundID     string `json:"round_id"`
-	Participant string `json:"participant"` // Discord ID
-	Score       *int   `json:"score"`
+	RoundID     sharedtypes.RoundID   `json:"round_id"`
+	Participant sharedtypes.DiscordID `json:"participant"`
+	Score       *sharedtypes.Score    `json:"score"`
 }
 
 type ScoreUpdateValidatedPayload struct {
@@ -271,163 +350,132 @@ type ScoreUpdateValidatedPayload struct {
 }
 
 type ParticipantScoreUpdatedPayload struct {
-	RoundID     string `json:"round_id"`
-	Participant string `json:"participant"` // Discord ID
-	Score       int    `json:"score"`
+	RoundID        sharedtypes.RoundID        `json:"round_id"`
+	Participant    sharedtypes.DiscordID      `json:"participant"`
+	Score          sharedtypes.Score          `json:"score"`
+	ChannelID      string                     `json:"channel_id"`
+	EventMessageID *roundtypes.EventMessageID `json:"discord_message_id"`
 }
 
 type AllScoresSubmittedPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID        sharedtypes.RoundID        `json:"round_id"`
+	EventMessageID *roundtypes.EventMessageID `json:"discord_message_id"`
 }
 
 type RoundScoreUpdateErrorPayload struct {
-	CorrelationID      string                     `json:"correlation_id"`
 	ScoreUpdateRequest *ScoreUpdateRequestPayload `json:"score_update_request"`
 	Error              string                     `json:"error"`
 }
 
-// RoundScheduleUpdatePayload is the payload for the round.schedule.update event.
-type RoundScheduleUpdatePayload struct {
-	RoundID   string     `json:"round_id"`
-	Title     string     `json:"title"`
-	StartTime *time.Time `json:"start_time"`
-	Location  *string    `json:"location"`
+type ParticipantScore struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Score     sharedtypes.Score      `json:"score"`
 }
 
-// --- Finalize Round ---
+type RoundScoresNotificationPayload struct {
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Scores  []ParticipantScore  `json:"scores"`
+}
+
+type ProcessRoundScoresRequestPayload struct {
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Scores  []ParticipantScore  `json:"scores"`
+}
+
+// ---- Round Lifecycle Payloads ----
+
 type RoundFinalizedPayload struct {
-	RoundID string `json:"round_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
 }
 
 type RoundFinalizationErrorPayload struct {
-	CorrelationID string `json:"correlation_id"`
-	RoundID       string `json:"round_id"`
-	Error         string `json:"error"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
 }
 
 type ScoreModuleNotificationErrorPayload struct {
-	CorrelationID string `json:"correlation_id"`
-	RoundID       string `json:"round_id"`
-	Error         string `json:"error"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
 }
 
-// --- Round Reminders ---
-type RoundReminderPayload struct {
-	RoundID          string     `json:"round_id"`
-	ReminderType     string     `json:"reminder_type"` // e.g., "1h", "30m"
-	RoundTitle       string     `json:"round_title"`
-	StartTime        *time.Time `json:"start_time"`
-	Location         *string    `json:"location"`
-	DiscordChannelID string     `json:"discord_channel_id,omitempty"`
-	DiscordGuildID   string     `json:"discord_guild_id,omitempty"`
-}
-
-// --- Round Start ---
-type RoundStartedPayload struct {
-	RoundID   string     `json:"round_id"`
-	Title     string     `json:"title"`
-	Location  *string    `json:"location"`
-	StartTime *time.Time `json:"start_time"`
-}
-
-// --- Communication with Discord ---
+// Discord-related payloads
 type DiscordReminderPayload struct {
-	RoundID          string     `json:"round_id"`
-	ReminderType     string     `json:"reminder_type"`
-	RoundTitle       string     `json:"round_title"`
-	StartTime        *time.Time `json:"start_time"`
-	Location         *string    `json:"location"`
-	UserIDs          []string   `json:"user_ids"`
-	DiscordChannelID string     `json:"discord_channel_id,omitempty"`
-	DiscordGuildID   string     `json:"discord_guild_id,omitempty"`
+	RoundID          sharedtypes.RoundID       `json:"round_id"`
+	ReminderType     string                    `json:"reminder_type"`
+	RoundTitle       roundtypes.Title          `json:"round_title"`
+	StartTime        *roundtypes.StartTime     `json:"start_time"`
+	Location         *roundtypes.Location      `json:"location"`
+	UserIDs          []sharedtypes.DiscordID   `json:"user_ids"`
+	DiscordChannelID string                    `json:"discord_channel_id,omitempty"`
+	DiscordGuildID   string                    `json:"discord_guild_id,omitempty"`
+	EventMessageID   roundtypes.EventMessageID `json:"event_message_id"`
 }
 
 type DiscordRoundStartPayload struct {
-	RoundID          string                    `json:"round_id"`
-	Title            string                    `json:"title"`
-	Location         *string                   `json:"location"`
-	StartTime        *time.Time                `json:"start_time"`
-	Participants     []DiscordRoundParticipant `json:"participants"`
+	RoundID          sharedtypes.RoundID       `json:"round_id"`
+	Title            roundtypes.Title          `json:"title"`
+	Location         *roundtypes.Location      `json:"location"`
+	StartTime        *roundtypes.StartTime     `json:"start_time"`
+	Participants     []RoundParticipant        `jsonb:"participants"`
 	DiscordChannelID string                    `json:"discord_channel_id,omitempty"`
 	DiscordGuildID   string                    `json:"discord_guild_id,omitempty"`
+	EventMessageID   roundtypes.EventMessageID `json:"event_message_id"`
 }
 
 type DiscordRoundParticipant struct {
-	DiscordID string `json:"user_id"`
-	TagNumber int    `json:"tag_number"`
-	Score     *int   `json:"score"`
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Score     *sharedtypes.Score     `json:"score"`
 }
 
-// --- Round State ---
-type RoundStateUpdatedPayload struct {
-	RoundID string                `json:"round_id"`
-	State   roundtypes.RoundState `json:"state"`
-}
+// ---- Tag Retrieval Payloads ----
 
-// Participant represents a participant in a round with their tag number.
-type Participant struct {
-	DiscordID string `json:"user_id"`
-	TagNumber int    `json:"tag_number"`
-}
-
-// --- Tag Retrieval ---
 type TagNumberRequestPayload struct {
-	DiscordID string        `json:"user_id"`
-	Timeout   time.Duration `json:"timeout"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
 }
 
 type RoundTagNumberFoundPayload struct {
-	RoundID   string `json:"round_id"`
-	DiscordID string `json:"user_id"`
-	TagNumber int    `json:"tag_number"`
+	RoundID   sharedtypes.RoundID    `json:"round_id"`
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 }
 
 type RoundTagNumberNotFoundPayload struct {
-	DiscordID string `json:"user_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
 }
 
-// --- Notify Score Module ---
-type RoundScoresNotificationPayload struct {
-	RoundID string             `json:"round_id"`
-	Scores  []ParticipantScore `json:"scores"`
+type GetTagNumberResponsePayload struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Error     string                 `json:"error,omitempty"`
+	RoundID   sharedtypes.RoundID    `json:"round_id"`
 }
 
-type ParticipantScore struct {
-	DiscordID string  `json:"user_id"`
-	TagNumber string  `json:"tag_number"`
-	Score     float64 `json:"score"`
-}
+// ---- Authorization Payloads ----
 
-// --- Process Round Scores ---
-type ProcessRoundScoresRequestPayload struct {
-	RoundID string             `json:"round_id"`
-	Scores  []ParticipantScore `json:"scores"`
-}
-
-// --- User Authorization ---
 type UserRoleCheckRequestPayload struct {
-	DiscordID     string `json:"user_id"`
-	RoundID       string `json:"round_id"`       // Context for the request
-	CorrelationID string `json:"correlation_id"` // To correlate with the response
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
 }
 
 type UserRoleCheckResultPayload struct {
-	DiscordID string `json:"user_id"`
-	RoundID   string `json:"round_id"` // Context for the request
-	HasRole   bool   `json:"has_role"`
-	Error     string `json:"error"` // Error message if the check failed
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	HasRole bool                  `json:"has_role"`
+	Error   string                `json:"error,omitempty"`
 }
 
 type RoundUserRoleCheckErrorPayload struct {
-	CorrelationID string `json:"correlation_id"`
-	DiscordID     string `json:"user_id"`
-	RoundID       string `json:"round_id"`
-	Error         string `json:"error"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	Error   string                `json:"error"`
 }
 
-// --- Payloads for Tag Retrieval ---
-type GetTagNumberResponsePayload struct {
-	DiscordID string `json:"user_id"`
-	TagNumber int    `json:"tag_number"`
-	Error     string `json:"error,omitempty"` // Include an error string
+func (p *AllScoresSubmittedPayload) ToRoundFinalizedPayload() RoundFinalizedPayload {
+	return RoundFinalizedPayload{
+		RoundID: p.RoundID,
+	}
 }

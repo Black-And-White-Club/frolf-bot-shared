@@ -1,4 +1,4 @@
-package observability
+package tempofrolfbot
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -20,11 +21,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Tracer defines the interface for tracing.  Moved here!
+// Tracer defines the interface for tracing.
 type Tracer interface {
 	InitTracing(ctx context.Context, opts TracingOptions) (shutdown func(), err error)
 	TraceHandler(h message.HandlerFunc) message.HandlerFunc
 	InjectTraceContext(ctx context.Context, msg *message.Message)
+	SpanContextFromContext(ctx context.Context) trace.SpanContext
+	StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span)
 }
 
 var shutdownOnce sync.Once
@@ -36,12 +39,42 @@ type TracingOptions struct {
 	Insecure       bool // Whether to use an insecure connection to Tempo (for testing ONLY!)
 	ServiceVersion string
 	SampleRate     float64
+	Environment    string
 }
 
 // TempoTracer is the concrete implementation of the Tracer interface.
 type TempoTracer struct {
 	tracerProvider *sdktrace.TracerProvider
 	tracer         trace.Tracer // Store the tracer for use in middleware
+}
+
+// NewTracer creates and configures a new Tempo tracer
+func NewTracer(
+	serviceName string,
+	tempoEndpoint string,
+	insecure bool,
+	sampleRate float64,
+	serviceVersion string,
+	environment string,
+) (Tracer, func(), error) {
+	tracer := &TempoTracer{}
+
+	opts := TracingOptions{
+		ServiceName:    serviceName,
+		TempoEndpoint:  tempoEndpoint,
+		Insecure:       insecure,
+		SampleRate:     sampleRate,
+		ServiceVersion: serviceVersion,
+		Environment:    environment,
+	}
+
+	// Initialize tracing with the provided options
+	shutdownFunc, err := tracer.InitTracing(context.Background(), opts)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to initialize tracing: %w", err)
+	}
+
+	return tracer, shutdownFunc, nil
 }
 
 // InitTracing initializes OpenTelemetry tracing with Tempo.
@@ -138,7 +171,7 @@ func (t *TempoTracer) TraceHandler(h message.HandlerFunc) message.HandlerFunc {
 			attribute.String("watermill.topic", msg.Metadata.Get("topic")),
 			attribute.String("watermill.middleware", "watermill.handler"),
 			attribute.Bool("watermill.dead_letter", msg.Metadata.Get("dead_letter") == "true"),
-			attribute.Int64("watermill.retry_count", deliveryAttemptValue), // Retry count
+			attribute.Int64("watermill.retry_count", deliveryAttemptValue),
 
 			// JetStream attributes
 			attribute.String("jetstream.stream", streamName),
@@ -175,9 +208,21 @@ func parseInt64(value string) int64 {
 	return val
 }
 
+// StartSpan creates a new span with the given name and includes common attributes.
+func (t *TempoTracer) StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span) {
+	return t.tracer.Start(ctx, name,
+		trace.WithAttributes(attribute.String("correlation_id", msg.Metadata.Get(middleware.CorrelationIDMetadataKey))),
+	)
+}
+
 // InjectTraceContext injects the trace context into the message metadata before publishing.
-func (t *TempoTracer) InjectTraceContext(ctx context.Context, msg *message.Message) { //method of TempoTracer
+func (t *TempoTracer) InjectTraceContext(ctx context.Context, msg *message.Message) {
 	otel.GetTextMapPropagator().Inject(ctx, messageMetadataCarrier{msg})
+}
+
+// SpanContextFromContext extracts the span context from the provided context.
+func (t *TempoTracer) SpanContextFromContext(ctx context.Context) trace.SpanContext {
+	return trace.SpanFromContext(ctx).SpanContext()
 }
 
 // messageMetadataCarrier adapts Watermill's message.Metadata to OpenTelemetry's TextMapCarrier.

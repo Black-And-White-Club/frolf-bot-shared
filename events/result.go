@@ -1,11 +1,8 @@
 package events
 
-import "time"
-
-// ResultPayload is a generic payload for success/failure events.
+// ResultPayload is a common payload structure for indicating success/failure.
 type ResultPayload struct {
-	CommonMetadata           // Embed the common metadata
-	Status         string    `json:"status"`
-	ErrorDetail    string    `json:"error_detail,omitempty"`
-	Timestamp      time.Time `json:"timestamp"`
+	CommonMetadata
+	Status      string `json:"result"`
+	ErrorDetail string `json:"reason,omitempty"`
 }

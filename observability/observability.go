@@ -3,107 +3,138 @@ package observability
 import (
 	"context"
 	"fmt"
-	"log/slog"
+
+	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/loki"
+	prometheusfrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/prometheus"
+	tempofrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/tempo"
 )
 
-// Observability defines a combined interface for logging, metrics, and tracing.
-type Observability interface {
-	GetLogger() Logger
-	GetMetrics() Metrics
-	GetTracer() Tracer
-	Start(ctx context.Context) error
-	Stop(ctx context.Context) error
-}
-
-// Config holds configuration for the observability components.  This is good!
+// Config holds all configuration for observability components
 type Config struct {
 	LokiURL         string
 	LokiTenantID    string
 	ServiceName     string
+	ServiceVersion  string
+	Environment     string
 	MetricsAddress  string
 	TempoEndpoint   string
 	TempoInsecure   bool
-	ServiceVersion  string
 	TempoSampleRate float64
-	// ... other configuration options ...
 }
 
-// concreteObservability is the concrete implementation of the Observability interface.
-type concreteObservability struct {
-	logger        Logger
-	metrics       Metrics
-	tracer        Tracer
-	metricsServer *MetricsServer // Hold the server here
+// Observability defines the unified interface for observability components
+type Observability interface {
+	GetLogger() lokifrolfbot.Logger
+	GetTracer() tempofrolfbot.Tracer
+	GetMetrics() prometheusfrolfbot.Metrics
+	RegisterHealthChecker(checker prometheusfrolfbot.HealthChecker)
+	PerformHealthChecks(ctx context.Context) map[string]error
+	HealthCheck(ctx context.Context) error
+	Start(ctx context.Context) error
+	Stop(ctx context.Context) error
 }
 
-// NewObservability creates and initializes the observability components. This is the factory.
-func NewObservability(ctx context.Context, config Config) (Observability, error) {
-	logger, err := NewLokiLogger(config.LokiURL, config.LokiTenantID, config.ServiceName)
+// ObservabilityService provides a unified service for all observability needs
+type ObservabilityService struct {
+	logger         lokifrolfbot.Logger
+	tracer         tempofrolfbot.Tracer
+	metrics        prometheusfrolfbot.Metrics
+	tracerShutdown func() // Store the tracer shutdown function
+}
+
+// NewObservability creates and configures all observability components
+func NewObservability(ctx context.Context, config Config) (*ObservabilityService, error) {
+	// Initialize Loki logger
+	logger, err := lokifrolfbot.NewLokiLogger(
+		config.LokiURL,
+		config.LokiTenantID,
+		config.ServiceName,
+		config.Environment,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Loki logger: %w", err)
+		return nil, fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
-	metricsBuilder := NewPrometheusMetricsBuilder(config.ServiceName, "subsystem") // Replace "subsystem" with your desired value
-
-	metricsServer, err := NewMetricsServer(config.MetricsAddress, metricsBuilder.Registry)
+	// Initialize Tempo tracer
+	tracer, tracerShutdown, err := tempofrolfbot.NewTracer(
+		config.ServiceName,
+		config.TempoEndpoint,
+		config.TempoInsecure,
+		config.TempoSampleRate,
+		config.ServiceVersion,
+		config.Environment,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create metrics server: %w", err)
+		return nil, fmt.Errorf("failed to initialize tracer: %w", err)
 	}
 
-	tracer := &TempoTracer{} // Create an instance of the concrete TempoTracer
-	tracingOpts := TracingOptions{
-		ServiceName:    config.ServiceName,
-		TempoEndpoint:  config.TempoEndpoint,
-		Insecure:       config.TempoInsecure,
-		ServiceVersion: config.ServiceVersion,
-		SampleRate:     config.TempoSampleRate,
-	}
-	tracerShutdown, err := tracer.InitTracing(ctx, tracingOpts) // Initialize tracing
+	// Initialize Prometheus metrics
+	metrics, err := prometheusfrolfbot.NewPrometheusMetrics(
+		config.MetricsAddress,
+		config.ServiceName,
+		config.Environment,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize tracing: %w", err)
+		return nil, fmt.Errorf("failed to initialize metrics: %w", err)
 	}
-	_ = tracerShutdown //keep reference to the tracer shutdown.
 
-	return &concreteObservability{
-		logger:        logger,
-		metrics:       metricsBuilder,
-		tracer:        tracer,
-		metricsServer: metricsServer,
+	return &ObservabilityService{
+		logger:         logger,
+		tracer:         tracer,
+		metrics:        metrics,
+		tracerShutdown: tracerShutdown,
 	}, nil
 }
 
-// GetLogger returns the Logger instance.
-func (o *concreteObservability) GetLogger() Logger {
+// Start initializes all observability components
+func (o *ObservabilityService) Start(ctx context.Context) error {
+	o.logger.Info("Starting observability components")
+	if err := o.metrics.Start(ctx); err != nil {
+		return err
+	}
+	// Additional start logic for tracer if needed
+	return nil
+}
+
+// Stop gracefully shuts down all observability components
+func (o *ObservabilityService) Stop(ctx context.Context) error {
+	o.logger.Info("Stopping observability components")
+	if o.tracerShutdown != nil {
+		o.tracerShutdown()
+	}
+	return o.metrics.Stop(ctx)
+}
+
+// GetLogger returns the logger instance
+func (o *ObservabilityService) GetLogger() lokifrolfbot.Logger {
 	return o.logger
 }
 
-// GetMetrics returns the Metrics instance.
-func (o *concreteObservability) GetMetrics() Metrics {
-	return o.metrics
-}
-
-// GetTracer returns the Tracer instance.
-func (o *concreteObservability) GetTracer() Tracer {
+// GetTracer returns the tracer instance
+func (o *ObservabilityService) GetTracer() tempofrolfbot.Tracer {
 	return o.tracer
 }
 
-// Start initializes the observability components.
-func (o *concreteObservability) Start(ctx context.Context) error {
-	o.metricsServer.Start(ctx)
-	return nil // Currently, only the metrics server needs starting.  If you had other startup tasks, add them here.
+// GetMetrics returns the metrics provider instance
+func (o *ObservabilityService) GetMetrics() prometheusfrolfbot.Metrics {
+	return o.metrics
 }
 
-// Stop shuts down the observability components.
-func (o *concreteObservability) Stop(ctx context.Context) error {
-	o.logger.Shutdown()                                   // Shutdown the logger
-	if err := o.metricsServer.Shutdown(ctx); err != nil { // Shutdown the metrics server
-		slog.Error("Failed to shut down metrics server", "error", err) //best effort.
-	}
-	if closer, ok := o.tracer.(interface{ Shutdown(context.Context) error }); ok { //check to make sure interface has shutdown method
-		if err := closer.Shutdown(ctx); err != nil {
-			return fmt.Errorf("failed to shut down tracer: %w", err)
-		}
-	}
+// RegisterHealthChecker adds a health checker to the metrics
+func (o *ObservabilityService) RegisterHealthChecker(checker prometheusfrolfbot.HealthChecker) {
+	o.metrics.RegisterHealthChecker(checker)
+}
 
+// PerformHealthChecks runs health checks and returns results
+func (o *ObservabilityService) PerformHealthChecks(ctx context.Context) map[string]error {
+	return o.metrics.PerformHealthChecks(ctx)
+}
+
+// HealthCheck performs health checks on all observability components
+func (o *ObservabilityService) HealthCheck(ctx context.Context) error {
+	// Check metrics server health
+	if err := o.metrics.HealthCheck(ctx); err != nil {
+		return fmt.Errorf("metrics health check failed: %w", err)
+	}
 	return nil
 }

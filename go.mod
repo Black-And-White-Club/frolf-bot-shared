@@ -3,7 +3,6 @@ module github.com/Black-And-White-Club/frolf-bot-shared
 go 1.23.5
 
 require (
-	github.com/Black-And-White-Club/frolf-bot v0.0.0-20250211235259-ba380fe320b5
 	github.com/ThreeDotsLabs/watermill v1.4.4
 	github.com/ThreeDotsLabs/watermill-nats/v2 v2.1.2
 	github.com/grafana/loki-client-go v0.0.0-20230116142646-e7494d0ef70c
@@ -25,7 +24,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
-	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
