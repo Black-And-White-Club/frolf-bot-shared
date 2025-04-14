@@ -3,10 +3,10 @@ package eventbus
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/Black-And-White-Club/frolf-bot-shared/observability/attr"
-	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/loki"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -15,11 +15,11 @@ import (
 type NATSHealthChecker struct {
 	conn    *nats.Conn
 	timeout time.Duration
-	logger  lokifrolfbot.Logger
+	logger  *slog.Logger // Updated to use slog.Logger
 }
 
 // NewNATSHealthChecker creates a new health checker for NATS
-func NewNATSHealthChecker(conn *nats.Conn, logger lokifrolfbot.Logger) *NATSHealthChecker {
+func NewNATSHealthChecker(conn *nats.Conn, logger *slog.Logger) *NATSHealthChecker {
 	return &NATSHealthChecker{
 		conn:    conn,
 		timeout: 5 * time.Second, // Default timeout
@@ -34,51 +34,36 @@ func (n *NATSHealthChecker) Name() string {
 
 // Check performs the health check
 func (n *NATSHealthChecker) Check(ctx context.Context) error {
-	logAttrs := []attr.LogAttr{
-		attr.String("component", "nats"),
-		attr.String("operation", "health_check"),
-	}
-
 	if n.conn == nil {
 		err := fmt.Errorf("NATS connection is nil")
-		if n.logger != nil {
-			n.logger.Warn("NATS health check failed", append(logAttrs, attr.Error(err))...)
-		}
+		n.logger.Warn("NATS health check failed", attr.Error(err)) // Directly use attr.LogAttr
 		return err
 	}
 
 	if !n.conn.IsConnected() {
 		err := fmt.Errorf("NATS connection is not established")
-		if n.logger != nil {
-			n.logger.Warn("NATS health check failed", append(logAttrs, attr.Error(err))...)
-		}
+		n.logger.Warn("NATS health check failed", attr.Error(err)) // Directly use attr.LogAttr
 		return err
 	}
 
 	// Test connectivity with ping/flush
 	if err := n.conn.FlushTimeout(n.timeout); err != nil {
-		if n.logger != nil {
-			n.logger.Warn("NATS ping failed", append(logAttrs,
-				attr.Error(err),
-				attr.Duration("timeout", n.timeout))...)
-		}
+		n.logger.Warn("NATS ping failed", attr.Error(err), attr.Duration("timeout", n.timeout)) // Directly use attr.LogAttr
 		return fmt.Errorf("NATS server ping failed: %w", err)
 	}
 
-	if n.logger != nil {
-		n.logger.Debug("NATS health check passed", logAttrs...)
-	}
+	n.logger.Debug("NATS health check passed") // No attributes needed
 	return nil
 }
 
 // JetStreamHealthChecker is a health checker for JetStream
 type JetStreamHealthChecker struct {
 	js     jetstream.JetStream
-	logger lokifrolfbot.Logger
+	logger *slog.Logger // Updated to use slog.Logger
 }
 
 // NewJetStreamHealthChecker creates a new health checker for JetStream
-func NewJetStreamHealthChecker(js jetstream.JetStream, logger lokifrolfbot.Logger) *JetStreamHealthChecker {
+func NewJetStreamHealthChecker(js jetstream.JetStream, logger *slog.Logger) *JetStreamHealthChecker {
 	return &JetStreamHealthChecker{
 		js:     js,
 		logger: logger,
@@ -92,39 +77,26 @@ func (j *JetStreamHealthChecker) Name() string {
 
 // Check performs the health check
 func (j *JetStreamHealthChecker) Check(ctx context.Context) error {
-	logAttrs := []attr.LogAttr{
-		attr.String("component", "jetstream"),
-		attr.String("operation", "health_check"),
-	}
-
 	if j.js == nil {
 		err := fmt.Errorf("JetStream context is nil")
-		if j.logger != nil {
-			j.logger.Warn("JetStream health check failed", append(logAttrs, attr.Error(err))...)
-		}
+		j.logger.Warn("JetStream health check failed", attr.Error(err)) // Directly use attr.LogAttr
 		return err
 	}
 
 	// Attempt to fetch account info to verify JetStream is operational
 	accountInfo, err := j.js.AccountInfo(ctx)
 	if err != nil {
-		if j.logger != nil {
-			j.logger.Warn("JetStream health check failed", append(logAttrs, attr.Error(err))...)
-		}
+		j.logger.Warn("JetStream health check failed", attr.Error(err)) // Directly use attr.LogAttr
 		return fmt.Errorf("JetStream account info check failed: %w", err)
 	}
 
 	if accountInfo == nil {
 		err := fmt.Errorf("JetStream account info is nil")
-		if j.logger != nil {
-			j.logger.Warn("JetStream health check failed", append(logAttrs, attr.Error(err))...)
-		}
+		j.logger.Warn("JetStream health check failed", attr.Error(err)) // Directly use attr.LogAttr
 		return err
 	}
 
-	if j.logger != nil {
-		j.logger.Debug("JetStream health check passed", logAttrs...)
-	}
+	j.logger.Debug("JetStream health check passed") // No attributes needed
 	return nil
 }
 
@@ -136,13 +108,13 @@ func (eb *eventBus) GetHealthCheckers() []HealthChecker {
 	checkers = append(checkers, &NATSHealthChecker{
 		conn:    eb.natsConn,
 		timeout: 5 * time.Second,
-		logger:  eb.logger,
+		logger:  eb.logger, // Ensure this is updated to use *slog.Logger
 	})
 
 	// Create JetStream health checker
 	checkers = append(checkers, &JetStreamHealthChecker{
 		js:     eb.js,
-		logger: eb.logger,
+		logger: eb.logger, // Ensure this is updated to use *slog.Logger
 	})
 
 	return checkers

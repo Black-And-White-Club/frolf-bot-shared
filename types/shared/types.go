@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // DiscordID defines a custom type for Discord IDs.
@@ -18,7 +20,17 @@ func (id DiscordID) IsValid() bool {
 }
 
 // RoundID defines a custom type for round identifiers.
-type RoundID int64
+type RoundID uuid.UUID
+
+func (r RoundID) String() string {
+	return uuid.UUID(r).String()
+}
+
+func (r RoundID) UUID() uuid.UUID {
+	return uuid.UUID(r)
+}
+
+type EventMessageID RoundID
 
 // Score defines a custom type for scores (can be negative or positive).
 type Score int
@@ -86,7 +98,40 @@ func (t *StartTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Add delegates to time.Time.Add.
+func (st StartTime) Add(d time.Duration) StartTime {
+	return StartTime(time.Time(st).Add(d))
+}
+
+// UTC delegates to time.Time.UTC.
+func (st StartTime) UTC() StartTime {
+	return StartTime(time.Time(st).UTC())
+}
+
+// AsTime converts StartTime to time.Time.
+func (st StartTime) AsTime() time.Time {
+	return time.Time(st)
+}
+
 // Common error payload for API responses
 type BaseErrorPayload struct {
 	Error string `json:"error"`
+}
+
+// ScoreInfo represents a score with UserID, Score, and TagNumber.
+type ScoreInfo struct {
+	UserID    DiscordID  `json:"user_id"`
+	Score     Score      `json:"score"`
+	TagNumber *TagNumber `json:"tag_number"`
+}
+
+// ScoreProcessingResult represents the result of processing scores for a round
+type ScoreProcessingResult struct {
+	RoundID     RoundID
+	TagMappings map[DiscordID]TagNumber
+}
+
+type TagMapping struct {
+	DiscordID DiscordID `json:"discord_id"`
+	TagNumber TagNumber `json:"tag_number"`
 }

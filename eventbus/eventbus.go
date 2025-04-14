@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,9 +12,8 @@ import (
 	"time"
 
 	"github.com/Black-And-White-Club/frolf-bot-shared/observability/attr"
-	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/loki"
-	eventbusmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/prometheus/eventbus"
-	tempofrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/tempo"
+	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/logging"
+	eventbusmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/eventbus"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
@@ -21,6 +21,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	nc "github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type eventBus struct {
@@ -28,12 +29,12 @@ type eventBus struct {
 	subscriber     message.Subscriber
 	js             jetstream.JetStream
 	natsConn       *nc.Conn
-	logger         lokifrolfbot.Logger
+	logger         *slog.Logger
 	createdStreams map[string]bool
 	streamMutex    sync.Mutex
 	marshaler      nats.Marshaler
 	metrics        eventbusmetrics.EventBusMetrics
-	tracer         tempofrolfbot.Tracer
+	tracer         trace.Tracer
 }
 
 const (
@@ -47,11 +48,10 @@ type EventBus interface {
 	Publish(topic string, messages ...*message.Message) error
 	Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error)
 	Close() error
-	ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime time.Time)
+	ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime) error
 	CancelScheduledMessage(ctx context.Context, roundID sharedtypes.RoundID) error
-	ScheduleRoundProcessing(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime time.Time)
 	RecoverScheduledRounds(ctx context.Context)
-
+	ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte) error
 	GetNATSConnection() *nc.Conn
 	GetJetStream() jetstream.JetStream
 	GetHealthCheckers() []HealthChecker
@@ -63,16 +63,16 @@ type HealthChecker interface {
 	Name() string
 }
 
-// NewEventBus creates a new JetStream-backed EventBus.
-func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger, appType string, metrics eventbusmetrics.EventBusMetrics, tracer tempofrolfbot.Tracer) (EventBus, error) {
+func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appType string, metrics eventbusmetrics.EventBusMetrics, tracer trace.Tracer) (EventBus, error) {
+	// Create a contextual logger with the base attributes
+	ctxLogger := logger.With(
+		"operation", "new_event_bus",
+		"nats_url", natsURL,
+		"app_type", appType,
+	)
 
-	logAttrs := []attr.LogAttr{
-		attr.String("operation", "new_event_bus"),
-		attr.String("nats_url", natsURL),
-		attr.String("app_type", appType),
-	}
-
-	logger.Info("Creating new EventBus", logAttrs...)
+	// Log the creation of the EventBus
+	ctxLogger.InfoContext(ctx, "Creating new EventBus")
 
 	natsConn, err := nc.Connect(natsURL,
 		nc.RetryOnFailedConnect(true),
@@ -81,16 +81,14 @@ func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger
 		nc.MaxReconnects(-1),
 	)
 	if err != nil {
-		errorAttrs := append(logAttrs, attr.Error(err))
-		logger.Error("Failed to connect to NATS", errorAttrs...)
+		ctxLogger.ErrorContext(ctx, "Failed to connect to NATS", "error", err)
 		return nil, fmt.Errorf("failed to connect to NATS: %w", err)
 	}
 
 	js, err := jetstream.New(natsConn)
 	if err != nil {
 		natsConn.Close()
-		errorAttrs := append(logAttrs, attr.Error(err))
-		logger.Error("Failed to initialize JetStream", errorAttrs...)
+		ctxLogger.ErrorContext(ctx, "Failed to initialize JetStream", "error", err)
 		return nil, fmt.Errorf("failed to initialize JetStream: %w", err)
 	}
 
@@ -109,7 +107,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger
 			},
 			JetStream: nats.JetStreamConfig{
 				Disabled:      false,
-				AutoProvision: false, // Now controlled manually by appType
+				AutoProvision: false,
 				TrackMsgId:    true,
 				DurablePrefix: "durable",
 				DurableCalculator: func(durablePrefix, topic string) string {
@@ -122,8 +120,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger
 	)
 	if err != nil {
 		natsConn.Close()
-		errorAttrs := append(logAttrs, attr.Error(err))
-		logger.Error("Failed to create Watermill publisher", errorAttrs...)
+		ctxLogger.ErrorContext(ctx, "Failed to create Watermill publisher", "error", err)
 		return nil, fmt.Errorf("failed to create Watermill publisher: %w", err)
 	}
 
@@ -145,8 +142,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger
 	)
 	if err != nil {
 		natsConn.Close()
-		errorAttrs := append(logAttrs, attr.Error(err))
-		logger.Error("Failed to create Watermill subscriber", errorAttrs...)
+		ctxLogger.ErrorContext(ctx, "Failed to create Watermill subscriber", "error", err)
 		return nil, fmt.Errorf("failed to create Watermill subscriber: %w", err)
 	}
 
@@ -163,70 +159,60 @@ func NewEventBus(ctx context.Context, natsURL string, logger lokifrolfbot.Logger
 		tracer:         tracer,
 	}
 
-	// Only create the necessary streams for the given app type
 	if err := eventBus.createStreamsForApp(ctx, appType); err != nil {
 		natsConn.Close()
-		errorAttrs := append(logAttrs, attr.Error(err))
-		logger.Error("Failed to create streams for app", errorAttrs...)
-		return nil, fmt.Errorf("failed to create streams: %w", err)
+		ctxLogger.ErrorContext(ctx, "Failed to create streams for app", "error", err)
+		return nil, fmt.Errorf("failed to create streams for app: %w", err)
 	}
 
-	logger.Info("EventBus created successfully", logAttrs...)
+	ctxLogger.InfoContext(ctx, "EventBus created successfully")
 	return eventBus, nil
-}
-
-func (eb *eventBus) ScheduleRoundProcessing(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime time.Time) {
-	logAttrs := []attr.LogAttr{
-		attr.String("operation", "schedule_round_processing"),
-		attr.Int("round_id", int(roundID)),
-		attr.Time("scheduled_time", scheduledTime),
-	}
-
-	eb.logger.Info("Scheduling round processing", logAttrs...)
-	go eb.ProcessDelayedMessages(ctx, roundID, scheduledTime)
 }
 
 // Publish publishes a message using Watermill's automatic marshaling.
 func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
-	logAttrs := []attr.LogAttr{
-		attr.String("operation", "publish"),
-		attr.String("topic", topic),
-		attr.Int("message_count", len(messages)),
-	}
+	// Create a contextual logger with the base attributes
+	ctxLogger := eb.logger.With(
+		"operation", "publish",
+		"topic", topic,
+		"message_count", len(messages),
+	)
 
 	// Ensure `marshaler` is set
 	if eb.marshaler == nil {
-		errorAttrs := append(logAttrs, attr.String("error", "marshaler not set"))
-		eb.logger.Error("Failed to publish message", errorAttrs...)
+		ctxLogger.Error("Failed to publish message", "error", "marshaler not set")
 		return fmt.Errorf("eventBus marshaler is not set")
 	}
 
-	eb.logger.Debug("Publishing messages", logAttrs...)
+	ctxLogger.Debug("Publishing messages")
 
 	// Record metrics for message publishing
-	eb.metrics.RecordMessagePublish(topic)
-
-	// Inject trace context into messages
-	for _, msg := range messages {
-		eb.tracer.InjectTraceContext(msg.Context(), msg) // Use the new method
+	if len(messages) > 0 {
+		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
 	}
 
 	// Let Watermill's `NATSMarshaler` handle the serialization
 	if err := eb.publisher.Publish(topic, messages...); err != nil {
-		errorAttrs := append(logAttrs, attr.Error(err))
-		eb.logger.Error("Failed to publish message", errorAttrs...)
-		eb.metrics.RecordMessagePublishError(topic) // Record error metric
+		ctxLogger.Error("Failed to publish message", "error", err)
+		if len(messages) > 0 {
+			eb.metrics.RecordMessagePublishError(messages[0].Context(), topic)
+		}
 		return fmt.Errorf("failed to publish message to topic %s: %w", topic, err)
 	}
 
-	// Log successful publish
+	// Log successful publish using the context from each message
 	for _, msg := range messages {
 		correlationID := middleware.MessageCorrelationID(msg)
-		msgAttrs := append(logAttrs,
-			attr.String("message_id", msg.UUID),
-			attr.String("correlation_id", correlationID),
+		msgContext := msg.Context() // Get the context from the message
+
+		// Create a contextual logger for the message
+		msgLogger := ctxLogger.With(
+			"message_id", msg.UUID,
+			"correlation_id", correlationID,
 		)
-		eb.logger.Info("Message published successfully", msgAttrs...)
+
+		// Use InfoContext to log with the message's context
+		msgLogger.InfoContext(msgContext, "Message published successfully")
 	}
 
 	return nil
@@ -234,15 +220,16 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 
 // Subscribe subscribes to a topic. Handles unmarshaling.
 func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	logAttrs := []attr.LogAttr{
-		attr.String("operation", "subscribe"),
-		attr.String("topic", topic),
-	}
+	// Create a contextual logger with the base attributes
+	ctxLogger := eb.logger.With(
+		"operation", "subscribe",
+		"topic", topic,
+	)
 
-	eb.logger.Info("Entering Subscribe", logAttrs...)
+	ctxLogger.Info("Entering Subscribe")
 
-	// Record metrics for message subscription
-	eb.metrics.RecordMessageSubscribe(topic)
+	// Record metrics for message subscription using the context
+	eb.metrics.RecordMessageSubscribe(ctx, topic)
 
 	var appType string
 	if strings.HasPrefix(topic, "discord.") {
@@ -250,10 +237,10 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	} else {
 		appType = "backend"
 	}
-	logAttrs = append(logAttrs, attr.String("app_type", appType))
+	ctxLogger = ctxLogger.With("app_type", appType)
 
 	consumerName := fmt.Sprintf("%s-consumer-%s", appType, sanitizeForNATS(topic))
-	logAttrs = append(logAttrs, attr.String("consumer_name", consumerName))
+	ctxLogger = ctxLogger.With("consumer_name", consumerName)
 
 	// Determine stream name based on topic
 	var streamName string
@@ -271,11 +258,10 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	case strings.HasPrefix(topic, "delayed."):
 		streamName = "delayed"
 	default:
-		errorAttrs := append(logAttrs, attr.String("error", "unknown topic prefix"))
-		eb.logger.Error("Failed to subscribe to topic", errorAttrs...)
+		ctxLogger.Error("Failed to subscribe to topic", "error", "unknown topic prefix")
 		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
-	logAttrs = append(logAttrs, attr.String("stream", streamName))
+	ctxLogger = ctxLogger.With("stream", streamName)
 
 	// Create or get consumer
 	consumerConfig := jetstream.ConsumerConfig{
@@ -289,40 +275,37 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	cons, err := eb.js.Consumer(ctx, streamName, consumerName)
 	if err != nil {
 		if errors.Is(err, jetstream.ErrConsumerNotFound) {
-			eb.logger.Info("Consumer not found, creating new one", logAttrs...)
+			ctxLogger.Info("Consumer not found, creating new one")
 			cons, err = eb.js.CreateConsumer(ctx, streamName, consumerConfig)
 			if err != nil {
-				errorAttrs := append(logAttrs, attr.Error(err))
-				eb.logger.Error("Failed to create consumer", errorAttrs...)
+				ctxLogger.Error("Failed to create consumer", "error", err)
 				return nil, fmt.Errorf("failed to create consumer: %w", err)
 			}
 		} else {
-			errorAttrs := append(logAttrs, attr.Error(err))
-			eb.logger.Error("Unexpected error fetching consumer", errorAttrs...)
+			ctxLogger.Error("Unexpected error fetching consumer", "error", err)
 			return nil, err
 		}
 	}
 
-	consInfoAttrs := append(logAttrs,
-		attr.String("consumer_durable_name", cons.CachedInfo().Config.Durable),
-		attr.String("consumer_filter_subject", cons.CachedInfo().Config.FilterSubject),
+	consInfoAttrs := ctxLogger.With(
+		"consumer_durable_name", cons.CachedInfo().Config.Durable,
+		"consumer_filter_subject", cons.CachedInfo().Config.FilterSubject,
 	)
-	eb.logger.Info("Consumer created", consInfoAttrs...)
+	consInfoAttrs.Info("Consumer created")
 
 	messages := make(chan *message.Message)
 	sub, err := cons.Messages()
 	if err != nil {
-		errorAttrs := append(logAttrs, attr.Error(err))
-		eb.logger.Error("Failed to start consumer", errorAttrs...)
+		ctxLogger.Error("Failed to start consumer", "error", err)
 		return nil, fmt.Errorf("failed to start consumer for topic %s: %w", topic, err)
 	}
 
 	go func() {
-		routineAttrs := append(logAttrs, attr.String("goroutine", "consumer_handler"))
-		eb.logger.Info("Starting consumer goroutine", routineAttrs...)
+		routineLogger := ctxLogger.With("goroutine", "consumer_handler")
+		routineLogger.Info("Starting consumer goroutine")
 
 		defer func() {
-			eb.logger.Info("Closing consumer goroutine", routineAttrs...)
+			routineLogger.Info("Closing consumer goroutine")
 			close(messages)
 			sub.Stop()
 		}()
@@ -331,85 +314,76 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 			jetStreamMsg, err := sub.Next()
 			if err != nil {
 				if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-					iteratorAttrs := append(routineAttrs, attr.Error(err))
-					eb.logger.Info("Consumer iterator closed", iteratorAttrs...)
+					routineLogger.Info("Consumer iterator closed", "error", err)
 				} else {
-					errorAttrs := append(routineAttrs, attr.Error(err))
-					eb.logger.Error("Error receiving message", errorAttrs...)
+					routineLogger.Error("Error receiving message", "error", err)
 				}
 				return
 			}
 
 			wmMsg, err := eb.toWatermillMessage(ctx, jetStreamMsg)
 			if err != nil {
-				errorAttrs := append(routineAttrs, attr.Error(err))
-				eb.logger.Error("Failed to convert message", errorAttrs...)
+				routineLogger.Error("Failed to convert message", "error", err)
 				continue
 			}
 
-			// Inject trace context into the message
-			eb.tracer.InjectTraceContext(ctx, wmMsg)
-
-			msgAttrs := append(routineAttrs,
-				attr.String("message_id", wmMsg.UUID),
-				attr.Any("metadata", wmMsg.Metadata),
+			msgAttrs := routineLogger.With(
+				"message_id", wmMsg.UUID,
+				"metadata", wmMsg.Metadata,
 			)
-			eb.logger.Info("Received message", msgAttrs...)
+			msgAttrs.Info("Received message")
 
 			select {
 			case messages <- wmMsg:
 				select {
 				case <-wmMsg.Acked():
 					if err := jetStreamMsg.Ack(); err != nil {
-						ackAttrs := append(msgAttrs, attr.Error(err))
-						eb.logger.Error("Failed to ack message", ackAttrs...)
+						msgAttrs.Error("Failed to ack message", "error", err)
 					} else {
-						eb.logger.Info("Message acknowledged", msgAttrs...)
+						msgAttrs.Info("Message acknowledged")
 					}
 				case <-wmMsg.Nacked():
 					if err := jetStreamMsg.Nak(); err != nil {
-						nackAttrs := append(msgAttrs, attr.Error(err))
-						eb.logger.Error("Failed to nack message", nackAttrs...)
+						msgAttrs.Error("Failed to nack message", "error", err)
 					} else {
-						eb.logger.Info("Message nacked", msgAttrs...)
+						msgAttrs.Info("Message nacked")
 					}
 				case <-ctx.Done():
-					eb.logger.Warn("Context cancelled (ack/nack)", msgAttrs...)
+					msgAttrs.Warn("Context cancelled (ack/nack)")
 					if err := jetStreamMsg.Term(); err != nil {
-						termAttrs := append(msgAttrs, attr.Error(err))
-						eb.logger.Error("Failed to term message", termAttrs...)
+						msgAttrs.Error("Failed to term message", "error", err)
 					}
 					return
 				}
 			case <-ctx.Done():
-				ctxAttrs := append(msgAttrs, attr.Error(ctx.Err()))
-				eb.logger.Warn("Context cancelled (sending)", ctxAttrs...)
+				msgAttrs.Warn("Context cancelled (sending)", "error", ctx.Err())
 				if err := jetStreamMsg.Term(); err != nil {
-					termAttrs := append(ctxAttrs, attr.Error(err))
-					eb.logger.Error("Failed to term message", termAttrs...)
+					msgAttrs.Error("Failed to term message", "error", err)
 				}
 				return
 			}
 		}
 	}()
 
-	eb.logger.Info("Subscribed to topic successfully", logAttrs...)
+	ctxLogger.Info("Subscribed to topic successfully")
 	return messages, nil
 }
 
+// toWatermillMessage converts a JetStream message to a Watermill message.
 func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstream.Msg) (*message.Message, error) {
 	msgID := string(jetStreamMsg.Headers().Get("Nats-Msg-Id"))
 	watermillMsg := message.NewMessage(msgID, jetStreamMsg.Data())
 
-	logAttrs := []attr.LogAttr{
+	// Create a contextual logger for this operation
+	ctxLogger := eb.logger.With(
 		attr.String("operation", "to_watermill_message"),
 		attr.String("message_id", watermillMsg.UUID),
-	}
+	)
 
 	meta, err := jetStreamMsg.Metadata()
 	if err == nil {
 		// Add metadata to log attributes
-		logAttrs = append(logAttrs,
+		ctxLogger = ctxLogger.With(
 			attr.String("stream", meta.Stream),
 			attr.String("consumer", meta.Consumer),
 			attr.Uint64("stream_seq", meta.Sequence.Stream),
@@ -425,8 +399,7 @@ func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstre
 		watermillMsg.Metadata.Set("ConsumerSeq", strconv.FormatUint(meta.Sequence.Consumer, 10))
 		watermillMsg.Metadata.Set("Timestamp", meta.Timestamp.String())
 	} else {
-		logAttrs = append(logAttrs, attr.Error(err))
-		eb.logger.Warn("Failed to get message metadata", logAttrs...)
+		ctxLogger.Warn("Failed to get message metadata", "error", err)
 	}
 
 	// Copy headers to metadata
@@ -438,80 +411,71 @@ func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstre
 	if watermillMsg.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		correlationID := watermill.NewUUID()
 		watermillMsg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-		logAttrs = append(logAttrs, attr.String("correlation_id", correlationID))
-		eb.logger.Debug("Generated new correlation ID", logAttrs...)
+		ctxLogger = ctxLogger.With(attr.String("correlation_id", correlationID))
+		ctxLogger.Debug("Generated new correlation ID")
 	} else {
-		logAttrs = append(logAttrs, attr.String("correlation_id",
+		ctxLogger = ctxLogger.With(attr.String("correlation_id",
 			watermillMsg.Metadata.Get(middleware.CorrelationIDMetadataKey)))
 	}
 
-	eb.logger.Debug("Created Watermill message from JetStream message", logAttrs...)
+	ctxLogger.Debug("Created Watermill message from JetStream message")
 
 	watermillMsg.SetContext(ctx)
 	return watermillMsg, nil
 }
 
+// sanitizeForNATS sanitizes a string for use in NATS topics.
 func sanitizeForNATS(s string) string {
 	reg := regexp.MustCompile(`[^a-zA-Z0-9-]+`) // Allow only alphanumeric and dashes
 	return reg.ReplaceAllString(strings.ReplaceAll(s, ".", "-"), "")
 }
 
+// Close closes the EventBus and its components.
 func (eb *eventBus) Close() error {
-	logAttrs := []attr.LogAttr{
-		attr.String("operation", "close"),
-	}
+	// Create a contextual logger for this operation
+	ctxLogger := eb.logger.With(attr.String("operation", "close"))
 
-	eb.logger.Info("Closing EventBus", logAttrs...)
+	ctxLogger.Info("Closing EventBus")
 
 	if eb.publisher != nil {
 		if err := eb.publisher.Close(); err != nil {
-			errorAttrs := append(logAttrs,
-				attr.String("component", "publisher"),
-				attr.Error(err),
-			)
-			eb.logger.Error("Error closing publisher", errorAttrs...)
+			ctxLogger.Error("Error closing publisher", "component", "publisher", "error", err)
 		} else {
-			eb.logger.Info("Publisher closed successfully",
-				append(logAttrs, attr.String("component", "publisher"))...)
+			ctxLogger.Info("Publisher closed successfully", "component", "publisher")
 		}
 	}
 
 	if eb.subscriber != nil {
 		if err := eb.subscriber.Close(); err != nil {
-			errorAttrs := append(logAttrs,
-				attr.String("component", "subscriber"),
-				attr.Error(err),
-			)
-			eb.logger.Error("Error closing subscriber", errorAttrs...)
+			ctxLogger.Error("Error closing subscriber", "component", "subscriber", "error", err)
 		} else {
-			eb.logger.Info("Subscriber closed successfully",
-				append(logAttrs, attr.String("component", "subscriber"))...)
+			ctxLogger.Info("Subscriber closed successfully", "component", "subscriber")
 		}
 	}
 
 	if eb.natsConn != nil {
-		eb.natsConn.Close()
-		eb.logger.Info("NATS connection closed",
-			append(logAttrs, attr.String("component", "nats_connection"))...)
+		eb.natsConn.Close() // Call Close() without checking for a return value
+		ctxLogger.Info("NATS connection closed", "component", "nats_connection")
 	}
 
-	eb.logger.Info("EventBus closed successfully", logAttrs...)
+	ctxLogger.Info("EventBus closed successfully")
 	return nil
 }
 
 // CreateStream creates or updates a single JetStream stream (helper function).
 func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
-	logAttrs := []attr.LogAttr{
+	// Create a contextual logger for this operation
+	ctxLogger := eb.logger.With(
 		attr.String("operation", "create_stream"),
 		attr.String("stream_name", streamName),
-	}
+	)
 
-	eb.logger.Info("Creating/Updating stream", logAttrs...)
+	ctxLogger.Info("Creating/Updating stream")
 	eb.streamMutex.Lock() // Protect against concurrent stream creation
 	defer eb.streamMutex.Unlock()
 
 	if eb.createdStreams[streamName] {
-		eb.logger.Info("Stream already created in this process", logAttrs...)
+		ctxLogger.Info("Stream already created in this process")
 		return nil // Already created, nothing to do
 	}
 
@@ -530,19 +494,17 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 	case DelayedMessagesStream:
 		subjects = []string{"delayed.>"}
 	default:
-		errorAttrs := append(logAttrs, attr.String("error", "unknown stream name"))
-		eb.logger.Error("Failed to create stream", errorAttrs...)
+		ctxLogger.Error("Failed to create stream", "error", "unknown stream name")
 		return fmt.Errorf("unknown stream name: %s", streamName)
 	}
 
-	logAttrs = append(logAttrs, attr.Any("subjects", subjects))
+	ctxLogger = ctxLogger.With(attr.Any("subjects", subjects))
 
 	// Define default stream configuration
 	streamCfg := jetstream.StreamConfig{
 		Name:      streamName,
 		Subjects:  subjects,
 		Retention: jetstream.LimitsPolicy, // Retain based on limits (age, size)
-		// Storage:   jetstream.FileStorage,  // Store on disk
 	}
 
 	// Customize for delayed messages stream
@@ -551,35 +513,36 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		streamCfg.MaxAge = 24 * time.Hour            // Auto-delete after 24 hours
 		streamCfg.MaxMsgs = -1                       // Unlimited messages (rely on MaxAge)
 		streamCfg.Retention = jetstream.LimitsPolicy // Use limits policy
-		logAttrs = append(logAttrs,
+		ctxLogger = ctxLogger.With(
 			attr.Duration("max_age", streamCfg.MaxAge),
-			attr.Int64("max_msgs", streamCfg.MaxMsgs))
+			attr.Int64("max_msgs", streamCfg.MaxMsgs),
+		)
 	default:
 		streamCfg.Duplicates = 5 * time.Minute // 5-minute deduplication window
-		logAttrs = append(logAttrs, attr.Duration("duplicates_window", streamCfg.Duplicates))
+		ctxLogger = ctxLogger.With(attr.Duration("duplicates_window", streamCfg.Duplicates))
 	}
 
 	// Create or update the stream (idempotent)
 	stream, err := eb.js.CreateOrUpdateStream(ctx, streamCfg)
 	if err != nil {
-		errorAttrs := append(logAttrs, attr.Error(err))
-		eb.logger.Error("Failed to create or update stream", errorAttrs...)
+		ctxLogger.Error("Failed to create or update stream", "error", err)
 		return fmt.Errorf("failed to create or update stream %s: %w", streamName, err)
 	}
 
-	successAttrs := append(logAttrs, attr.String("stream_name", stream.CachedInfo().Config.Name))
-	eb.logger.Info("Stream created or updated successfully", successAttrs...)
+	ctxLogger.Info("Stream created or updated successfully", "stream_name", stream.CachedInfo().Config.Name)
 	eb.createdStreams[streamName] = true // Mark as created
 	return nil
 }
 
+// createStreamsForApp creates streams for a specific application type.
 func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) error {
-	logAttrs := []attr.LogAttr{
+	// Create a contextual logger for this operation
+	ctxLogger := eb.logger.With(
 		attr.String("operation", "create_streams_for_app"),
 		attr.String("app_type", appType),
-	}
+	)
 
-	eb.logger.Info("Creating streams for application type", logAttrs...)
+	ctxLogger.Info("Creating streams for application type")
 
 	var streams []string
 	switch appType {
@@ -588,35 +551,33 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	case "discord":
 		streams = []string{"discord"}
 	default:
-		errorAttrs := append(logAttrs, attr.String("error", "unknown app type"))
-		eb.logger.Error("Failed to create streams for app", errorAttrs...)
+		ctxLogger.Error("Failed to create streams for app", "error", "unknown app type")
 		return fmt.Errorf("unknown app type: %s", appType)
 	}
 
-	logAttrs = append(logAttrs, attr.Any("streams", streams))
-	eb.logger.Info("Streams to create", logAttrs...)
+	ctxLogger = ctxLogger.With(attr.Any("streams", streams))
+	ctxLogger.Info("Streams to create")
 
 	for _, stream := range streams {
-		streamAttrs := append(logAttrs, attr.String("current_stream", stream))
-		eb.logger.Debug("Creating stream", streamAttrs...)
+		streamAttrs := ctxLogger.With(attr.String("current_stream", stream))
+		streamAttrs.Debug("Creating stream")
 
 		if err := eb.CreateStream(ctx, stream); err != nil {
-			errorAttrs := append(streamAttrs, attr.Error(err))
-			eb.logger.Error("Failed to create stream", errorAttrs...)
+			streamAttrs.Error("Failed to create stream", "error", err)
 			return fmt.Errorf("failed to create stream %s: %w", stream, err)
 		}
 	}
 
-	eb.logger.Info("All streams created successfully for app type", logAttrs...)
+	ctxLogger.Info("All streams created successfully for app type")
 	return nil
 }
 
-// GetNATSConnection returns the underlying NATS connection
+// GetNATSConnection returns the underlying NATS connection.
 func (eb *eventBus) GetNATSConnection() *nc.Conn {
-	return eb.natsConn // Assuming conn is your NATS connection
+	return eb.natsConn // Assuming conn is your N ATS connection
 }
 
-// GetJetStream returns the JetStream context
+// GetJetStream returns the JetStream context.
 func (eb *eventBus) GetJetStream() jetstream.JetStream {
 	return eb.js // Assuming js is your JetStream context
 }

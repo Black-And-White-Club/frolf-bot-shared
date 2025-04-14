@@ -12,7 +12,6 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
 	eventbus "github.com/Black-And-White-Club/frolf-bot-shared/eventbus"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
@@ -117,9 +116,11 @@ func (mr *MockEventBusMockRecorder) GetNATSConnection() *gomock.Call {
 }
 
 // ProcessDelayedMessages mocks base method.
-func (m *MockEventBus) ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime time.Time) {
+func (m *MockEventBus) ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessDelayedMessages", ctx, roundID, scheduledTime)
+	ret := m.ctrl.Call(m, "ProcessDelayedMessages", ctx, roundID, scheduledTime)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // ProcessDelayedMessages indicates an expected call of ProcessDelayedMessages.
@@ -159,16 +160,18 @@ func (mr *MockEventBusMockRecorder) RecoverScheduledRounds(ctx any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecoverScheduledRounds", reflect.TypeOf((*MockEventBus)(nil).RecoverScheduledRounds), ctx)
 }
 
-// ScheduleRoundProcessing mocks base method.
-func (m *MockEventBus) ScheduleRoundProcessing(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime time.Time) {
+// ScheduleDelayedMessage mocks base method.
+func (m *MockEventBus) ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ScheduleRoundProcessing", ctx, roundID, scheduledTime)
+	ret := m.ctrl.Call(m, "ScheduleDelayedMessage", ctx, originalSubject, roundID, scheduledTime, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ScheduleRoundProcessing indicates an expected call of ScheduleRoundProcessing.
-func (mr *MockEventBusMockRecorder) ScheduleRoundProcessing(ctx, roundID, scheduledTime any) *gomock.Call {
+// ScheduleDelayedMessage indicates an expected call of ScheduleDelayedMessage.
+func (mr *MockEventBusMockRecorder) ScheduleDelayedMessage(ctx, originalSubject, roundID, scheduledTime, payload any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleRoundProcessing", reflect.TypeOf((*MockEventBus)(nil).ScheduleRoundProcessing), ctx, roundID, scheduledTime)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleDelayedMessage", reflect.TypeOf((*MockEventBus)(nil).ScheduleDelayedMessage), ctx, originalSubject, roundID, scheduledTime, payload)
 }
 
 // Subscribe mocks base method.

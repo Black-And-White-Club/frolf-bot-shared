@@ -15,34 +15,41 @@ const (
 // Leaderboard-related events
 const (
 	// Leaderboard Update
-	RoundFinalized             = "leaderboard.round.finalized"  // From Score module
-	LeaderboardUpdateRequested = "leaderboard.update.requested" // Internal to Leaderboard module
-	LeaderboardUpdated         = "discord.leaderboard.updated"  // Internal or external
-	LeaderboardUpdateFailed    = "leaderboard.update.failed"    // Internal or external
-	DeactivateOldLeaderboard   = "leaderboard.deactivate"       // Internal
+	RoundFinalized             = "leaderboard.round.finalized"
+	LeaderboardUpdateRequested = "leaderboard.update.requested"
+	LeaderboardUpdated         = "discord.leaderboard.updated"
+	LeaderboardUpdateFailed    = "discord.leaderboard.update.failed"
+	DeactivateOldLeaderboard   = "leaderboard.deactivate"
 
 	// Tag Assignment
-	TagAvailabilityCheckRequest       = "leaderboard.tag.availability.check.request" // From User module
-	LeaderboardTagAssignmentRequested = "leaderboard.tag.assignment.requested"       // Internal to Leaderboard module
-	LeaderboardTagAssignmentFailed    = "leaderboard.tag.assignment.failed"          // Internal to Leaderboard module
-	TagAssigned                       = "leaderboard.tag.assigned"                   // Internal to Leaderboard module
-	TagAvailable                      = "leaderboard.tag.available"                  // Internal to Leaderboard module
-	TagUnavailable                    = "user.tag.unavailable"
+	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.request"
+	LeaderboardTagAssignmentRequested      = "leaderboard.tag.assignment.requested"
+	LeaderboardTagAssignmentFailed         = "discord.leaderboard.tag.assignment.failed"
+	LeaderboardTagAssignmentSuccess        = "discord.leaderboard.tag.assignment.success"
+	TagAvailable                           = "leaderboard.tag.available"
+	TagUnavailable                         = "user.tag.unavailable"
+	TagAvailableCheckFailure               = "leaderboard.tag.availability.failure"
+	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
+	LeaderboardBatchTagAssignmentFailed    = "discord.leaderboard.batch.tag.assignment.failed"
+	LeaderboardBatchTagAssigned            = "discord.leaderboard.batch.tag.assigned"
 
 	// Tag Swap
-	TagSwapRequested = "leaderboard.tag.swap.requested" // External
-	TagSwapInitiated = "leaderboard.tag.swap.initiated" // Internal
-	TagSwapFailed    = "leaderboard.tag.swap.failed"    // Internal
-	TagSwapProcessed = "leaderboard.tag.swap.processed" // Internal
+	TagSwapRequested = "leaderboard.tag.swap.requested"
+	TagSwapInitiated = "leaderboard.tag.swap.initiated"
+	TagSwapFailed    = "discord.leaderboard.tag.swap.failed"
+	TagSwapProcessed = "discord.leaderboard.tag.swap.processed"
 
 	// Leaderboard Requests
 	GetLeaderboardRequest  = "leaderboard.get.request"
-	GetLeaderboardResponse = "leaderboard.get.response"
+	GetLeaderboardResponse = "discord.get.leaderboard.success"
+	GetLeaderboardFailed   = "discord.get.leaderboard.failed"
 
 	// Tag Requests
 	GetTagByUserIDRequest  = "leaderboard.get.tag.number.request"
 	GetTagByUserIDResponse = "round.get.tag.number.response"
 	LeaderboardTraceEvent  = "discord.leaderboard.trace.event"
+	GetTagNumberFailed     = "discord.get.tag.by.discordid.failed"
+	GetTagNumberResponse   = "discord.get.tag.by.discordid.success"
 )
 
 // -- Event Payloads --
@@ -57,7 +64,8 @@ type RoundFinalizedPayload struct {
 type TagAssignedPayload struct {
 	UserID       sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber    *sharedtypes.TagNumber `json:"tag_number"`
-	AssignmentID string                 `json:"assignment_id"`
+	AssignmentID sharedtypes.RoundID    `json:"assignment_id"`
+	Source       string                 `json:"source"`
 }
 
 // TagAvailablePayload is the payload for the TagAvailable event.
@@ -71,14 +79,13 @@ type TagAvailablePayload struct {
 type TagUnavailablePayload struct {
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	Reason    string                 `json:"reason"`
 }
 
 // TagAssignmentRequestedPayload is the payload for the TagAssignmentRequested event.
 type TagAssignmentRequestedPayload struct {
 	UserID     sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
-	UpdateID   string                 `json:"update_id"`
+	UpdateID   sharedtypes.RoundID    `json:"update_id"`
 	Source     string                 `json:"source"`
 	UpdateType string                 `json:"update_type"`
 }
@@ -113,10 +120,23 @@ type DeactivateOldLeaderboardPayload struct {
 type TagAssignmentFailedPayload struct {
 	UserID     sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
-	UpdateID   string                 `json:"update_id"`
 	Source     string                 `json:"source"`
 	UpdateType string                 `json:"update_type"`
 	Reason     string                 `json:"reason"`
+}
+
+// TagAvailabilityCheckResultPayload is the payload for the result of a tag availability check.
+type TagAvailabilityCheckResultPayload struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Available bool                   `json:"tag_available"`
+}
+
+// TagAvailabilityCheckFailedPayload is the payload for the failure of a tag availability check.
+type TagAvailabilityCheckFailedPayload struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Reason    string                 `json:"reason"`
 }
 
 // TagSwapRequestedPayload is the payload for the TagSwapRequested event.
@@ -181,3 +201,36 @@ type TagAvailabilityCheckRequestedPayload struct {
 
 // TagOrder represents the order of tags.
 type TagOrder []string
+
+type GetLeaderboardFailedPayload struct {
+	Reason string `json:"reason"` // Reason for the failure
+}
+
+// GetTagNumberFailedPayload is the payload for the GetTagNumberFailed event.
+type GetTagNumberFailedPayload struct {
+	Reason string `json:"reason"` // Reason for the failure
+}
+
+type BatchTagAssignmentRequestedPayload struct {
+	RequestingUserID sharedtypes.DiscordID
+	BatchID          string
+	Assignments      []TagAssignmentInfo
+}
+
+type TagAssignmentInfo struct {
+	UserID    sharedtypes.DiscordID
+	TagNumber sharedtypes.TagNumber
+}
+
+type BatchTagAssignedPayload struct {
+	RequestingUserID sharedtypes.DiscordID
+	BatchID          string
+	AssignmentCount  int
+	Assignments      []TagAssignmentInfo
+}
+
+type BatchTagAssignmentFailedPayload struct {
+	RequestingUserID sharedtypes.DiscordID
+	BatchID          string
+	Reason           string
+}

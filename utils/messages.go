@@ -3,8 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
-	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/loki"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 )
@@ -18,11 +18,11 @@ type Helpers interface {
 
 // DefaultHelper is the default implementation of Helpers.
 type DefaultHelper struct {
-	Logger lokifrolfbot.Logger
+	Logger *slog.Logger
 }
 
 // NewHelper creates a new DefaultHelper.
-func NewHelper(logger lokifrolfbot.Logger) Helpers {
+func NewHelper(logger *slog.Logger) Helpers {
 	return &DefaultHelper{Logger: logger}
 }
 
