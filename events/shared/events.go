@@ -18,7 +18,7 @@ const (
 	DiscordTagLookUpByUserIDRequest  = "leaderboard.tag.lookup.by.user.id.request"
 	DiscordTagLookupByUserIDFailed   = "discord.leaderboard.tag.lookup.by.user.id.failed"
 	DiscordTagLookupByUserIDSuccess  = "discord.leaderboard.tag.lookup.by.user.id.success"
-	DiscordTagLoopupByUserIDNotFound = "discord.leaderboard.tag.lookup.by.user.id.not.found"
+	DiscordTagLookupByUserIDNotFound = "discord.leaderboard.tag.lookup.by.user.id.not.found"
 )
 
 // RoundTagLookupRequestPayload is the payload for requesting a tag number lookup from the Leaderboard module.
