@@ -20,3 +20,7 @@ func StartTimePtr(t time.Time) *sharedtypes.StartTime {
 	st := sharedtypes.StartTime(t)
 	return &st
 }
+
+func EventTypePtr(et EventType) *EventType {
+	return &et
+}

@@ -34,29 +34,38 @@ const (
 	UpdateUserRoleRequested       = "user.role.update.requested"
 	UserRoleUpdated               = "user.role.updated"
 	UserRoleUpdateFailed          = "user.role.update.failed"
-	GetUserRoleRequest            = "user.get.role.request"
-	GetUserRoleResponse           = "user.get.role.response"
-	GetUserRoleFailed             = "user.get.role.failed"
-	GetUserRequest                = "user.get.request"
-	GetUserResponse               = "user.get.response"
-	GetUserFailed                 = "user.get.failed"
 	UserPermissionsCheckRequest   = "user.permissions.check.request"
 	UserPermissionsCheckResponse  = "user.permissions.check.response"
 	UserPermissionsCheckFailed    = "user.permissions.check.failed"
 	TagAvailable                  = "user.tag.available"
 	TagUnavailable                = "discord.user.tag.unavailable"
-	TagAvailabilityCheckRequested = "user.tag.availability.check.requested"
+	TagAvailabilityCheckRequested = "leaderboard.tag.availability.check.requested"
+	TagAssignmentRequested        = "user.tag.assignment.requested"
+	TagAssignedForUserCreation    = "user.tag.assigned.for.creation"
+	TagAssignmentFailed           = "user.tag.assignment.failed"
+	// Discord-specific topics for user role updates
+	DiscordUserRoleUpdateRequest = "discord.user.role.update.request"
+	DiscordUserRoleUpdated       = "discord.user.role.updated"
+	DiscordUserRoleUpdateFailed  = "discord.user.role.update.failed"
+
+	// User retrieval flow
+	GetUserRequest  = "user.get.request"
+	GetUserResponse = "user.get.response"
+	GetUserFailed   = "user.get.failed"
+
+	// User role retrieval flow
+	GetUserRoleRequest  = "user.role.get.request"
+	GetUserRoleResponse = "discord.user.role.get.response"
+	GetUserRoleFailed   = "discord.user.role.get.failed"
 )
 
 // BaseEventPayload is a struct that can be embedded in other event structs to provide common fields.
-// DEPRECATED. Use CommonMetadata now
 type BaseEventPayload struct {
 	EventID   string    `json:"event_id"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 // Payload types
-
 type CreateUserRequestedPayload struct {
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
@@ -88,7 +97,7 @@ type UserRoleUpdateRequestPayload struct {
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 }
 
-type UpdateUserRoleRequestedPayload struct { //DEPRECATED
+type UpdateUserRoleRequestedPayload struct { // DEPRECATED
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 	RequesterID sharedtypes.DiscordID    `json:"requester_id"`
@@ -179,4 +188,14 @@ type TagUnavailablePayload struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 	Reason    string                `json:"reason"`
+}
+
+type TagAssignmentRequestedPayload struct {
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	TagNumber sharedtypes.TagNumber `json:"tag_number"`
+}
+
+type TagAssignedForUserCreationPayload struct {
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 }

@@ -1,6 +1,7 @@
 package leaderboardevents
 
 import (
+	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
@@ -22,11 +23,11 @@ const (
 	DeactivateOldLeaderboard   = "leaderboard.deactivate"
 
 	// Tag Assignment
-	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.request"
+	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.requested"
 	LeaderboardTagAssignmentRequested      = "leaderboard.tag.assignment.requested"
 	LeaderboardTagAssignmentFailed         = "discord.leaderboard.tag.assignment.failed"
 	LeaderboardTagAssignmentSuccess        = "discord.leaderboard.tag.assignment.success"
-	TagAvailable                           = "leaderboard.tag.available"
+	TagAvailable                           = "user.tag.available"
 	TagUnavailable                         = "user.tag.unavailable"
 	TagAvailableCheckFailure               = "leaderboard.tag.availability.failure"
 	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
@@ -45,11 +46,23 @@ const (
 	GetLeaderboardFailed   = "discord.get.leaderboard.failed"
 
 	// Tag Requests
-	GetTagByUserIDRequest  = "leaderboard.get.tag.number.request"
-	GetTagByUserIDResponse = "round.get.tag.number.response"
-	LeaderboardTraceEvent  = "discord.leaderboard.trace.event"
-	GetTagNumberFailed     = "discord.get.tag.by.discordid.failed"
-	GetTagNumberResponse   = "discord.get.tag.by.discordid.success"
+	LeaderboardTraceEvent = "discord.leaderboard.trace.event"
+
+	// Request events
+	GetTagByUserIDRequest      = "leaderboard.tag.get.by.user.id.request"
+	RoundGetTagByUserIDRequest = "leaderboard.round.tag.get.by.user.id.request"
+
+	// Response events
+	GetTagNumberResponse   = "round.leaderboard.tag.get.by.user.id.response"
+	GetTagByUserIDResponse = "round.leaderboard.tag.get.by.user.id.response"
+	GetTagByUserIDNotFound = "round.leaderboard.tag.get.by.user.id.not.found"
+
+	// Round-specific response events
+	RoundTagNumberFound    = "round.leaderboard.tag.found"
+	RoundTagNumberNotFound = "round.leaderboard.tag.not.found"
+
+	// Failure events
+	GetTagNumberFailed = "discord.leaderboard.tag.get.by.user.id.failed"
 )
 
 // -- Event Payloads --
@@ -100,9 +113,9 @@ type LeaderboardUpdateRequestedPayload struct {
 
 // LeaderboardUpdatedPayload is the payload for the LeaderboardUpdated event.
 type LeaderboardUpdatedPayload struct {
-	LeaderboardID   int64               `json:"leaderboard_id"`
-	RoundID         sharedtypes.RoundID `json:"round_id"`
-	LeaderboardData map[int]string      `json:"leaderboard_data"`
+	LeaderboardID   int64                                           `json:"leaderboard_id"`
+	RoundID         sharedtypes.RoundID                             `json:"round_id"`
+	LeaderboardData map[sharedtypes.TagNumber]sharedtypes.DiscordID `json:"leaderboard_data"`
 }
 
 // LeaderboardUpdateFailedPayload is the payload for the LeaderboardUpdateFailed event.
@@ -167,15 +180,23 @@ type TagSwapProcessedPayload struct {
 // GetLeaderboardRequestPayload is the payload for the GetLeaderboardRequest event.
 type GetLeaderboardRequestPayload struct{} // Empty, as no data is needed for this request
 
-// LeaderboardEntry represents an entry on the leaderboard.
-type LeaderboardEntry struct {
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-}
+// // LeaderboardEntry represents an entry on the leaderboard.
+// type LeaderboardEntry struct {
+// 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+// 	UserID    sharedtypes.DiscordID  `json:"user_id"`
+// }
 
 // GetLeaderboardResponsePayload is the payload for the GetLeaderboardResponse event.
 type GetLeaderboardResponsePayload struct {
-	Leaderboard []LeaderboardEntry `json:"leaderboard"`
+	Leaderboard leaderboardtypes.LeaderboardData `json:"leaderboard"`
+}
+type SoloTagNumberRequestPayload struct {
+	UserID sharedtypes.DiscordID `json:"user_id"`
+}
+
+type SoloTagNumberResponsePayload struct {
+	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	UserID    sharedtypes.DiscordID  `json:"user_id"`
 }
 
 // GetTagByUserIDRequestPayload is the payload for the GetTagByUserIDRequest event.
@@ -189,6 +210,7 @@ type GetTagNumberResponsePayload struct {
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
+	Found     bool                   `json:"found"`
 }
 
 // TagAvailabilityCheckRequestedPayload is the payload for the TagAvailabilityCheckRequested event.
@@ -233,4 +255,23 @@ type BatchTagAssignmentFailedPayload struct {
 	RequestingUserID sharedtypes.DiscordID
 	BatchID          string
 	Reason           string
+}
+
+// GetUserID returns the UserID of the payload
+func (p *TagAssignmentRequestedPayload) GetUserID() sharedtypes.DiscordID {
+	return p.UserID
+}
+
+// GetTagNumber returns the TagNumber of the payload
+func (p *TagAssignmentRequestedPayload) GetTagNumber() *sharedtypes.TagNumber {
+	return p.TagNumber
+}
+
+func (p *TagAssignedPayload) GetUserID() sharedtypes.DiscordID {
+	return p.UserID
+}
+
+// GetTagNumber returns the TagNumber of the payload
+func (p *TagAssignedPayload) GetTagNumber() *sharedtypes.TagNumber {
+	return p.TagNumber
 }

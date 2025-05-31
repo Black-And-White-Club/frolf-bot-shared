@@ -20,4 +20,10 @@ type discordMetrics struct {
 	websocketEventCounter      metric.Int64Counter
 	websocketReconnectCounter  metric.Int64Counter
 	websocketDisconnectCounter metric.Int64Counter
+
+	// --- Handler Metrics ---
+	handlerAttemptCounter metric.Int64Counter
+	handlerSuccessCounter metric.Int64Counter
+	handlerFailureCounter metric.Int64Counter
+	handlerDuration       metric.Float64Histogram
 }

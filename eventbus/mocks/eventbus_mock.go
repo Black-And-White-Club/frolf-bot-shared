@@ -73,6 +73,20 @@ func (mr *MockEventBusMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockEventBus)(nil).Close))
 }
 
+// CreateStream mocks base method.
+func (m *MockEventBus) CreateStream(ctx context.Context, streamName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateStream", ctx, streamName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateStream indicates an expected call of CreateStream.
+func (mr *MockEventBusMockRecorder) CreateStream(ctx, streamName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateStream", reflect.TypeOf((*MockEventBus)(nil).CreateStream), ctx, streamName)
+}
+
 // GetHealthCheckers mocks base method.
 func (m *MockEventBus) GetHealthCheckers() []eventbus.HealthChecker {
 	m.ctrl.T.Helper()
@@ -161,17 +175,17 @@ func (mr *MockEventBusMockRecorder) RecoverScheduledRounds(ctx any) *gomock.Call
 }
 
 // ScheduleDelayedMessage mocks base method.
-func (m *MockEventBus) ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte) error {
+func (m *MockEventBus) ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte, additionalMetadata map[string]string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScheduleDelayedMessage", ctx, originalSubject, roundID, scheduledTime, payload)
+	ret := m.ctrl.Call(m, "ScheduleDelayedMessage", ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ScheduleDelayedMessage indicates an expected call of ScheduleDelayedMessage.
-func (mr *MockEventBusMockRecorder) ScheduleDelayedMessage(ctx, originalSubject, roundID, scheduledTime, payload any) *gomock.Call {
+func (mr *MockEventBusMockRecorder) ScheduleDelayedMessage(ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleDelayedMessage", reflect.TypeOf((*MockEventBus)(nil).ScheduleDelayedMessage), ctx, originalSubject, roundID, scheduledTime, payload)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleDelayedMessage", reflect.TypeOf((*MockEventBus)(nil).ScheduleDelayedMessage), ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata)
 }
 
 // Subscribe mocks base method.

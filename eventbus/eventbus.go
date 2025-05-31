@@ -15,7 +15,6 @@ import (
 	lokifrolfbot "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/logging"
 	eventbusmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/eventbus"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
@@ -51,10 +50,11 @@ type EventBus interface {
 	ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime) error
 	CancelScheduledMessage(ctx context.Context, roundID sharedtypes.RoundID) error
 	RecoverScheduledRounds(ctx context.Context)
-	ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte) error
+	ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte, additionalMetadata map[string]string) error
 	GetNATSConnection() *nc.Conn
 	GetJetStream() jetstream.JetStream
 	GetHealthCheckers() []HealthChecker
+	CreateStream(ctx context.Context, streamName string) error
 }
 
 // HealthChecker interface for components that can be health-checked
@@ -191,6 +191,14 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
 	}
 
+	// Log details before attempting to publish
+	for _, msg := range messages {
+		ctxLogger.Debug("Attempting to publish message",
+			attr.String("message_uuid", msg.UUID),
+			attr.String("topic_name", topic),
+		)
+	}
+
 	// Let Watermill's `NATSMarshaler` handle the serialization
 	if err := eb.publisher.Publish(topic, messages...); err != nil {
 		ctxLogger.Error("Failed to publish message", "error", err)
@@ -218,7 +226,7 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 	return nil
 }
 
-// Subscribe subscribes to a topic. Handles unmarshaling.
+// Subscribe subscribes to a topic. Handles unmarshaling with retry logic.
 func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
 	// Create a contextual logger with the base attributes
 	ctxLogger := eb.logger.With(
@@ -270,6 +278,8 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		MaxAckPending: 2048,
 		DeliverPolicy: jetstream.DeliverAllPolicy,
+		MaxDeliver:    3,
+		BackOff:       []time.Duration{1 * time.Second, 3 * time.Second},
 	}
 
 	cons, err := eb.js.Consumer(ctx, streamName, consumerName)
@@ -290,8 +300,10 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	consInfoAttrs := ctxLogger.With(
 		"consumer_durable_name", cons.CachedInfo().Config.Durable,
 		"consumer_filter_subject", cons.CachedInfo().Config.FilterSubject,
+		"max_deliver", cons.CachedInfo().Config.MaxDeliver,
+		"backoff_delays", cons.CachedInfo().Config.BackOff,
 	)
-	consInfoAttrs.Info("Consumer created")
+	consInfoAttrs.Info("Consumer created with retry configuration")
 
 	messages := make(chan *message.Message)
 	sub, err := cons.Messages()
@@ -324,14 +336,35 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 			wmMsg, err := eb.toWatermillMessage(ctx, jetStreamMsg)
 			if err != nil {
 				routineLogger.Error("Failed to convert message", "error", err)
+				if err := jetStreamMsg.Term(); err != nil {
+					routineLogger.Error("Failed to terminate malformed message", "error", err)
+				}
 				continue
+			}
+
+			// Get delivery count
+			meta, err := jetStreamMsg.Metadata()
+			var deliveryCount uint64 = 1
+			if err == nil {
+				deliveryCount = meta.NumDelivered
 			}
 
 			msgAttrs := routineLogger.With(
 				"message_id", wmMsg.UUID,
+				"delivery_count", deliveryCount,
 				"metadata", wmMsg.Metadata,
 			)
 			msgAttrs.Info("Received message")
+
+			// Check if we've exceeded max retries (original + 2 retries = 3 deliveries)
+			if deliveryCount > 3 {
+				msgAttrs.Warn("Message exceeded max retry attempts, terminating",
+					"delivery_count", deliveryCount)
+				if err := jetStreamMsg.Term(); err != nil {
+					msgAttrs.Error("Failed to terminate message after max retries", "error", err)
+				}
+				continue
+			}
 
 			select {
 			case messages <- wmMsg:
@@ -343,10 +376,11 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 						msgAttrs.Info("Message acknowledged")
 					}
 				case <-wmMsg.Nacked():
+					msgAttrs.Info("Message nacked, will be redelivered for retry",
+						"current_delivery", deliveryCount,
+						"max_deliveries", 3)
 					if err := jetStreamMsg.Nak(); err != nil {
 						msgAttrs.Error("Failed to nack message", "error", err)
-					} else {
-						msgAttrs.Info("Message nacked")
 					}
 				case <-ctx.Done():
 					msgAttrs.Warn("Context cancelled (ack/nack)")
@@ -405,17 +439,6 @@ func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstre
 	// Copy headers to metadata
 	for k, v := range jetStreamMsg.Headers() {
 		watermillMsg.Metadata.Set(k, v[0])
-	}
-
-	// Ensure correlation ID
-	if watermillMsg.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
-		correlationID := watermill.NewUUID()
-		watermillMsg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-		ctxLogger = ctxLogger.With(attr.String("correlation_id", correlationID))
-		ctxLogger.Debug("Generated new correlation ID")
-	} else {
-		ctxLogger = ctxLogger.With(attr.String("correlation_id",
-			watermillMsg.Metadata.Get(middleware.CorrelationIDMetadataKey)))
 	}
 
 	ctxLogger.Debug("Created Watermill message from JetStream message")

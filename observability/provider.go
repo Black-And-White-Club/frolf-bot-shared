@@ -2,8 +2,10 @@ package observability
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -96,20 +98,38 @@ func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trac
 }
 
 func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metric.MeterProvider, func(context.Context) error, error) {
-	exporter, err := otlpmetricgrpc.New(ctx,
-		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress),
-		otlpmetricgrpc.WithInsecure(),
+	// Create a connection to the OTLP endpoint with proper timeouts
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	exporter, err := otlpmetricgrpc.New(ctxWithTimeout,
+		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress), // "alloy.observability:4317"
+		otlpmetricgrpc.WithInsecure(),                   // Only for non-production
+		otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
+			Enabled:         true,
+			InitialInterval: 500 * time.Millisecond,
+			MaxInterval:     5 * time.Second,
+			MaxElapsedTime:  30 * time.Second,
+		}),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
 	}
 
+	// Configure the meter provider with periodic reading
+	reader := sdkmetric.NewPeriodicReader(
+		exporter,
+		sdkmetric.WithInterval(15*time.Second),
+	)
+
 	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
 		sdkmetric.WithResource(res),
+		sdkmetric.WithReader(reader),
 	)
 
 	otel.SetMeterProvider(mp)
+
+	// Return proper shutdown function
 	return mp, func(ctx context.Context) error {
 		return exporter.Shutdown(ctx)
 	}, nil

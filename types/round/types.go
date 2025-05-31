@@ -6,34 +6,14 @@ import (
 
 // Core Type Definitions
 type (
-	Title          string
-	Description    string
-	Location       string
-	EventType      string
-	Finalized      bool
-	CreatedBy      sharedtypes.DiscordID
-	Timezone       string
-	EventMessageID sharedtypes.RoundID // eventmessageid is the customID of the embedded event on discord
+	Title       string
+	Description string
+	Location    string
+	EventType   string
+	Finalized   bool
+	CreatedBy   sharedtypes.DiscordID
+	Timezone    string
 )
-
-// func (t StartTime) MarshalJSON() ([]byte, error) {
-// 	return json.Marshal(time.Time(t).Format(time.RFC3339))
-// }
-
-// func (t *StartTime) UnmarshalJSON(data []byte) error {
-// 	var str string
-// 	if err := json.Unmarshal(data, &str); err != nil {
-// 		return err
-// 	}
-
-// 	parsedTime, err := time.Parse(time.RFC3339, str)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	*t = StartTime(parsedTime)
-// 	return nil
-// }
 
 // RoundState represents the state of a round.
 type RoundState string
@@ -55,7 +35,7 @@ const (
 
 type RoundUpdate struct {
 	RoundID        sharedtypes.RoundID
-	EventMessageID sharedtypes.RoundID
+	EventMessageID string
 	Participants   []Participant
 }
 type Participant struct {
@@ -76,8 +56,10 @@ type Round struct {
 	CreatedBy      sharedtypes.DiscordID  `json:"created_by"`
 	State          RoundState             `json:"state"`
 	Participants   []Participant          `json:"participants"`
-	EventMessageID sharedtypes.RoundID    `json:"event_message_id"`
+	EventMessageID string                 `json:"event_message_id"`
 }
+
+const DefaultEventType = EventType("casual")
 
 func (r *Round) AddParticipant(participant Participant) {
 	r.Participants = append(r.Participants, participant)

@@ -19,7 +19,7 @@ const (
 	ScoreUpdateRequest         = "score.update.request"
 	ScoreUpdateSuccess         = "discord.score.update.success"
 	ScoreUpdateFailure         = "discord.score.update.fail"
-	ProcessRoundScoresSuccess  = "leaderboard.process.round.scores.success"
+	ProcessRoundScoresSuccess  = "leaderboard.batch.tag.assignment.requested"
 	ProcessRoundScoresFailure  = "score.process.round.scores.fail"
 )
 

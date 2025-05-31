@@ -41,3 +41,9 @@ func (n *NoOpMetrics) RecordWebsocketReconnect(ctx context.Context) {
 // RecordWebsocketDisconnect does nothing
 func (n *NoOpMetrics) RecordWebsocketDisconnect(ctx context.Context, reason string) {
 }
+
+func (n *NoOpMetrics) RecordHandlerAttempt(ctx context.Context, handlerName string) {}
+func (n *NoOpMetrics) RecordHandlerSuccess(ctx context.Context, handlerName string) {}
+func (n *NoOpMetrics) RecordHandlerFailure(ctx context.Context, handlerName string) {}
+func (n *NoOpMetrics) RecordHandlerDuration(ctx context.Context, handlerName string, duration time.Duration) {
+}

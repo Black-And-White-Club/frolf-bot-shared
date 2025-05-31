@@ -91,5 +91,39 @@ func NewDiscordMetrics(meter metric.Meter, prefix string) (DiscordMetrics, error
 		return nil, err
 	}
 
+	// --- Handler Metrics ---
+	m.handlerAttemptCounter, err = meter.Int64Counter(
+		metricName("handler_attempts_total"),
+		metric.WithDescription("Number of handler attempts"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.handlerSuccessCounter, err = meter.Int64Counter(
+		metricName("handler_success_total"),
+		metric.WithDescription("Number of successful handler attempts"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.handlerFailureCounter, err = meter.Int64Counter(
+		metricName("handler_failure_total"),
+		metric.WithDescription("Number of failed handler attempts"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+	m.handlerDuration, err = meter.Float64Histogram(
+		metricName("handler_duration_seconds"),
+		metric.WithDescription("Duration of handler execution in seconds"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return m, nil
 }

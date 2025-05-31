@@ -18,6 +18,7 @@ USER_METRICS=observability/otel/metrics/user/interface.go
 SCORE_METRICS=observability/otel/metrics/score/interface.go
 LEADERBOARD_METRICS=observability/otel/metrics/leaderboard/interface.go
 ROUND_METRICS=observability/otel/metrics/round/interface.go
+DISCORD_METRICS=observability/otel/metrics/discord/interface.go
 
 mocks: generate-mocks
 
@@ -29,6 +30,7 @@ generate-mocks:
 	mockgen -source=$(USER_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/usermetrics_mock.go -package=mocks
 	mockgen -source=$(SCORE_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/scoremetrics_mock.go -package=mocks
 	mockgen -source=$(ROUND_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/roundmetrics_mock.go -package=mocks
+	mockgen -source=$(DISCORD_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/discordmetrics_mock.go -package=mocks
 	mockgen -source=$(LEADERBOARD_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/leaderboard_mock.go -package=mocks
 	mockgen -source=$(TEMPO_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/tracer_mock.go -package=mocks
 	mockgen -source=$(UTILS_METADATA) -destination=$(MOCKS_DIR)/metadata_mock.go -package=mocks

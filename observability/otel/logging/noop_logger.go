@@ -5,30 +5,18 @@ import (
 	"log/slog"
 )
 
-// NoOpLogger is a logger that does nothing. Useful for unit tests.
-type NoOpLogger struct{}
+type noOpHandler struct{}
 
-// NewNoOpLogger creates a new instance of NoOpLogger.
-func NewNoOpLogger() *NoOpLogger {
-	return &NoOpLogger{}
-}
+func (h noOpHandler) Enabled(_ context.Context, _ slog.Level) bool { return false }
 
-// Debug does nothing.
-func (n *NoOpLogger) Debug(msg string, attrs ...slog.Attr) {}
+func (h noOpHandler) Handle(_ context.Context, _ slog.Record) error { return nil }
 
-// Info does nothing.
-func (n *NoOpLogger) Info(msg string, attrs ...slog.Attr) {}
+func (h noOpHandler) WithAttrs(_ []slog.Attr) slog.Handler { return h }
 
-// Warn does nothing.
-func (n *NoOpLogger) Warn(msg string, attrs ...slog.Attr) {}
+func (h noOpHandler) WithGroup(_ string) slog.Handler { return h }
 
-// Error does nothing.
-func (n *NoOpLogger) Error(msg string, attrs ...slog.Attr) {}
+var NoOpLogger = slog.New(noOpHandler{})
 
-// Close does nothing.
-func (n *NoOpLogger) Close() {}
-
-// WithContext returns the same NoOpLogger, as it does not log anything.
-func (n *NoOpLogger) WithContext(ctx context.Context) *NoOpLogger {
-	return n
+func SetNoOpLogger() {
+	slog.SetDefault(NoOpLogger)
 }

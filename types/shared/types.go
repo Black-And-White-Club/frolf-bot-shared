@@ -1,6 +1,7 @@
 package sharedtypes
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -28,6 +29,31 @@ func (r RoundID) String() string {
 
 func (r RoundID) UUID() uuid.UUID {
 	return uuid.UUID(r)
+}
+
+func (r *RoundID) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case []byte:
+		id, err := uuid.ParseBytes(v)
+		if err != nil {
+			return fmt.Errorf("invalid UUID []byte: %w", err)
+		}
+		*r = RoundID(id)
+		return nil
+	case string:
+		id, err := uuid.Parse(v)
+		if err != nil {
+			return fmt.Errorf("invalid UUID string: %w", err)
+		}
+		*r = RoundID(id)
+		return nil
+	default:
+		return fmt.Errorf("unsupported Scan type for RoundID: %T", value)
+	}
+}
+
+func (r RoundID) Value() (driver.Value, error) {
+	return uuid.UUID(r).String(), nil
 }
 
 type EventMessageID RoundID
@@ -133,5 +159,29 @@ type ScoreProcessingResult struct {
 
 type TagMapping struct {
 	DiscordID DiscordID `json:"discord_id"`
+	TagNumber TagNumber `json:"tag_number"`
+}
+
+// TagUpdateSource defines the source of tag updates
+type ServiceUpdateSource string
+
+const (
+	ServiceUpdateSourceProcessScores ServiceUpdateSource = "process_scores"
+	ServiceUpdateSourceCreateUser    ServiceUpdateSource = "create_user"
+	ServiceUpdateSourceAdminBatch    ServiceUpdateSource = "admin_batch"
+	ServiceUpdateSourceManual        ServiceUpdateSource = "manual"
+	ServiceUpdateSourceTagSwap       ServiceUpdateSource = "tag_swap"
+)
+
+// TagUpdateMetadata contains data for tag update operations
+type TagUpdateContext struct {
+	RequestingUserID DiscordID
+	BatchID          string
+	RoundID          *RoundID
+}
+
+// TagAssignmentRequest represents a request to assign a tag to a user
+type TagAssignmentRequest struct {
+	UserID    DiscordID `json:"user_id"`
 	TagNumber TagNumber `json:"tag_number"`
 }
