@@ -12,7 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	usertypes "github.com/Black-And-White-Club/frolf-bot-shared/types/user"
+	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,20 +40,6 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
 }
 
-// GetDiscordID mocks base method.
-func (m *MockUser) GetDiscordID() usertypes.DiscordID {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDiscordID")
-	ret0, _ := ret[0].(usertypes.DiscordID)
-	return ret0
-}
-
-// GetDiscordID indicates an expected call of GetDiscordID.
-func (mr *MockUserMockRecorder) GetDiscordID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDiscordID", reflect.TypeOf((*MockUser)(nil).GetDiscordID))
-}
-
 // GetID mocks base method.
 func (m *MockUser) GetID() int64 {
 	m.ctrl.T.Helper()
@@ -69,10 +55,10 @@ func (mr *MockUserMockRecorder) GetID() *gomock.Call {
 }
 
 // GetRole mocks base method.
-func (m *MockUser) GetRole() usertypes.UserRoleEnum {
+func (m *MockUser) GetRole() sharedtypes.UserRoleEnum {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRole")
-	ret0, _ := ret[0].(usertypes.UserRoleEnum)
+	ret0, _ := ret[0].(sharedtypes.UserRoleEnum)
 	return ret0
 }
 
@@ -80,4 +66,18 @@ func (m *MockUser) GetRole() usertypes.UserRoleEnum {
 func (mr *MockUserMockRecorder) GetRole() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockUser)(nil).GetRole))
+}
+
+// GetUserID mocks base method.
+func (m *MockUser) GetUserID() sharedtypes.DiscordID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserID")
+	ret0, _ := ret[0].(sharedtypes.DiscordID)
+	return ret0
+}
+
+// GetUserID indicates an expected call of GetUserID.
+func (mr *MockUserMockRecorder) GetUserID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockUser)(nil).GetUserID))
 }

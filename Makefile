@@ -10,12 +10,15 @@ EVENTBUS_FILE=eventbus/eventbus.go
 ERRORS_FILE=errors/publish_errors.go
 ROUND_TYPES=types/round/types.go
 USER_TYPES=types/user/types.go
-EVENTS_METADATA=events/metadata.go
-
+UTILS_METADATA=utils/metadata.go
+MESSAGES_UTILS=utils/messages.go
 # Observability interfaces
-LOKI_FILE=observability/loki.go
-PROMETHEUS_FILE=observability/prometheus.go
-TEMPO_FILE=observability/tempo.go
+TEMPO_FILE=observability/otel/tracing/tempo.go
+USER_METRICS=observability/otel/metrics/user/interface.go
+SCORE_METRICS=observability/otel/metrics/score/interface.go
+LEADERBOARD_METRICS=observability/otel/metrics/leaderboard/interface.go
+ROUND_METRICS=observability/otel/metrics/round/interface.go
+DISCORD_METRICS=observability/otel/metrics/discord/interface.go
 
 mocks: generate-mocks
 
@@ -24,10 +27,14 @@ generate-mocks:
 	mockgen -source=$(EVENTBUS_FILE) -destination=$(EVENTBUS_MOCKS_DIR)/eventbus_mock.go -package=mocks
 	mockgen -source=$(ERRORS_FILE) -destination=$(MOCKS_DIR)/publish_errors_mock.go -package=mocks
 	mockgen -source=$(USER_TYPES) -destination=$(MOCKS_DIR)/user_types_mock.go -package=mocks
-	mockgen -source=$(LOKI_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/loki_mock.go -package=mocks
-	mockgen -source=$(PROMETHEUS_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/prometheus_mock.go -package=mocks
-	mockgen -source=$(TEMPO_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/tempo_mock.go -package=mocks
-	mockgen -source=$(EVENTS_METADATA) -destination=$(MOCKS_DIR)/metadata_mock.go -package=mocks
+	mockgen -source=$(USER_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/usermetrics_mock.go -package=mocks
+	mockgen -source=$(SCORE_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/scoremetrics_mock.go -package=mocks
+	mockgen -source=$(ROUND_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/roundmetrics_mock.go -package=mocks
+	mockgen -source=$(DISCORD_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/discordmetrics_mock.go -package=mocks
+	mockgen -source=$(LEADERBOARD_METRICS) -destination=$(OBSERVABILITY_MOCKS_DIR)/leaderboard_mock.go -package=mocks
+	mockgen -source=$(TEMPO_FILE) -destination=$(OBSERVABILITY_MOCKS_DIR)/tracer_mock.go -package=mocks
+	mockgen -source=$(UTILS_METADATA) -destination=$(MOCKS_DIR)/metadata_mock.go -package=mocks
+	mockgen -source=$(MESSAGES_UTILS) -destination=$(MOCKS_DIR)/messages_mock.go -package=mocks
 	@echo "Mocks generated successfully."
 
 .PHONY: mocks generate-mocks
@@ -37,3 +44,5 @@ clean:
 	rm -f $(MOCKS_DIR)/*_mock.go
 	@echo "Mocks cleaned successfully."
 .PHONY: clean
+
+

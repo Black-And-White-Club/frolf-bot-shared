@@ -1,40 +1,41 @@
 package attr
 
 import (
+	"context"
 	"log/slog"
 	"time"
 
+	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/google/uuid"
 )
 
-// --- Attribute Constructors ---
-
-// CorrelationIDFromMsg creates an slog.Attr for the correlation ID from message metadata.
+// CorrelationIDFromMsg creates a slog.Attr for the correlation ID from message metadata.
 func CorrelationIDFromMsg(msg *message.Message) slog.Attr {
 	return slog.String("correlation_id", msg.Metadata.Get("correlation_id"))
 }
 
-// UserID creates an slog.Attr for a user ID.
-func UserID(userID string) slog.Attr {
-	return slog.String("user_id", userID)
+// UserID creates a slog.Attr for a user ID.
+func UserID(userID sharedtypes.DiscordID) slog.Attr {
+	return slog.String("user_id", string(userID))
 }
 
-// MessageID creates an slog.Attr for a Watermill message ID.
+// MessageID creates a slog.Attr for a Watermill message ID.
 func MessageID(msg *message.Message) slog.Attr {
 	return slog.String("message_id", msg.UUID)
 }
 
-// Error creates an slog.Attr for an error.
+// Error creates a slog.Attr for an error.
 func Error(err error) slog.Attr {
 	return slog.Any("error", err)
 }
 
-// EventName creates an slog.Attr for an event name.
+// EventName creates a slog.Attr for an event name.
 func EventName(event string) slog.Attr {
 	return slog.String("event", event)
 }
 
-// Topic creates an slog.Attr for a topic.
+// Topic creates a slog.Attr for a topic.
 func Topic(topic string) slog.Attr {
 	return slog.String("topic", topic)
 }
@@ -47,6 +48,25 @@ func String(key, value string) slog.Attr {
 // Int creates a generic int attribute.
 func Int(key string, value int) slog.Attr {
 	return slog.Int(key, value)
+}
+
+// RoundID creates a slog.Attr for a RoundID.
+func RoundID(key string, value sharedtypes.RoundID) slog.Attr {
+	return slog.String(key, value.String())
+}
+
+// UUIDValue creates a slog.Attr for a UUID.
+func UUIDValue(key string, value uuid.UUID) slog.Attr {
+	return slog.String(key, value.String())
+}
+
+// StringUUID safely converts a string to a UUID for logging.
+func StringUUID(key string, uuidStr string) slog.Attr {
+	id, err := uuid.Parse(uuidStr)
+	if err != nil {
+		return slog.String(key, "<invalid-uuid>")
+	}
+	return slog.String(key, id.String())
 }
 
 // Int64 creates a generic int64 attribute.
@@ -84,11 +104,34 @@ func Any(key string, value interface{}) slog.Attr {
 	return slog.Any(key, value)
 }
 
-// Group creates a grouped attribute.  VERY useful.
+// Group creates a grouped attribute.
 func Group(key string, attrs ...slog.Attr) slog.Attr {
-	convertedAttrs := make([]any, len(attrs))
+	slogAttrs := make([]any, len(attrs))
 	for i, attr := range attrs {
-		convertedAttrs[i] = attr
+		slogAttrs[i] = attr
 	}
-	return slog.Group(key, convertedAttrs...)
+	return slog.Group(key, slogAttrs...)
+}
+
+// ExtractCorrelationID pulls the correlation ID from context, or sets a default.
+func ExtractCorrelationID(ctx context.Context) slog.Attr {
+	if ctx == nil {
+		return slog.String("correlation_id", "unknown") // Safe fallback
+	}
+
+	// Assume correlation_id is stored in context under this key
+	if correlationID, ok := ctx.Value("correlation_id").(string); ok && correlationID != "" {
+		return slog.String("correlation_id", correlationID)
+	}
+
+	return slog.String("correlation_id", "unknown") // Default if missing
+}
+
+// ConvertAttrsToAny converts a slice of slog.Attr to a slice of any.
+func ConvertAttrsToAny(attrs []slog.Attr) []any {
+	anyAttrs := make([]any, len(attrs))
+	for i, attr := range attrs {
+		anyAttrs[i] = attr
+	}
+	return anyAttrs
 }
