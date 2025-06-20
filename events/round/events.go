@@ -11,6 +11,7 @@ const (
 	UserStreamName        = "user"
 	LeaderboardStreamName = "leaderboard"
 	ScoreStreamName       = "score"
+	DiscordStreamName     = "discord"
 )
 
 // Event names - grouped by functionality
@@ -71,14 +72,15 @@ const (
 	RoundParticipantStatusUpdateRequest   = "round.participant.status.update.request"
 
 	// Score Events
-	RoundScoreUpdateRequest      = "round.score.update.request"
-	RoundScoreUpdateValidated    = "round.score.update.validated"
-	RoundParticipantScoreUpdated = "round.participant.score.updated"
-	RoundAllScoresSubmitted      = "round.all.scores.submitted"
-	RoundNotAllScoresSubmitted   = "discord.round.not.all.scores.submitted"
-	RoundScoreUpdateError        = "discord.round.score.update.error"
-	ProcessRoundScoresRequest    = "score.process.scores.request"
-	ScoreModuleNotificationError = "score.module.notification.error"
+	RoundScoreUpdateRequest        = "round.score.update.request"
+	RoundScoreUpdateValidated      = "round.score.update.validated"
+	RoundParticipantScoreUpdated   = "round.participant.score.updated"
+	DiscordParticipantScoreUpdated = "discord.participant.score.updated"
+	RoundAllScoresSubmitted        = "round.all.scores.submitted"
+	RoundNotAllScoresSubmitted     = "discord.round.not.all.scores.submitted"
+	RoundScoreUpdateError          = "discord.round.score.update.error"
+	ProcessRoundScoresRequest      = "score.process.round.scores.request"
+	ScoreModuleNotificationError   = "score.module.notification.error"
 
 	// Round Lifecycle Events
 	RoundStarted            = "round.started"
@@ -87,7 +89,7 @@ const (
 	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
 	RoundReminder           = "round.reminder"
-	DiscordRoundReminder    = "discord.round.reminder"
+	DiscordRoundReminder    = "discord.reminder"
 	DiscordRoundFinalized   = "discord.round.finalized"
 
 	// Tag Events
@@ -156,12 +158,12 @@ type RoundStartedPayload struct {
 }
 
 type TagLookupRequestPayload struct {
-	RoundID    sharedtypes.RoundID   `json:"round_id"`
-	UserID     sharedtypes.DiscordID `json:"user_id"`
-	Response   roundtypes.Response   `json:"response"`
-	JoinedLate *bool                 `json:"joined_late"`
+	UserID           sharedtypes.DiscordID `json:"user_id"`
+	RoundID          sharedtypes.RoundID   `json:"round_id"`
+	Response         roundtypes.Response   `json:"response"`          // ← Current/Active response
+	OriginalResponse roundtypes.Response   `json:"original_response"` // ← Same as Response (for consistency)
+	JoinedLate       *bool                 `json:"joined_late,omitempty"`
 }
-
 type RoundFinalizedEmbedUpdatePayload struct {
 	RoundID          sharedtypes.RoundID      `json:"round_id"`
 	Title            roundtypes.Title         `json:"title"`
@@ -228,13 +230,18 @@ type UpdateRoundRequestedPayload struct {
 	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
 	StartTime   *string                 `json:"start_time,omitempty"`
-	Timezone    *roundtypes.Timezone    `json:"timezone,omitempty"`
+	Timezone    *roundtypes.Timezone    `json:"timezone"`
 	Location    *roundtypes.Location    `json:"location,omitempty"`
 }
 
 type RoundUpdateRequestPayload struct {
-	roundtypes.BaseRoundPayload
-	EventType *roundtypes.EventType `json:"event_type,omitempty"`
+	RoundID     sharedtypes.RoundID     `json:"round_id"`
+	Title       roundtypes.Title        `json:"title,omitempty"`
+	Description *roundtypes.Description `json:"description,omitempty"`
+	Location    *roundtypes.Location    `json:"location,omitempty"`
+	StartTime   *sharedtypes.StartTime  `json:"start_time,omitempty"`
+	EventType   *roundtypes.EventType   `json:"event_type,omitempty"`
+	UserID      sharedtypes.DiscordID   `json:"user_id"`
 }
 
 type RoundUpdateValidatedPayload struct {
@@ -584,6 +591,27 @@ type ParticipantUpdatePayload interface {
 	GetUserID() sharedtypes.DiscordID
 	GetTagNumber() *sharedtypes.TagNumber
 	GetJoinedLate() *bool
+}
+
+type RoundUpdateInfo struct {
+	RoundID             sharedtypes.RoundID      `json:"round_id"`
+	EventMessageID      string                   `json:"event_message_id"`
+	Title               roundtypes.Title         `json:"title"`
+	StartTime           *sharedtypes.StartTime   `json:"start_time"`
+	Location            *roundtypes.Location     `json:"location"`
+	UpdatedParticipants []roundtypes.Participant `json:"updated_participants"`
+	ParticipantsChanged int                      `json:"participants_changed"`
+}
+
+type UpdateSummary struct {
+	TotalRoundsProcessed int `json:"total_rounds_processed"`
+	RoundsUpdated        int `json:"rounds_updated"`
+	ParticipantsUpdated  int `json:"participants_updated"`
+}
+
+type TagsUpdatedForScheduledRoundsPayload struct {
+	UpdatedRounds []RoundUpdateInfo `json:"updated_rounds"`
+	Summary       UpdateSummary     `json:"summary"`
 }
 
 // Implement the interface for ParticipantDeclinedPayload

@@ -5,18 +5,23 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 
+	// OTEL exporters
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+
+	// OTEL SDK
+	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type Provider struct {
@@ -27,62 +32,193 @@ type Provider struct {
 }
 
 func Setup(ctx context.Context, cfg Config) (*Provider, error) {
-	var shutdownFns []func(ctx context.Context) error
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: parseLogLevel(cfg), // helper function
-	}))
-
-	res, err := resource.New(ctx,
-		resource.WithAttributes(cfg.ResourceAttributes()...),
-		resource.WithFromEnv(),
-		resource.WithTelemetrySDK(),
-	)
+	// Create resource with attributes
+	res, err := resource.New(ctx, resource.WithAttributes(cfg.ResourceAttributes()...))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create resource: %w", err)
 	}
+
+	shutdownFuncs := []func(context.Context) error{}
 
 	// ========== Tracer ==========
 	var tracerProvider trace.TracerProvider = trace.NewNoopTracerProvider()
+
 	if cfg.TracingEnabled() {
 		tp, shutdown, err := setupTracing(ctx, cfg, res)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to setup tracing: %w", err)
 		}
 		tracerProvider = tp
-		shutdownFns = append(shutdownFns, shutdown)
+		shutdownFuncs = append(shutdownFuncs, shutdown)
 	}
+
+	otel.SetTracerProvider(tracerProvider)
 
 	// ========== Metrics ==========
 	var meterProvider metric.MeterProvider = noop.NewMeterProvider()
+
 	if cfg.MetricsEnabled() {
 		mp, shutdown, err := setupMetrics(ctx, cfg, res)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to setup metrics: %w", err)
 		}
 		meterProvider = mp
-		shutdownFns = append(shutdownFns, shutdown)
+		shutdownFuncs = append(shutdownFuncs, shutdown)
 	}
 
-	// You can forward logs to OTEL here in future via slog OTEL handler or bridge
+	otel.SetMeterProvider(meterProvider)
+
+	// ========== Logging ==========
+	logger, logShutdown, err := setupLogging(ctx, cfg, res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup logging: %w", err)
+	}
+	shutdownFuncs = append(shutdownFuncs, logShutdown)
+
+	// Combined shutdown function
+	shutdown := func(ctx context.Context) error {
+		for _, fn := range shutdownFuncs {
+			if err := fn(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 
 	return &Provider{
-		Logger:         logger,
 		TracerProvider: tracerProvider,
 		MeterProvider:  meterProvider,
-		Shutdown: func(ctx context.Context) error {
-			for _, fn := range shutdownFns {
-				_ = fn(ctx) // log errors if needed
-			}
-			return nil
-		},
+		Logger:         logger,
+		Shutdown:       shutdown,
 	}, nil
 }
 
+func setupLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
+	if cfg.LokiEnabled() {
+		// Use OTLP log exporter to send to Alloy, which forwards to Loki
+		return setupOTLPLogging(ctx, cfg, res)
+	}
+
+	// Fallback to stdout logging
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: parseLogLevel(cfg),
+	}))
+	logger = logger.With("service", cfg.ServiceName, "version", cfg.Version, "environment", cfg.Environment)
+
+	return logger, func(context.Context) error { return nil }, nil
+}
+
+func setupOTLPLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
+	// Create OTLP log exporter (sends to Alloy on 4317/4318)
+	exporter, err := otlploggrpc.New(ctx,
+		otlploggrpc.WithEndpoint(cfg.MetricsAddress), // Use same endpoint as metrics
+		otlploggrpc.WithInsecure(),
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)
+	}
+
+	// Create log processor
+	processor := sdklog.NewBatchProcessor(exporter)
+
+	// Create logger provider
+	loggerProvider := sdklog.NewLoggerProvider(
+		sdklog.WithResource(res),
+		sdklog.WithProcessor(processor),
+	)
+
+	// Create slog handler that uses OTEL
+	handler := NewOTELHandler(loggerProvider, cfg)
+	logger := slog.New(handler)
+
+	shutdown := func(ctx context.Context) error {
+		return loggerProvider.Shutdown(ctx)
+	}
+
+	return logger, shutdown, nil
+}
+
+// Custom slog handler that sends to OTEL
+type otelHandler struct {
+	loggerProvider *sdklog.LoggerProvider
+	level          slog.Level
+	attrs          []slog.Attr
+}
+
+func NewOTELHandler(provider *sdklog.LoggerProvider, cfg Config) slog.Handler {
+	return &otelHandler{
+		loggerProvider: provider,
+		level:          parseLogLevel(cfg),
+	}
+}
+
+func (h *otelHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= h.level
+}
+
+func (h *otelHandler) Handle(ctx context.Context, record slog.Record) error {
+	// Get logger from provider
+	logger := h.loggerProvider.Logger("frolf-bot")
+
+	// Convert slog to OTEL log record
+	var logRecord log.Record
+	logRecord.SetTimestamp(record.Time)
+	logRecord.SetBody(log.StringValue(record.Message))
+	logRecord.SetSeverity(convertLevel(record.Level))
+
+	// Add attributes
+	record.Attrs(func(attr slog.Attr) bool {
+		logRecord.AddAttributes(log.String(attr.Key, attr.Value.String()))
+		return true
+	})
+
+	// Add handler attrs
+	for _, attr := range h.attrs {
+		logRecord.AddAttributes(log.String(attr.Key, attr.Value.String()))
+	}
+
+	// Emit the log (no return value)
+	logger.Emit(ctx, logRecord)
+	return nil
+}
+
+func (h *otelHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	newAttrs := make([]slog.Attr, len(h.attrs)+len(attrs))
+	copy(newAttrs, h.attrs)
+	copy(newAttrs[len(h.attrs):], attrs)
+
+	return &otelHandler{
+		loggerProvider: h.loggerProvider,
+		level:          h.level,
+		attrs:          newAttrs,
+	}
+}
+
+func (h *otelHandler) WithGroup(name string) slog.Handler {
+	// For simplicity, ignore groups for now
+	return h
+}
+
+func convertLevel(level slog.Level) log.Severity {
+	switch level {
+	case slog.LevelDebug:
+		return log.SeverityDebug
+	case slog.LevelInfo:
+		return log.SeverityInfo
+	case slog.LevelWarn:
+		return log.SeverityWarn
+	case slog.LevelError:
+		return log.SeverityError
+	default:
+		return log.SeverityInfo
+	}
+}
+
 func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trace.TracerProvider, func(context.Context) error, error) {
+	// Your existing tracing setup using OTLP
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(cfg.TempoEndpoint),
-		otlptracegrpc.WithInsecure(), // optional: toggle for prod
+		otlptracegrpc.WithInsecure(),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -93,44 +229,23 @@ func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trac
 		sdktrace.WithResource(res),
 	)
 
-	otel.SetTracerProvider(tp)
 	return tp, tp.Shutdown, nil
 }
 
 func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metric.MeterProvider, func(context.Context) error, error) {
-	// Create a connection to the OTLP endpoint with proper timeouts
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	exporter, err := otlpmetricgrpc.New(ctxWithTimeout,
-		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress), // "alloy.observability:4317"
-		otlpmetricgrpc.WithInsecure(),                   // Only for non-production
-		otlpmetricgrpc.WithRetry(otlpmetricgrpc.RetryConfig{
-			Enabled:         true,
-			InitialInterval: 500 * time.Millisecond,
-			MaxInterval:     5 * time.Second,
-			MaxElapsedTime:  30 * time.Second,
-		}),
+	// Your existing metrics setup using OTLP
+	exporter, err := otlpmetricgrpc.New(ctx,
+		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress),
+		otlpmetricgrpc.WithInsecure(),
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create OTLP exporter: %w", err)
+		return nil, nil, err
 	}
 
-	// Configure the meter provider with periodic reading
-	reader := sdkmetric.NewPeriodicReader(
-		exporter,
-		sdkmetric.WithInterval(15*time.Second),
-	)
-
 	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
 		sdkmetric.WithResource(res),
-		sdkmetric.WithReader(reader),
 	)
 
-	otel.SetMeterProvider(mp)
-
-	// Return proper shutdown function
-	return mp, func(ctx context.Context) error {
-		return exporter.Shutdown(ctx)
-	}, nil
+	return mp, mp.Shutdown, nil
 }
