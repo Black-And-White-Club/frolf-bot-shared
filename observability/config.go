@@ -19,6 +19,10 @@ type Config struct {
 	TempoSampleRate float64
 }
 
+func (c Config) LokiEnabled() bool {
+	return c.LokiURL != ""
+}
+
 func (c Config) TracingEnabled() bool {
 	return c.TempoEndpoint != ""
 }

@@ -34,10 +34,12 @@ const (
 )
 
 type RoundUpdate struct {
-	RoundID        sharedtypes.RoundID
-	EventMessageID string
-	Participants   []Participant
+	RoundID        sharedtypes.RoundID `json:"round_id"`
+	EventMessageID string              `json:"event_message_id"`
+	Participants   []Participant       `json:"participants"`
+	Round          *Round              `json:"round,omitempty"`
 }
+
 type Participant struct {
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`

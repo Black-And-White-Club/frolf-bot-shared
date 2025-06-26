@@ -15,10 +15,16 @@ const (
 	// RoundTagLookupNotFound is the topic for the result when a tag number is not found.
 	RoundTagLookupNotFound = "round.tag.lookup.not.found"
 
+	// ADD THIS LINE:
+	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
+
 	DiscordTagLookUpByUserIDRequest  = "leaderboard.tag.lookup.by.user.id.request"
 	DiscordTagLookupByUserIDFailed   = "discord.leaderboard.tag.lookup.by.user.id.failed"
 	DiscordTagLookupByUserIDSuccess  = "discord.leaderboard.tag.lookup.by.user.id.success"
 	DiscordTagLookupByUserIDNotFound = "discord.leaderboard.tag.lookup.by.user.id.not.found"
+
+	// LeaderboardBatchTagAssignmentRequested is the topic for triggering batch tag updates to the leaderboard.
+	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
 )
 
 // RoundTagLookupRequestPayload is the payload for requesting a tag number lookup from the Leaderboard module.
@@ -47,9 +53,6 @@ type RoundTagLookupFailedPayload struct {
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	Reason  string                `json:"reason"`
 }
-
-// LeaderboardBatchTagAssignmentRequested is the topic for triggering batch tag updates to the leaderboard.
-const LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
 
 // TagAssignment represents a user and the tag number they should be assigned.
 type TagAssignmentInfo struct {

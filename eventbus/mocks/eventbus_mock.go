@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	eventbus "github.com/Black-And-White-Club/frolf-bot-shared/eventbus"
-	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 	message "github.com/ThreeDotsLabs/watermill/message"
 	nats "github.com/nats-io/nats.go"
 	jetstream "github.com/nats-io/nats.go/jetstream"
@@ -43,20 +42,6 @@ func NewMockEventBus(ctrl *gomock.Controller) *MockEventBus {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEventBus) EXPECT() *MockEventBusMockRecorder {
 	return m.recorder
-}
-
-// CancelScheduledMessage mocks base method.
-func (m *MockEventBus) CancelScheduledMessage(ctx context.Context, roundID sharedtypes.RoundID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelScheduledMessage", ctx, roundID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CancelScheduledMessage indicates an expected call of CancelScheduledMessage.
-func (mr *MockEventBusMockRecorder) CancelScheduledMessage(ctx, roundID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelScheduledMessage", reflect.TypeOf((*MockEventBus)(nil).CancelScheduledMessage), ctx, roundID)
 }
 
 // Close mocks base method.
@@ -129,20 +114,6 @@ func (mr *MockEventBusMockRecorder) GetNATSConnection() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNATSConnection", reflect.TypeOf((*MockEventBus)(nil).GetNATSConnection))
 }
 
-// ProcessDelayedMessages mocks base method.
-func (m *MockEventBus) ProcessDelayedMessages(ctx context.Context, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessDelayedMessages", ctx, roundID, scheduledTime)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ProcessDelayedMessages indicates an expected call of ProcessDelayedMessages.
-func (mr *MockEventBusMockRecorder) ProcessDelayedMessages(ctx, roundID, scheduledTime any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDelayedMessages", reflect.TypeOf((*MockEventBus)(nil).ProcessDelayedMessages), ctx, roundID, scheduledTime)
-}
-
 // Publish mocks base method.
 func (m *MockEventBus) Publish(topic string, messages ...*message.Message) error {
 	m.ctrl.T.Helper()
@@ -160,32 +131,6 @@ func (mr *MockEventBusMockRecorder) Publish(topic any, messages ...any) *gomock.
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{topic}, messages...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockEventBus)(nil).Publish), varargs...)
-}
-
-// RecoverScheduledRounds mocks base method.
-func (m *MockEventBus) RecoverScheduledRounds(ctx context.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecoverScheduledRounds", ctx)
-}
-
-// RecoverScheduledRounds indicates an expected call of RecoverScheduledRounds.
-func (mr *MockEventBusMockRecorder) RecoverScheduledRounds(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecoverScheduledRounds", reflect.TypeOf((*MockEventBus)(nil).RecoverScheduledRounds), ctx)
-}
-
-// ScheduleDelayedMessage mocks base method.
-func (m *MockEventBus) ScheduleDelayedMessage(ctx context.Context, originalSubject string, roundID sharedtypes.RoundID, scheduledTime sharedtypes.StartTime, payload []byte, additionalMetadata map[string]string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScheduleDelayedMessage", ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ScheduleDelayedMessage indicates an expected call of ScheduleDelayedMessage.
-func (mr *MockEventBusMockRecorder) ScheduleDelayedMessage(ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleDelayedMessage", reflect.TypeOf((*MockEventBus)(nil).ScheduleDelayedMessage), ctx, originalSubject, roundID, scheduledTime, payload, additionalMetadata)
 }
 
 // Subscribe mocks base method.

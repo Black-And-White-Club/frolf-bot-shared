@@ -16,11 +16,12 @@ const (
 // Leaderboard-related events
 const (
 	// Leaderboard Update
-	RoundFinalized             = "leaderboard.round.finalized"
-	LeaderboardUpdateRequested = "leaderboard.update.requested"
-	LeaderboardUpdated         = "discord.leaderboard.updated"
-	LeaderboardUpdateFailed    = "discord.leaderboard.update.failed"
-	DeactivateOldLeaderboard   = "leaderboard.deactivate"
+	RoundFinalized              = "leaderboard.round.finalized"
+	LeaderboardUpdateRequested  = "leaderboard.update.requested"
+	LeaderboardUpdated          = "discord.leaderboard.batch.tag.assigned"
+	LeaderboardUpdateFailed     = "discord.leaderboard.update.failed"
+	DeactivateOldLeaderboard    = "leaderboard.deactivate"
+	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
 
 	// Tag Assignment
 	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.requested"
@@ -101,6 +102,15 @@ type TagAssignmentRequestedPayload struct {
 	UpdateID   sharedtypes.RoundID    `json:"update_id"`
 	Source     string                 `json:"source"`
 	UpdateType string                 `json:"update_type"`
+}
+
+type LeaderboardTagAssignRequestPayload struct {
+	RequestorID      sharedtypes.DiscordID `json:"requestor_id"`
+	TagNumber        sharedtypes.TagNumber `json:"tag_number"`
+	ChannelID        string                `json:"channel_id"`
+	RequestID        string                `json:"request_id"`
+	InteractionToken string                `json:"interaction_token"`
+	GuildID          string                `json:"guild_id,omitempty"`
 }
 
 // LeaderboardUpdateRequestedPayload is the payload for the LeaderboardUpdateRequested event.
