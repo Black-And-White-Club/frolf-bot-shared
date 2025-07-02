@@ -67,37 +67,44 @@ type BaseEventPayload struct {
 
 // Payload types
 type CreateUserRequestedPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 }
 
 type UserSignupRequestPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 }
 
 type UserSignupFailedPayload struct {
+	sharedtypes.GuildID
 	Reason string `json:"reason"`
 }
 
 type UserCreatedPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 }
 
 type UserCreationFailedPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	Reason    string                 `json:"reason"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 }
 
 type UserRoleUpdateRequestPayload struct {
+	sharedtypes.GuildID
 	RequesterID sharedtypes.DiscordID    `json:"requester_id"`
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 }
 
-type UpdateUserRoleRequestedPayload struct { // DEPRECATED
+type UpdateUserRoleRequestedPayload struct {
+	sharedtypes.GuildID
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 	RequesterID sharedtypes.DiscordID    `json:"requester_id"`
@@ -105,6 +112,7 @@ type UpdateUserRoleRequestedPayload struct { // DEPRECATED
 
 // UserRoleUpdateResultPayload is the result of the role update operation (from backend).
 type UserRoleUpdateResultPayload struct {
+	sharedtypes.GuildID
 	UserID  sharedtypes.DiscordID    `json:"user_id"`
 	Role    sharedtypes.UserRoleEnum `json:"role"`
 	Success bool                     `json:"success"`
@@ -113,51 +121,61 @@ type UserRoleUpdateResultPayload struct {
 
 // DEPRECATED, going to use UserRoleUpdateResultPayload
 type UserRoleUpdatedPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID    `json:"user_id"`
 	Role   sharedtypes.UserRoleEnum `json:"role"`
 }
 
 // DEPRECATED, going to use UserRoleUpdateResultPayload
 type UserRoleUpdateFailedPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID    `json:"user_id"`
 	Role   sharedtypes.UserRoleEnum `json:"role"`
 	Reason string                   `json:"reason"`
 }
 
 type GetUserRoleRequestPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID `json:"user_id"`
 }
 
 type GetUserRoleResponsePayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID    `json:"user_id"`
 	Role   sharedtypes.UserRoleEnum `json:"role"`
 }
 
 type GetUserRoleFailedPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID `json:"user_id"`
 	Reason string                `json:"reason"`
 }
 
 type GetUserRequestPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID `json:"user_id"`
 }
 
 type GetUserResponsePayload struct {
+	sharedtypes.GuildID
 	User *usertypes.UserData `json:"user"`
 }
 
 type GetUserFailedPayload struct {
+	sharedtypes.GuildID
 	UserID sharedtypes.DiscordID `json:"user_id"`
 	Reason string                `json:"reason"`
 }
 
 type UserPermissionsCheckRequestPayload struct {
+	sharedtypes.GuildID
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 	RequesterID sharedtypes.DiscordID    `json:"requester_id"`
 }
 
 type UserPermissionsCheckResponsePayload struct {
+	sharedtypes.GuildID
 	HasPermission bool                     `json:"has_permission"`
 	UserID        sharedtypes.DiscordID    `json:"user_id"`
 	Role          sharedtypes.UserRoleEnum `json:"role"`
@@ -165,6 +183,7 @@ type UserPermissionsCheckResponsePayload struct {
 }
 
 type UserPermissionsCheckFailedPayload struct {
+	sharedtypes.GuildID
 	Reason      string                   `json:"reason"`
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
@@ -173,29 +192,34 @@ type UserPermissionsCheckFailedPayload struct {
 
 // TagAvailabilityCheckRequestedPayload is the payload for the TagAvailabilityCheckRequested event.
 type TagAvailabilityCheckRequestedPayload struct {
+	sharedtypes.GuildID
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 }
 
 // TagAvailablePayload is the payload for the TagAvailable event.
 type TagAvailablePayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 }
 
 // TagUnavailablePayload is the payload for the TagUnavailable event.
 type TagUnavailablePayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 	Reason    string                `json:"reason"`
 }
 
 type TagAssignmentRequestedPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 }
 
 type TagAssignedForUserCreationPayload struct {
+	sharedtypes.GuildID
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 }

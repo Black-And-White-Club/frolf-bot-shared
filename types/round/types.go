@@ -59,6 +59,7 @@ type Round struct {
 	State          RoundState             `json:"state"`
 	Participants   []Participant          `json:"participants"`
 	EventMessageID string                 `json:"event_message_id"`
+	GuildID        sharedtypes.GuildID    `json:"guild_id"`
 }
 
 const DefaultEventType = EventType("casual")
