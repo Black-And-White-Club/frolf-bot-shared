@@ -15,4 +15,10 @@ type guildMetrics struct {
 	operationSuccessCounter metric.Int64Counter
 	operationFailureCounter metric.Int64Counter
 	operationDuration       metric.Float64Histogram
+
+	// --- Handler Metrics ---
+	handlerAttemptCounter metric.Int64Counter
+	handlerSuccessCounter metric.Int64Counter
+	handlerFailureCounter metric.Int64Counter
+	handlerDuration       metric.Float64Histogram
 }

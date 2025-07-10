@@ -590,7 +590,7 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score"}
+		streams = []string{"user", "leaderboard", "round", "score", "guild"}
 	case "discord":
 		streams = []string{"discord", "guild"}
 	default:

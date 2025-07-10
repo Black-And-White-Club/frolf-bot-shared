@@ -25,28 +25,28 @@ const (
 
 // ProcessRoundScoresRequestPayload is the payload for the ProcessRoundScoresRequest event.
 type ProcessRoundScoresRequestPayload struct {
-	sharedtypes.GuildID
+	GuildID sharedtypes.GuildID     `json:"guild_id"`
 	RoundID sharedtypes.RoundID     `json:"round_id"`
 	Scores  []sharedtypes.ScoreInfo `json:"scores"`
 }
 
 // ProcessRoundScoresSuccessPayload is the payload for the ProcessRoundScoresSuccess event.
 type ProcessRoundScoresSuccessPayload struct {
-	sharedtypes.GuildID
+	GuildID     sharedtypes.GuildID      `json:"guild_id"`
 	RoundID     sharedtypes.RoundID      `json:"round_id"`
 	TagMappings []sharedtypes.TagMapping `json:"tag_mappings"`
 }
 
 // ProcessRoundScoresFailurePayload is the payload for the ProcessRoundScoresFailure event.
 type ProcessRoundScoresFailurePayload struct {
-	sharedtypes.GuildID
+	GuildID sharedtypes.GuildID `json:"guild_id"`
 	RoundID sharedtypes.RoundID `json:"round_id"`
 	Error   string              `json:"error"`
 }
 
 // ScoreUpdateRequestPayload is the payload for the ScoreUpdateRequest event.
 type ScoreUpdateRequestPayload struct {
-	sharedtypes.GuildID
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	Score     sharedtypes.Score      `json:"score"`
@@ -55,7 +55,7 @@ type ScoreUpdateRequestPayload struct {
 
 // ScoreUpdateSuccessPayload is the payload for successful score updates.
 type ScoreUpdateSuccessPayload struct {
-	sharedtypes.GuildID
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	Score   sharedtypes.Score     `json:"score"`
@@ -63,7 +63,7 @@ type ScoreUpdateSuccessPayload struct {
 
 // ScoreUpdateFailurePayload is the payload for failed score updates.
 type ScoreUpdateFailurePayload struct {
-	sharedtypes.GuildID
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	Error   string                `json:"error"`
