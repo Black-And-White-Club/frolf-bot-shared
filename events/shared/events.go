@@ -7,7 +7,7 @@ import (
 
 // ScopedGuildID can be embedded to ensure all events include a GuildID for multi-tenancy.
 type ScopedGuildID struct {
-	GuildID string `json:"guild_id"`
+	GuildID sharedtypes.GuildID `json:"guild_id"`
 }
 
 const (
