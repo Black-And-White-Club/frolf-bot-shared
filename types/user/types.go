@@ -35,8 +35,8 @@ func (u UserData) GetRole() sharedtypes.UserRoleEnum {
 // ParseUserRoleEnum converts a string to a UserRoleEnum.
 func ParseUserRoleEnum(role string) (sharedtypes.UserRoleEnum, error) {
 	switch role {
-	case "Rattler":
-		return sharedtypes.UserRoleRattler, nil
+	case "User":
+		return sharedtypes.UserRoleUser, nil
 	case "Editor":
 		return sharedtypes.UserRoleEditor, nil
 	case "Admin":

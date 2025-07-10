@@ -5,6 +5,11 @@ import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
+// ScopedGuildID can be embedded to ensure all events include a GuildID for multi-tenancy.
+type ScopedGuildID struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+}
+
 const (
 	// RoundTagLookupRequest is the topic for requesting a tag number lookup from the Leaderboard module.
 	RoundTagLookupRequest = "round.tag.lookup.request"
@@ -15,7 +20,6 @@ const (
 	// RoundTagLookupNotFound is the topic for the result when a tag number is not found.
 	RoundTagLookupNotFound = "round.tag.lookup.not.found"
 
-	// ADD THIS LINE:
 	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
 
 	DiscordTagLookUpByUserIDRequest  = "leaderboard.tag.lookup.by.user.id.request"
@@ -30,6 +34,7 @@ const (
 // RoundTagLookupRequestPayload is the payload for requesting a tag number lookup from the Leaderboard module.
 // Published by the Round module, consumed by the Leaderboard module.
 type RoundTagLookupRequestPayload struct {
+	ScopedGuildID
 	UserID     sharedtypes.DiscordID `json:"user_id"`
 	RoundID    sharedtypes.RoundID   `json:"round_id"`
 	Response   roundtypes.Response   `json:"response"`
@@ -39,6 +44,7 @@ type RoundTagLookupRequestPayload struct {
 // RoundTagLookupResultPayload is the payload for the result of a tag number lookup request.
 // Published by the Leaderboard module, consumed by the Round module.
 type RoundTagLookupResultPayload struct {
+	ScopedGuildID
 	UserID             sharedtypes.DiscordID  `json:"user_id"`
 	RoundID            sharedtypes.RoundID    `json:"round_id"`
 	TagNumber          *sharedtypes.TagNumber `json:"tag_number,omitempty"`
@@ -49,6 +55,7 @@ type RoundTagLookupResultPayload struct {
 }
 
 type RoundTagLookupFailedPayload struct {
+	ScopedGuildID
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	Reason  string                `json:"reason"`
@@ -56,23 +63,26 @@ type RoundTagLookupFailedPayload struct {
 
 // TagAssignment represents a user and the tag number they should be assigned.
 type TagAssignmentInfo struct {
-	UserID    sharedtypes.DiscordID
-	TagNumber sharedtypes.TagNumber
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 }
 
 // BatchTagAssignmentRequestedPayload is published by the score module after processing a round.
 type BatchTagAssignmentRequestedPayload struct {
-	RequestingUserID sharedtypes.DiscordID
-	BatchID          string
-	Assignments      []TagAssignmentInfo
+	ScopedGuildID
+	RequestingUserID sharedtypes.DiscordID `json:"requester_user_id"`
+	BatchID          string                `json:"batch_id"`
+	Assignments      []TagAssignmentInfo   `json:"assignments"`
 }
 
 type DiscordTagLookupRequestPayload struct {
+	ScopedGuildID
 	RequestingUserID sharedtypes.DiscordID `json:"requester_user_id"`
 	UserID           sharedtypes.DiscordID `json:"user_id"`
 }
 
 type DiscordTagLookupResultPayload struct {
+	ScopedGuildID
 	RequestingUserID sharedtypes.DiscordID  `json:"requester_user_id"`
 	UserID           sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber        *sharedtypes.TagNumber `json:"tag_number,omitempty"`
@@ -80,6 +90,7 @@ type DiscordTagLookupResultPayload struct {
 }
 
 type DiscordTagLookupByUserIDFailedPayload struct {
+	ScopedGuildID
 	RequestingUserID sharedtypes.DiscordID `json:"requester_user_id"`
 	UserID           sharedtypes.DiscordID `json:"user_id"`
 	Reason           string                `json:"reason"`

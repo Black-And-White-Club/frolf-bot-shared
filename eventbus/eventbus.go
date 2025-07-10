@@ -269,6 +269,8 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		streamName = "score"
 	case strings.HasPrefix(topic, "discord."):
 		streamName = "discord"
+	case strings.HasPrefix(topic, "guild."):
+		streamName = "guild"
 	default:
 		ctxLogger.Error("Failed to subscribe to topic", "error", "unknown topic prefix")
 		return nil, fmt.Errorf("unknown topic: %s", topic)
@@ -536,6 +538,8 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		subjects = []string{"score.>"}
 	case "discord":
 		subjects = []string{"discord.>"}
+	case "guild":
+		subjects = []string{"guild.>"}
 	default:
 		ctxLogger.Error("Failed to create stream", "error", "unknown stream name")
 		return fmt.Errorf("unknown stream name: %s", streamName)
@@ -586,9 +590,9 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score"} // REMOVED "delayed"
+		streams = []string{"user", "leaderboard", "round", "score", "guild"}
 	case "discord":
-		streams = []string{"discord"}
+		streams = []string{"discord", "guild"}
 	default:
 		ctxLogger.Error("Failed to create streams for app", "error", "unknown app type")
 		return fmt.Errorf("unknown app type: %s", appType)

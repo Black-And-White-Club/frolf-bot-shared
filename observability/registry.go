@@ -8,6 +8,7 @@ import (
 
 	discordmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/discord"
 	eventbusmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/eventbus"
+	guildmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/guild"
 	leaderboardmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/leaderboard"
 	roundmetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/round"
 	scoremetrics "github.com/Black-And-White-Club/frolf-bot-shared/observability/otel/metrics/score"
@@ -26,6 +27,7 @@ type Registry struct {
 	LeaderboardMetrics leaderboardmetrics.LeaderboardMetrics
 	EventBusMetrics    eventbusmetrics.EventBusMetrics
 	DiscordMetrics     discordmetrics.DiscordMetrics
+	GuildMetrics       guildmetrics.GuildMetrics
 }
 
 func NewRegistry(provider *Provider, cfg Config) *Registry {
@@ -38,6 +40,7 @@ func NewRegistry(provider *Provider, cfg Config) *Registry {
 	leaderboardMetrics := leaderboardmetrics.NewNoop()
 	eventbusMetrics := eventbusmetrics.NewNoop()
 	discordMetrics := discordmetrics.NewNoop()
+	guildMetrics := guildmetrics.NewNoop()
 
 	if cfg.MetricsEnabled() {
 		userMetrics, _ = usermetrics.NewUserMetrics(meter, cfg.ServiceName)
@@ -46,6 +49,7 @@ func NewRegistry(provider *Provider, cfg Config) *Registry {
 		leaderboardMetrics, _ = leaderboardmetrics.NewLeaderboardMetrics(meter, cfg.ServiceName)
 		eventbusMetrics, _ = eventbusmetrics.NewEventBusMetrics(meter, cfg.ServiceName)
 		discordMetrics, _ = discordmetrics.NewDiscordMetrics(meter, cfg.ServiceName)
+		guildMetrics, _ = guildmetrics.NewGuildMetrics(meter, cfg.ServiceName)
 	}
 
 	return &Registry{
@@ -59,5 +63,6 @@ func NewRegistry(provider *Provider, cfg Config) *Registry {
 		LeaderboardMetrics: leaderboardMetrics,
 		EventBusMetrics:    eventbusMetrics,
 		DiscordMetrics:     discordMetrics,
+		GuildMetrics:       guildMetrics,
 	}
 }

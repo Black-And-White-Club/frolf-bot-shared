@@ -70,12 +70,14 @@ const (
 
 // RoundFinalizedPayload is the payload for the RoundFinalized event.
 type RoundFinalizedPayload struct {
+	GuildID               sharedtypes.GuildID `json:"guild_id"`
 	RoundID               sharedtypes.RoundID `json:"round_id"`
 	SortedParticipantTags TagOrder            `json:"sorted_participant_tags"` // Slice of "tag:UserID" strings
 }
 
 // TagAssignedPayload is the payload for the TagAssigned event.
 type TagAssignedPayload struct {
+	GuildID      sharedtypes.GuildID    `json:"guild_id"`
 	UserID       sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber    *sharedtypes.TagNumber `json:"tag_number"`
 	AssignmentID sharedtypes.RoundID    `json:"assignment_id"`
@@ -84,6 +86,7 @@ type TagAssignedPayload struct {
 
 // TagAvailablePayload is the payload for the TagAvailable event.
 type TagAvailablePayload struct {
+	GuildID      sharedtypes.GuildID    `json:"guild_id"`
 	UserID       sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber    *sharedtypes.TagNumber `json:"tag_number"`
 	AssignmentID string                 `json:"assignment_id"`
@@ -91,12 +94,15 @@ type TagAvailablePayload struct {
 
 // TagUnavailablePayload is the payload for the TagUnavailable event.
 type TagUnavailablePayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	Reason    string                 `json:"reason"` // Reason why the tag is unavailable
 }
 
 // TagAssignmentRequestedPayload is the payload for the TagAssignmentRequested event.
 type TagAssignmentRequestedPayload struct {
+	GuildID    sharedtypes.GuildID    `json:"guild_id"`
 	UserID     sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
 	UpdateID   sharedtypes.RoundID    `json:"update_id"`
@@ -105,16 +111,17 @@ type TagAssignmentRequestedPayload struct {
 }
 
 type LeaderboardTagAssignRequestPayload struct {
+	GuildID          sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID      sharedtypes.DiscordID `json:"requestor_id"`
 	TagNumber        sharedtypes.TagNumber `json:"tag_number"`
 	ChannelID        string                `json:"channel_id"`
 	RequestID        string                `json:"request_id"`
 	InteractionToken string                `json:"interaction_token"`
-	GuildID          string                `json:"guild_id,omitempty"`
 }
 
 // LeaderboardUpdateRequestedPayload is the payload for the LeaderboardUpdateRequested event.
 type LeaderboardUpdateRequestedPayload struct {
+	GuildID               sharedtypes.GuildID `json:"guild_id"`
 	RoundID               sharedtypes.RoundID `json:"round_id"`
 	SortedParticipantTags []string            `json:"sorted_participant_tags"`
 	Source                string              `json:"source"`    // "round", "manual"
@@ -123,6 +130,7 @@ type LeaderboardUpdateRequestedPayload struct {
 
 // LeaderboardUpdatedPayload is the payload for the LeaderboardUpdated event.
 type LeaderboardUpdatedPayload struct {
+	GuildID         sharedtypes.GuildID                             `json:"guild_id"`
 	LeaderboardID   int64                                           `json:"leaderboard_id"`
 	RoundID         sharedtypes.RoundID                             `json:"round_id"`
 	LeaderboardData map[sharedtypes.TagNumber]sharedtypes.DiscordID `json:"leaderboard_data"`
@@ -130,17 +138,20 @@ type LeaderboardUpdatedPayload struct {
 
 // LeaderboardUpdateFailedPayload is the payload for the LeaderboardUpdateFailed event.
 type LeaderboardUpdateFailedPayload struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
 	RoundID sharedtypes.RoundID `json:"round_id"`
 	Reason  string              `json:"reason"` // Reason for the failure
 }
 
 // DeactivateOldLeaderboardPayload is the payload for the DeactivateOldLeaderboard event.
 type DeactivateOldLeaderboardPayload struct {
-	LeaderboardID int64 `json:"leaderboard_id"`
+	GuildID       sharedtypes.GuildID `json:"guild_id"`
+	LeaderboardID int64               `json:"leaderboard_id"`
 }
 
 // TagAssignmentFailedPayload is the payload for the TagAssignmentFailed event.
 type TagAssignmentFailedPayload struct {
+	GuildID    sharedtypes.GuildID    `json:"guild_id"`
 	UserID     sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
 	Source     string                 `json:"source"`
@@ -150,13 +161,16 @@ type TagAssignmentFailedPayload struct {
 
 // TagAvailabilityCheckResultPayload is the payload for the result of a tag availability check.
 type TagAvailabilityCheckResultPayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	Available bool                   `json:"tag_available"`
+	Reason    string                 `json:"reason,omitempty"` // Reason for unavailability (empty if available)
 }
 
 // TagAvailabilityCheckFailedPayload is the payload for the failure of a tag availability check.
 type TagAvailabilityCheckFailedPayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	Reason    string                 `json:"reason"`
@@ -164,18 +178,21 @@ type TagAvailabilityCheckFailedPayload struct {
 
 // TagSwapRequestedPayload is the payload for the TagSwapRequested event.
 type TagSwapRequestedPayload struct {
+	GuildID     sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	TargetID    sharedtypes.DiscordID `json:"target_id"`
 }
 
 // TagSwapInitiatedPayload is the payload for the TagSwapInitiated event.
 type TagSwapInitiatedPayload struct {
+	GuildID     sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	TargetID    sharedtypes.DiscordID `json:"target_id"`
 }
 
 // TagSwapFailedPayload is the payload for the TagSwapFailed event.
 type TagSwapFailedPayload struct {
+	GuildID     sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	TargetID    sharedtypes.DiscordID `json:"target_id"`
 	Reason      string                `json:"reason"`
@@ -183,40 +200,42 @@ type TagSwapFailedPayload struct {
 
 // TagSwapProcessedPayload is the payload for the TagSwapProcessed event.
 type TagSwapProcessedPayload struct {
+	GuildID     sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	TargetID    sharedtypes.DiscordID `json:"target_id"`
 }
 
 // GetLeaderboardRequestPayload is the payload for the GetLeaderboardRequest event.
-type GetLeaderboardRequestPayload struct{} // Empty, as no data is needed for this request
-
-// // LeaderboardEntry represents an entry on the leaderboard.
-// type LeaderboardEntry struct {
-// 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-// 	UserID    sharedtypes.DiscordID  `json:"user_id"`
-// }
+type GetLeaderboardRequestPayload struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+}
 
 // GetLeaderboardResponsePayload is the payload for the GetLeaderboardResponse event.
 type GetLeaderboardResponsePayload struct {
+	GuildID     sharedtypes.GuildID              `json:"guild_id"`
 	Leaderboard leaderboardtypes.LeaderboardData `json:"leaderboard"`
 }
 type SoloTagNumberRequestPayload struct {
-	UserID sharedtypes.DiscordID `json:"user_id"`
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
 }
 
 type SoloTagNumberResponsePayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 }
 
 // GetTagByUserIDRequestPayload is the payload for the GetTagByUserIDRequest event.
 type TagNumberRequestPayload struct {
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 }
 
 // GetTagByUserIDResponsePayload is the payload for the GetTagByUserIDResponse event.
 type GetTagNumberResponsePayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
@@ -225,6 +244,7 @@ type GetTagNumberResponsePayload struct {
 
 // TagAvailabilityCheckRequestedPayload is the payload for the TagAvailabilityCheckRequested event.
 type TagAvailabilityCheckRequestedPayload struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 }
@@ -235,26 +255,31 @@ type TagAvailabilityCheckRequestedPayload struct {
 type TagOrder []string
 
 type GetLeaderboardFailedPayload struct {
-	Reason string `json:"reason"` // Reason for the failure
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	Reason  string              `json:"reason"` // Reason for the failure
 }
 
 // GetTagNumberFailedPayload is the payload for the GetTagNumberFailed event.
 type GetTagNumberFailedPayload struct {
-	Reason string `json:"reason"` // Reason for the failure
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	Reason  string              `json:"reason"` // Reason for the failure
 }
 
 type BatchTagAssignmentRequestedPayload struct {
+	GuildID          sharedtypes.GuildID `json:"guild_id"`
 	RequestingUserID sharedtypes.DiscordID
 	BatchID          string
 	Assignments      []TagAssignmentInfo
 }
 
 type TagAssignmentInfo struct {
+	GuildID   sharedtypes.GuildID `json:"guild_id"`
 	UserID    sharedtypes.DiscordID
 	TagNumber sharedtypes.TagNumber
 }
 
 type BatchTagAssignedPayload struct {
+	GuildID          sharedtypes.GuildID `json:"guild_id"`
 	RequestingUserID sharedtypes.DiscordID
 	BatchID          string
 	AssignmentCount  int
@@ -262,6 +287,7 @@ type BatchTagAssignedPayload struct {
 }
 
 type BatchTagAssignmentFailedPayload struct {
+	GuildID          sharedtypes.GuildID `json:"guild_id"`
 	RequestingUserID sharedtypes.DiscordID
 	BatchID          string
 	Reason           string

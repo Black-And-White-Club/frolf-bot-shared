@@ -13,6 +13,8 @@ import (
 // DiscordID defines a custom type for Discord IDs.
 type DiscordID string
 
+type GuildID string
+
 var userIDRegex = regexp.MustCompile(`^[0-9]+$`) // Matches one or more digits
 
 // IsValid checks if the DiscordID is valid (contains only numbers).
@@ -80,7 +82,7 @@ type UserRoleEnum string
 // Constants for user roles
 const (
 	UserRoleUnknown UserRoleEnum = ""
-	UserRoleRattler UserRoleEnum = "Rattler"
+	UserRoleUser    UserRoleEnum = "User"
 	UserRoleEditor  UserRoleEnum = "Editor"
 	UserRoleAdmin   UserRoleEnum = "Admin"
 )
@@ -88,7 +90,7 @@ const (
 // IsValid checks if the given role is valid.
 func (ur UserRoleEnum) IsValid() bool {
 	switch ur {
-	case UserRoleRattler, UserRoleEditor, UserRoleAdmin:
+	case UserRoleUser, UserRoleEditor, UserRoleAdmin:
 		return true
 	default:
 		return false
