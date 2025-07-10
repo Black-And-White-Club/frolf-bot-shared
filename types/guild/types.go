@@ -9,7 +9,7 @@ import (
 )
 
 type GuildConfig struct {
-	GuildID              sharedtypes.GuildID
+	GuildID              sharedtypes.GuildID `json:"guild_id"`
 	SignupChannelID      string
 	SignupMessageID      string
 	EventChannelID       string
