@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+# macOS
+.DS_Store
+
+# Build artifacts
+bin/
+
+# Reports
+reports/
