@@ -3,6 +3,7 @@ package leaderboardevents
 import (
 	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
+	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 )
 
 // Stream names
@@ -134,6 +135,7 @@ type LeaderboardUpdatedPayload struct {
 	LeaderboardID   int64                                           `json:"leaderboard_id"`
 	RoundID         sharedtypes.RoundID                             `json:"round_id"`
 	LeaderboardData map[sharedtypes.TagNumber]sharedtypes.DiscordID `json:"leaderboard_data"`
+	Config          *sharedevents.GuildConfigFragment               `json:"config_fragment,omitempty"`
 }
 
 // LeaderboardUpdateFailedPayload is the payload for the LeaderboardUpdateFailed event.
@@ -157,6 +159,7 @@ type TagAssignmentFailedPayload struct {
 	Source     string                 `json:"source"`
 	UpdateType string                 `json:"update_type"`
 	Reason     string                 `json:"reason"`
+	Config     *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 // TagAvailabilityCheckResultPayload is the payload for the result of a tag availability check.
@@ -203,6 +206,7 @@ type TagSwapProcessedPayload struct {
 	GuildID     sharedtypes.GuildID   `json:"guild_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	TargetID    sharedtypes.DiscordID `json:"target_id"`
+	Config      *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 // GetLeaderboardRequestPayload is the payload for the GetLeaderboardRequest event.
@@ -284,6 +288,7 @@ type BatchTagAssignedPayload struct {
 	BatchID          string
 	AssignmentCount  int
 	Assignments      []TagAssignmentInfo
+	Config           *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type BatchTagAssignmentFailedPayload struct {

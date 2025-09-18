@@ -254,6 +254,11 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	ctxLogger = ctxLogger.With("app_type", appType)
 
 	consumerName := fmt.Sprintf("%s-consumer-%s", appType, sanitizeForNATS(topic))
+	if v := ctx.Value("eventbus_consumer_name"); v != nil {
+		if s, ok := v.(string); ok && s != "" {
+			consumerName = s
+		}
+	}
 	ctxLogger = ctxLogger.With("consumer_name", consumerName)
 
 	// Determine stream name based on topic
@@ -315,7 +320,10 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	)
 	consInfoAttrs.Info("Consumer created with retry configuration")
 
-	messages := make(chan *message.Message)
+	// Use a buffered channel so early-arriving messages (published before the router's handler goroutines start
+	// reading) don't block the JetStream consumer send and trigger context cancellation. A modest buffer
+	// prevents backpressure races observed when Discord events are published immediately at startup.
+	messages := make(chan *message.Message, 128)
 	sub, err := cons.Messages()
 	if err != nil {
 		ctxLogger.Error("Failed to start consumer", "error", err)
@@ -590,7 +598,7 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score", "guild"}
+		streams = []string{"user", "leaderboard", "round", "score"}
 	case "discord":
 		streams = []string{"discord", "guild"}
 	default:

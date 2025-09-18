@@ -1,6 +1,7 @@
 package roundevents
 
 import (
+	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
@@ -151,16 +152,19 @@ type RoundDateTimeParsedPayload struct {
 type RoundScheduledPayload struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 	roundtypes.BaseRoundPayload
-	EventMessageID string `json:"discord_message_id"`
+	EventMessageID string                            `json:"discord_message_id"`
+	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
+	ChannelID      string                            `json:"channel_id,omitempty"`
 }
 
 type RoundStartedPayload struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	RoundID   sharedtypes.RoundID    `json:"round_id"`
-	Title     roundtypes.Title       `json:"title"`
-	Location  *roundtypes.Location   `json:"location"`
-	StartTime *sharedtypes.StartTime `json:"start_time"`
-	ChannelID string                 `json:"channel_id"`
+	GuildID   sharedtypes.GuildID               `json:"guild_id"`
+	RoundID   sharedtypes.RoundID               `json:"round_id"`
+	Title     roundtypes.Title                  `json:"title"`
+	Location  *roundtypes.Location              `json:"location"`
+	StartTime *sharedtypes.StartTime            `json:"start_time"`
+	ChannelID string                            `json:"channel_id"`
+	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type TagLookupRequestPayload struct {
@@ -180,6 +184,7 @@ type RoundFinalizedEmbedUpdatePayload struct {
 	Participants     []roundtypes.Participant `json:"participants"`
 	EventMessageID   string                   `json:"discord_message_id"`
 	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
+	// Removed duplicate GuildID field
 }
 
 // ---- Round Creation Payloads ----
@@ -196,21 +201,24 @@ type RoundValidationFailedPayload struct {
 }
 
 type RoundEntityCreatedPayload struct {
-	GuildID          sharedtypes.GuildID `json:"guild_id"`
-	Round            roundtypes.Round    `json:"round"`
-	DiscordChannelID string              `json:"discord_channel_id"`
-	DiscordGuildID   string              `json:"discord_guild_id"`
+	GuildID          sharedtypes.GuildID               `json:"guild_id"`
+	Round            roundtypes.Round                  `json:"round"`
+	DiscordChannelID string                            `json:"discord_channel_id"`
+	DiscordGuildID   string                            `json:"discord_guild_id"`
+	Config           *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type RoundStoredPayload struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
-	Round   roundtypes.Round    `json:"round"`
+	GuildID sharedtypes.GuildID               `json:"guild_id"`
+	Round   roundtypes.Round                  `json:"round"`
+	Config  *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type RoundCreatedPayload struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 	roundtypes.BaseRoundPayload
-	ChannelID string `json:"channel_id"`
+	ChannelID string                            `json:"channel_id"`
+	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type RoundCreationFailedPayload struct {
@@ -350,12 +358,13 @@ type RoundParticipant struct {
 }
 
 type ParticipantJoinRequestPayload struct {
-	GuildID    sharedtypes.GuildID    `json:"guild_id"`
-	RoundID    sharedtypes.RoundID    `json:"round_id"`
-	UserID     sharedtypes.DiscordID  `json:"user_id"`
-	Response   roundtypes.Response    `json:"response"`
-	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
-	JoinedLate *bool                  `json:"joined_late,omitempty"`
+	GuildID    sharedtypes.GuildID               `json:"guild_id"`
+	RoundID    sharedtypes.RoundID               `json:"round_id"`
+	UserID     sharedtypes.DiscordID             `json:"user_id"`
+	Response   roundtypes.Response               `json:"response"`
+	TagNumber  *sharedtypes.TagNumber            `json:"tag_number"`
+	JoinedLate *bool                             `json:"joined_late,omitempty"`
+	Config     *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 type ParticipantJoinValidatedPayload struct {
 	GuildID                       sharedtypes.GuildID           `json:"guild_id"`
@@ -389,13 +398,14 @@ type ParticipantRemovalRequestPayload struct {
 }
 
 type ParticipantRemovedPayload struct {
-	GuildID               sharedtypes.GuildID      `json:"guild_id"`
-	RoundID               sharedtypes.RoundID      `json:"round_id"`
-	UserID                sharedtypes.DiscordID    `json:"user_id"`
-	AcceptedParticipants  []roundtypes.Participant `json:"accepted_participants"`
-	DeclinedParticipants  []roundtypes.Participant `json:"declined_participants"`
-	TentativeParticipants []roundtypes.Participant `json:"tentative_participants"`
-	EventMessageID        string                   `json:"discord_message_id"`
+	GuildID               sharedtypes.GuildID               `json:"guild_id"`
+	RoundID               sharedtypes.RoundID               `json:"round_id"`
+	UserID                sharedtypes.DiscordID             `json:"user_id"`
+	AcceptedParticipants  []roundtypes.Participant          `json:"accepted_participants"`
+	DeclinedParticipants  []roundtypes.Participant          `json:"declined_participants"`
+	TentativeParticipants []roundtypes.Participant          `json:"tentative_participants"`
+	EventMessageID        string                            `json:"discord_message_id"`
+	Config                *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type ParticipantJoinValidationRequestPayload struct {
@@ -406,20 +416,22 @@ type ParticipantJoinValidationRequestPayload struct {
 }
 
 type ParticipantJoinedPayload struct {
-	GuildID               sharedtypes.GuildID      `json:"guild_id"`
-	RoundID               sharedtypes.RoundID      `json:"round_id"`
-	AcceptedParticipants  []roundtypes.Participant `jsonb:"accepted_participants"`
-	DeclinedParticipants  []roundtypes.Participant `jsonb:"declined_participants"`
-	TentativeParticipants []roundtypes.Participant `jsonb:"tentative_participants"`
-	EventMessageID        string                   `json:"discord_message_id"`
-	JoinedLate            *bool                    `json:"joined_late,omitempty"`
+	GuildID               sharedtypes.GuildID               `json:"guild_id"`
+	RoundID               sharedtypes.RoundID               `json:"round_id"`
+	AcceptedParticipants  []roundtypes.Participant          `jsonb:"accepted_participants"`
+	DeclinedParticipants  []roundtypes.Participant          `jsonb:"declined_participants"`
+	TentativeParticipants []roundtypes.Participant          `jsonb:"tentative_participants"`
+	EventMessageID        string                            `json:"discord_message_id"`
+	JoinedLate            *bool                             `json:"joined_late,omitempty"`
+	Config                *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type ParticipantDeclinedPayload struct {
-	GuildID        sharedtypes.GuildID   `json:"guild_id"`
-	RoundID        sharedtypes.RoundID   `json:"round_id"`
-	UserID         sharedtypes.DiscordID `json:"user_id"`
-	EventMessageID string                `json:"discord_message_id"`
+	GuildID        sharedtypes.GuildID               `json:"guild_id"`
+	RoundID        sharedtypes.RoundID               `json:"round_id"`
+	UserID         sharedtypes.DiscordID             `json:"user_id"`
+	EventMessageID string                            `json:"discord_message_id"`
+	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 // ParticipantStatusCheckErrorPayload holds data for errors during participant status check.
@@ -469,21 +481,23 @@ type ScoreUpdateValidatedPayload struct {
 }
 
 type ParticipantScoreUpdatedPayload struct {
-	GuildID        sharedtypes.GuildID      `json:"guild_id"`
-	RoundID        sharedtypes.RoundID      `json:"round_id"`
-	Participant    sharedtypes.DiscordID    `json:"participant"`
-	Score          sharedtypes.Score        `json:"score"`
-	ChannelID      string                   `json:"channel_id"`
-	EventMessageID string                   `json:"discord_message_id"`
-	Participants   []roundtypes.Participant `json:"participants,omitempty"`
+	GuildID        sharedtypes.GuildID               `json:"guild_id"`
+	RoundID        sharedtypes.RoundID               `json:"round_id"`
+	Participant    sharedtypes.DiscordID             `json:"participant"`
+	Score          sharedtypes.Score                 `json:"score"`
+	ChannelID      string                            `json:"channel_id"`
+	EventMessageID string                            `json:"discord_message_id"`
+	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
+	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type AllScoresSubmittedPayload struct {
-	GuildID        sharedtypes.GuildID      `json:"guild_id"`
-	RoundID        sharedtypes.RoundID      `json:"round_id"`
-	EventMessageID string                   `json:"discord_message_id"`
-	RoundData      roundtypes.Round         `json:"round_data"`
-	Participants   []roundtypes.Participant `json:"participants,omitempty"`
+	GuildID        sharedtypes.GuildID               `json:"guild_id"`
+	RoundID        sharedtypes.RoundID               `json:"round_id"`
+	EventMessageID string                            `json:"discord_message_id"`
+	RoundData      roundtypes.Round                  `json:"round_data"`
+	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
+	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type RoundScoreUpdateErrorPayload struct {
@@ -514,9 +528,10 @@ type ProcessRoundScoresRequestPayload struct {
 // ---- Round Lifecycle Payloads ----
 
 type RoundFinalizedPayload struct {
-	GuildID   sharedtypes.GuildID `json:"guild_id"`
-	RoundID   sharedtypes.RoundID `json:"round_id"`
-	RoundData roundtypes.Round    `json:"round_data"`
+	GuildID   sharedtypes.GuildID               `json:"guild_id"`
+	RoundID   sharedtypes.RoundID               `json:"round_id"`
+	RoundData roundtypes.Round                  `json:"round_data"`
+	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type RoundFinalizationErrorPayload struct {
@@ -551,15 +566,16 @@ type RoundReminderProcessedPayload struct {
 }
 
 type DiscordRoundStartPayload struct {
-	GuildID          sharedtypes.GuildID    `json:"guild_id"`
-	RoundID          sharedtypes.RoundID    `json:"round_id"`
-	Title            roundtypes.Title       `json:"title"`
-	Location         *roundtypes.Location   `json:"location"`
-	StartTime        *sharedtypes.StartTime `json:"start_time"`
-	Participants     []RoundParticipant     `jsonb:"participants"`
-	DiscordChannelID string                 `json:"discord_channel_id,omitempty"`
-	DiscordGuildID   string                 `json:"discord_guild_id,omitempty"`
-	EventMessageID   string                 `json:"event_message_id"`
+	GuildID          sharedtypes.GuildID               `json:"guild_id"`
+	RoundID          sharedtypes.RoundID               `json:"round_id"`
+	Title            roundtypes.Title                  `json:"title"`
+	Location         *roundtypes.Location              `json:"location"`
+	StartTime        *sharedtypes.StartTime            `json:"start_time"`
+	Participants     []RoundParticipant                `jsonb:"participants"`
+	DiscordChannelID string                            `json:"discord_channel_id,omitempty"`
+	DiscordGuildID   string                            `json:"discord_guild_id,omitempty"`
+	EventMessageID   string                            `json:"event_message_id"`
+	Config           *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
 type DiscordRoundParticipant struct {

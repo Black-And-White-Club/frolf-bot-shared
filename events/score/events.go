@@ -17,8 +17,10 @@ const (
 	ProcessRoundScoresRequest  = "score.process.round.scores.request"
 	LeaderboardUpdateRequested = "leaderboard.update.requested"
 	ScoreUpdateRequest         = "score.update.request"
+	ScoreBulkUpdateRequest     = "score.update.bulk.request"
 	ScoreUpdateSuccess         = "discord.score.update.success"
 	ScoreUpdateFailure         = "discord.score.update.fail"
+	ScoreBulkUpdateSuccess     = "score.update.bulk.success"
 	ProcessRoundScoresSuccess  = "leaderboard.batch.tag.assignment.requested"
 	ProcessRoundScoresFailure  = "score.process.round.scores.fail"
 )
@@ -53,6 +55,13 @@ type ScoreUpdateRequestPayload struct {
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 }
 
+// ScoreBulkUpdateRequestPayload batches multiple score corrections for a single round.
+type ScoreBulkUpdateRequestPayload struct {
+	GuildID sharedtypes.GuildID         `json:"guild_id"`
+	RoundID sharedtypes.RoundID         `json:"round_id"`
+	Updates []ScoreUpdateRequestPayload `json:"updates"`
+}
+
 // ScoreUpdateSuccessPayload is the payload for successful score updates.
 type ScoreUpdateSuccessPayload struct {
 	GuildID sharedtypes.GuildID   `json:"guild_id"`
@@ -67,4 +76,14 @@ type ScoreUpdateFailurePayload struct {
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	Error   string                `json:"error"`
+}
+
+// ScoreBulkUpdateSuccessPayload summarises a completed bulk update.
+type ScoreBulkUpdateSuccessPayload struct {
+	GuildID        sharedtypes.GuildID     `json:"guild_id"`
+	RoundID        sharedtypes.RoundID     `json:"round_id"`
+	AppliedCount   int                     `json:"applied_count"`
+	FailedCount    int                     `json:"failed_count"`
+	TotalRequested int                     `json:"total_requested"`
+	UserIDsApplied []sharedtypes.DiscordID `json:"user_ids_applied"`
 }
