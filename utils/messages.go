@@ -58,37 +58,18 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 		newEvent.Metadata.Set(key, value)
 	}
 
-	// Debug: log metadata before making changes
-	for k, v := range newEvent.Metadata {
-		h.Logger.Debug("🧾 Metadata before topic overwrite",
-			slog.String("key", k),
-			slog.String("value", v),
-		)
-	}
-
-	// Force overwrite topic (case-sensitive fix)
+	// Overwrite topic deterministically
 	newEvent.Metadata.Set("topic", topic)
-	h.Logger.Debug("✅ Topic metadata set",
-		slog.String("new_topic", topic),
-		slog.String("final_topic", newEvent.Metadata.Get("topic")),
-	)
-
-	// Defensive: clear any alternate casing like "Topic"
-	if _, ok := newEvent.Metadata["Topic"]; ok {
-		newEvent.Metadata["Topic"] = ""
-		h.Logger.Warn("⚠️ Removed conflicting metadata key 'Topic'")
-	}
+	// Remove conflicting alternate casing like "Topic", if present
+	delete(newEvent.Metadata, "Topic")
 
 	// Ensure correlation ID exists
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		newCID := watermill.NewUUID()
 		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
-		h.Logger.Warn("⚠️ No correlation ID found; generated new one",
+		// This is a normal path; keep level at Debug to avoid noise
+		h.Logger.Debug("generated correlation id for result message",
 			slog.String("correlation_id", newCID),
-		)
-	} else {
-		h.Logger.Debug("🔗 Correlation ID preserved",
-			slog.String("correlation_id", newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey)),
 		)
 	}
 
@@ -132,19 +113,20 @@ func (h *DefaultHelper) UnmarshalPayload(msg *message.Message, payload interface
 			terminateReason := fmt.Sprintf("Failed to unmarshal payload: %s", err.Error())
 			termErr := jsMsg.TermWithReason(terminateReason)
 			if termErr != nil {
-				h.Logger.Error("Failed to terminate message after unmarshal error",
+				h.Logger.Error("failed to terminate message after unmarshal error",
 					slog.String("msg_uuid", msg.UUID),
 					slog.String("unmarshal_error", err.Error()),
 					slog.String("term_error", termErr.Error()),
 				)
 			} else {
-				h.Logger.Info("Message terminated due to unmarshal error",
+				h.Logger.Warn("message terminated due to unmarshal error",
 					slog.String("msg_uuid", msg.UUID),
 					slog.String("reason", terminateReason),
 				)
 			}
 		} else {
-			h.Logger.Warn("Could not terminate message - no NATS JetStream message found",
+			// Avoid extra noise; keep as Debug since we'll return the error
+			h.Logger.Debug("no NATS JetStream message found to terminate",
 				slog.String("msg_uuid", msg.UUID),
 			)
 		}
