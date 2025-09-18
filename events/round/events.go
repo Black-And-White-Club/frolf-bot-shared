@@ -184,7 +184,9 @@ type RoundFinalizedEmbedUpdatePayload struct {
 	Participants     []roundtypes.Participant `json:"participants"`
 	EventMessageID   string                   `json:"discord_message_id"`
 	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
-	// Removed duplicate GuildID field
+	// The GuildID field was removed from this struct because it was already present as the first field,
+	// making its inclusion redundant and potentially confusing. This ensures the payload only contains
+	// a single GuildID reference.
 }
 
 // ---- Round Creation Payloads ----
