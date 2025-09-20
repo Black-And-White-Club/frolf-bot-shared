@@ -13,10 +13,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/trace"
 
-	// OTEL exporters
-	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	// OTEL exporters (gRPC only)
+	otlploggrpc "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	otlpmetricgrpc "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 
 	// OTEL SDK
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -109,11 +109,8 @@ func setupLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slo
 }
 
 func setupOTLPLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
-	// Create OTLP log exporter (sends to Alloy on 4317/4318)
-	exporter, err := otlploggrpc.New(ctx,
-		otlploggrpc.WithEndpoint(cfg.MetricsAddress), // Use same endpoint as metrics
-		otlploggrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.MetricsAddress)
+	exporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint), otlploggrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)
 	}
@@ -215,11 +212,12 @@ func convertLevel(level slog.Level) log.Severity {
 }
 
 func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trace.TracerProvider, func(context.Context) error, error) {
-	// Your existing tracing setup using OTLP
-	exporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithEndpoint(cfg.TempoEndpoint),
-		otlptracegrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.TempoEndpoint)
+	if endpoint == "" {
+		// tracing disabled
+		return trace.NewNoopTracerProvider(), func(context.Context) error { return nil }, nil
+	}
+	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(endpoint), otlptracegrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -233,11 +231,12 @@ func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trac
 }
 
 func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metric.MeterProvider, func(context.Context) error, error) {
-	// Your existing metrics setup using OTLP
-	exporter, err := otlpmetricgrpc.New(ctx,
-		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress),
-		otlpmetricgrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.MetricsAddress)
+	if endpoint == "" {
+		// metrics disabled
+		return noop.NewMeterProvider(), func(context.Context) error { return nil }, nil
+	}
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithEndpoint(endpoint), otlpmetricgrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -248,4 +247,13 @@ func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metr
 	)
 
 	return mp, mp.Shutdown, nil
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
