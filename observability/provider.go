@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/log"
@@ -13,10 +14,10 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/trace"
 
-	// OTEL exporters
-	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	// OTEL exporters (gRPC)
+	otlploggrpc "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	otlpmetricgrpc "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 
 	// OTEL SDK
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -95,30 +96,38 @@ func Setup(ctx context.Context, cfg Config) (*Provider, error) {
 
 func setupLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
 	if cfg.LokiEnabled() {
-		// Use OTLP log exporter to send to Alloy, which forwards to Loki
+		// Use OTLP log exporter to send to Alloy, which forwards to Loki.
+		// If endpoint is empty, we'll fallback to stdout inside setupOTLPLogging.
 		return setupOTLPLogging(ctx, cfg, res)
 	}
 
-	// Fallback to stdout logging
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: parseLogLevel(cfg),
-	}))
-	logger = logger.With("service", cfg.ServiceName, "version", cfg.Version, "environment", cfg.Environment)
-
-	return logger, func(context.Context) error { return nil }, nil
+	// Fallback to stdout logging when Loki/OTLP logging not configured
+	return newStdoutLogger(cfg), func(context.Context) error { return nil }, nil
 }
 
 func setupOTLPLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
-	// Create OTLP log exporter (sends to Alloy on 4317/4318)
-	exporter, err := otlploggrpc.New(ctx,
-		otlploggrpc.WithEndpoint(cfg.MetricsAddress), // Use same endpoint as metrics
-		otlploggrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.MetricsAddress)
+
+	// If no endpoint is configured, fall back to stdout gracefully.
+	if strings.TrimSpace(endpoint) == "" {
+		return newStdoutLogger(cfg), func(context.Context) error { return nil }, nil
+	}
+
+	transport, err := transportFromConfig(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if transport == "http" {
+		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for logging; use \"grpc\"")
+	}
+
+	exporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint), otlploggrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)
 	}
 
-	// Create log processor
+	// Batch processor (defaults)
 	processor := sdklog.NewBatchProcessor(exporter)
 
 	// Create logger provider
@@ -215,11 +224,20 @@ func convertLevel(level slog.Level) log.Severity {
 }
 
 func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trace.TracerProvider, func(context.Context) error, error) {
-	// Your existing tracing setup using OTLP
-	exporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithEndpoint(cfg.TempoEndpoint),
-		otlptracegrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.TempoEndpoint)
+	if endpoint == "" {
+		// tracing disabled
+		return trace.NewNoopTracerProvider(), func(context.Context) error { return nil }, nil
+	}
+	transport, err := transportFromConfig(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	if transport == "http" {
+		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for tracing in this build; use \"grpc\"")
+	}
+
+	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(endpoint), otlptracegrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -233,11 +251,20 @@ func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trac
 }
 
 func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metric.MeterProvider, func(context.Context) error, error) {
-	// Your existing metrics setup using OTLP
-	exporter, err := otlpmetricgrpc.New(ctx,
-		otlpmetricgrpc.WithEndpoint(cfg.MetricsAddress),
-		otlpmetricgrpc.WithInsecure(),
-	)
+	endpoint := firstNonEmpty(cfg.OTLPEndpoint, cfg.MetricsAddress)
+	if endpoint == "" {
+		// metrics disabled
+		return noop.NewMeterProvider(), func(context.Context) error { return nil }, nil
+	}
+	transport, err := transportFromConfig(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	if transport == "http" {
+		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for metrics in this build; use \"grpc\"")
+	}
+
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithEndpoint(endpoint), otlpmetricgrpc.WithInsecure())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -248,4 +275,31 @@ func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metr
 	)
 
 	return mp, mp.Shutdown, nil
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func transportFromConfig(cfg Config) (string, error) {
+	t := strings.TrimSpace(strings.ToLower(cfg.OTLPTransport))
+	if t == "" {
+		return "grpc", nil
+	}
+	switch t {
+	case "grpc", "http":
+		return t, nil
+	default:
+		return "", fmt.Errorf("unsupported OTLPTransport value: %q (supported: \"grpc\", \"http\")", cfg.OTLPTransport)
+	}
+}
+
+func newStdoutLogger(cfg Config) *slog.Logger {
+	l := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: parseLogLevel(cfg)}))
+	return l.With("service", cfg.ServiceName, "version", cfg.Version, "environment", cfg.Environment)
 }
