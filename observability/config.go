@@ -18,7 +18,10 @@ type Config struct {
 	TempoInsecure   bool
 	TempoSampleRate float64
 	OTLPEndpoint    string
-	OTLPTransport   string // grpc|http
+	// OTLPTransport selects the OTLP transport ("grpc" or "http").
+	// Default is "grpc" when empty. Value is case-insensitive.
+	// Note: current build supports gRPC only; "http" will return an error.
+	OTLPTransport string
 
 	// OTEL log batching (optional; zeros use sensible defaults)
 	LogBatchMaxQueueSize       int // e.g., 256 dev, 2048 prod
