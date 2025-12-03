@@ -1,9 +1,9 @@
 package leaderboardevents
 
 import (
+	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
-	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 )
 
 // Stream names
@@ -19,36 +19,36 @@ const (
 	// Leaderboard Update
 	RoundFinalized              = "leaderboard.round.finalized"
 	LeaderboardUpdateRequested  = "leaderboard.update.requested"
-	LeaderboardUpdated          = "discord.leaderboard.batch.tag.assigned"
-	LeaderboardUpdateFailed     = "discord.leaderboard.update.failed"
+	LeaderboardUpdated          = "leaderboard.batch.tag.assigned"
+	LeaderboardUpdateFailed     = "leaderboard.update.failed"
 	DeactivateOldLeaderboard    = "leaderboard.deactivate"
 	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
 
 	// Tag Assignment
 	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.requested"
 	LeaderboardTagAssignmentRequested      = "leaderboard.tag.assignment.requested"
-	LeaderboardTagAssignmentFailed         = "discord.leaderboard.tag.assignment.failed"
-	LeaderboardTagAssignmentSuccess        = "discord.leaderboard.tag.assignment.success"
+	LeaderboardTagAssignmentFailed         = "leaderboard.tag.assignment.failed"
+	LeaderboardTagAssignmentSuccess        = "leaderboard.tag.assignment.success"
 	TagAvailable                           = "user.tag.available"
 	TagUnavailable                         = "user.tag.unavailable"
 	TagAvailableCheckFailure               = "leaderboard.tag.availability.failure"
 	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
-	LeaderboardBatchTagAssignmentFailed    = "discord.leaderboard.batch.tag.assignment.failed"
-	LeaderboardBatchTagAssigned            = "discord.leaderboard.batch.tag.assigned"
+	LeaderboardBatchTagAssignmentFailed    = "leaderboard.batch.tag.assignment.failed"
+	LeaderboardBatchTagAssigned            = "leaderboard.batch.tag.assigned"
 
 	// Tag Swap
 	TagSwapRequested = "leaderboard.tag.swap.requested"
 	TagSwapInitiated = "leaderboard.tag.swap.initiated"
-	TagSwapFailed    = "discord.leaderboard.tag.swap.failed"
-	TagSwapProcessed = "discord.leaderboard.tag.swap.processed"
+	TagSwapFailed    = "leaderboard.tag.swap.failed"
+	TagSwapProcessed = "leaderboard.tag.swap.processed"
 
 	// Leaderboard Requests
 	GetLeaderboardRequest  = "leaderboard.get.request"
-	GetLeaderboardResponse = "discord.get.leaderboard.success"
-	GetLeaderboardFailed   = "discord.get.leaderboard.failed"
+	GetLeaderboardResponse = "leaderboard.get.success"
+	GetLeaderboardFailed   = "leaderboard.get.failed"
 
 	// Tag Requests
-	LeaderboardTraceEvent = "discord.leaderboard.trace.event"
+	LeaderboardTraceEvent = "leaderboard.trace.event"
 
 	// Request events
 	GetTagByUserIDRequest      = "leaderboard.tag.get.by.user.id.request"
@@ -64,7 +64,7 @@ const (
 	RoundTagNumberNotFound = "round.leaderboard.tag.not.found"
 
 	// Failure events
-	GetTagNumberFailed = "discord.leaderboard.tag.get.by.user.id.failed"
+	GetTagNumberFailed = "leaderboard.tag.get.by.user.id.failed"
 )
 
 // -- Event Payloads --
@@ -153,12 +153,12 @@ type DeactivateOldLeaderboardPayload struct {
 
 // TagAssignmentFailedPayload is the payload for the TagAssignmentFailed event.
 type TagAssignmentFailedPayload struct {
-	GuildID    sharedtypes.GuildID    `json:"guild_id"`
-	UserID     sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber  *sharedtypes.TagNumber `json:"tag_number"`
-	Source     string                 `json:"source"`
-	UpdateType string                 `json:"update_type"`
-	Reason     string                 `json:"reason"`
+	GuildID    sharedtypes.GuildID               `json:"guild_id"`
+	UserID     sharedtypes.DiscordID             `json:"user_id"`
+	TagNumber  *sharedtypes.TagNumber            `json:"tag_number"`
+	Source     string                            `json:"source"`
+	UpdateType string                            `json:"update_type"`
+	Reason     string                            `json:"reason"`
 	Config     *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
@@ -203,9 +203,9 @@ type TagSwapFailedPayload struct {
 
 // TagSwapProcessedPayload is the payload for the TagSwapProcessed event.
 type TagSwapProcessedPayload struct {
-	GuildID     sharedtypes.GuildID   `json:"guild_id"`
-	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
-	TargetID    sharedtypes.DiscordID `json:"target_id"`
+	GuildID     sharedtypes.GuildID               `json:"guild_id"`
+	RequestorID sharedtypes.DiscordID             `json:"requestor_id"`
+	TargetID    sharedtypes.DiscordID             `json:"target_id"`
 	Config      *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
