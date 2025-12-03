@@ -272,15 +272,23 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		streamName = "round"
 	case strings.HasPrefix(topic, "score."):
 		streamName = "score"
-	case strings.HasPrefix(topic, "discord."):
-		streamName = "discord"
 	case strings.HasPrefix(topic, "guild."):
 		streamName = "guild"
+	case strings.HasPrefix(topic, "discord."):
+		streamName = "discord"
 	default:
 		ctxLogger.Error("Failed to subscribe to topic", "error", "unknown topic prefix")
 		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
 	ctxLogger = ctxLogger.With("stream", streamName)
+
+	// Ensure stream exists before creating consumer
+	// This allows Discord (or other apps) to subscribe to backend streams
+	// The CreateStream is idempotent, so it's safe to call even if already created
+	if err := eb.CreateStream(ctx, streamName); err != nil {
+		ctxLogger.Error("Failed to ensure stream exists", "error", err)
+		return nil, fmt.Errorf("failed to ensure stream exists: %w", err)
+	}
 
 	// Create or get consumer with improved reliability settings
 	consumerConfig := jetstream.ConsumerConfig{
@@ -293,8 +301,8 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		BackOff:           []time.Duration{1 * time.Second, 5 * time.Second}, // Increased backoff
 		AckWait:           30 * time.Second,                                  // Explicit ack wait timeout
 		ReplayPolicy:      jetstream.ReplayInstantPolicy,
-		MaxWaiting:        512,             // Limit pull requests
-		InactiveThreshold: 5 * time.Minute, // Clean up inactive consumers
+		MaxWaiting:        512,            // Limit pull requests
+		InactiveThreshold: 5 * time.Minute, // Reduce inactive threshold to 5 minutes (default)
 	}
 
 	cons, err := eb.js.Consumer(ctx, streamName, consumerName)
@@ -598,8 +606,10 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score"}
+		streams = []string{"user", "leaderboard", "round", "score", "guild"}
 	case "discord":
+		// Discord creates its own internal stream and the shared guild stream
+		// It will subscribe to backend streams (which backend creates)
 		streams = []string{"discord", "guild"}
 	default:
 		ctxLogger.Error("Failed to create streams for app", "error", "unknown app type")

@@ -20,17 +20,16 @@ const (
 	// Round Creation Events
 	RoundCreateRequest         = "round.create.request"
 	RoundValidated             = "round.validated"
-	RoundValidationFailed      = "discord.round.validation.failed"
+	RoundValidationFailed      = "round.validation.failed"
 	RoundDateTimeParsed        = "round.datetime.parsed"
 	RoundEntityCreated         = "round.entity.created"
 	RoundStored                = "round.stored"
 	RoundScheduled             = "round.scheduled"
-	RoundCreated               = "discord.round.created"
-	RoundCreationFailed        = "discord.round.creation.failed"
+	RoundCreated               = "round.created"
+	RoundCreationFailed        = "round.creation.failed"
 	RoundError                 = "round.error"
-	RoundCreatedEvent          = "discord.round.created"
-	RoundEventMessageIDUpdated = "round.discord.event.id.updated"
-	RoundEventMessageIDUpdate  = "round.discord.event.id.update"
+	RoundEventMessageIDUpdated = "round.event.message.id.updated"
+	RoundEventMessageIDUpdate  = "round.event.message.id.update"
 	RoundTraceEvent            = "round.trace.event"
 
 	// Round Update Events
@@ -41,14 +40,14 @@ const (
 	RoundUpdateSuccess    = "round.update.success"
 	RoundUpdateError      = "round.update.error"
 	RoundUpdated          = "round.updated"
-	RoundScheduleUpdate   = "discord.round.schedule.update"
+	RoundScheduleUpdate   = "round.schedule.updated"
 	RoundStateUpdated     = "round.state.updated"
 	RoundsUpdated         = "round.rounds.updated"
 	RoundUpdateReschedule = "round.update.reschedule"
 
 	// Round Delete Events
 	RoundDeleteRequest      = "round.delete.request"
-	RoundDeleted            = "discord.round.deleted"
+	RoundDeleted            = "round.deleted"
 	RoundDeleteValidated    = "round.delete.validated"
 	RoundToDeleteFetched    = "round.to.delete.fetched"
 	RoundDeleteAuthorized   = "round.delete.authorized"
@@ -59,39 +58,37 @@ const (
 	RoundParticipantJoinRequest           = "round.participant.join.request"
 	RoundParticipantJoinValidated         = "round.participant.join.validated"
 	RoundParticipantJoinError             = "round.participant.join.error"
-	RoundParticipantDeclined              = "discord.round.participant.declined"
-	RoundParticipantDeclinedResponse      = "discord.round.participant.declined"
-	RoundParticipantJoined                = "discord.round.participant.joined"
+	RoundParticipantDeclined              = "round.participant.declined"
+	RoundParticipantJoined                = "round.participant.joined"
 	RoundParticipantRemovalRequest        = "round.participant.removal.request"
-	RoundParticipantRemoved               = "discord.round.participant.removed"
+	RoundParticipantRemoved               = "round.participant.removed"
 	RoundParticipantJoinValidationRequest = "round.participant.join.validation.request"
 	RoundParticipantStatusError           = "round.participant.error"
 	RoundParticipantStatusFound           = "round.participant.found"
-	RoundParticipantStatusCheckError      = "discord.round.participant.status.check.error"
+	RoundParticipantStatusCheckError      = "round.participant.status.check.error"
 	RoundParticipantRemovalError          = "round.participant.removal.error"
 	RoundParticipantUpdateError           = "round.participant.update.error"
 	RoundParticipantStatusUpdateRequest   = "round.participant.status.update.request"
 
 	// Score Events
-	RoundScoreUpdateRequest        = "round.score.update.request"
-	RoundScoreUpdateValidated      = "round.score.update.validated"
-	RoundParticipantScoreUpdated   = "round.participant.score.updated"
-	DiscordParticipantScoreUpdated = "discord.participant.score.updated"
-	RoundAllScoresSubmitted        = "round.all.scores.submitted"
-	RoundNotAllScoresSubmitted     = "discord.round.not.all.scores.submitted"
-	RoundScoreUpdateError          = "discord.round.score.update.error"
-	ProcessRoundScoresRequest      = "score.process.round.scores.request"
-	ScoreModuleNotificationError   = "score.module.notification.error"
+	RoundScoreUpdateRequest      = "round.score.update.request"
+	RoundScoreUpdateValidated    = "round.score.update.validated"
+	RoundParticipantScoreUpdated = "round.participant.score.updated"
+	RoundAllScoresSubmitted      = "round.all.scores.submitted"
+	RoundNotAllScoresSubmitted   = "round.not.all.scores.submitted"
+	RoundScoreUpdateError        = "round.score.update.error"
+	ProcessRoundScoresRequest    = "score.process.round.scores.request"
+	ScoreModuleNotificationError = "score.module.notification.error"
 
 	// Round Lifecycle Events
 	RoundStarted            = "round.started"
-	DiscordRoundStarted     = "discord.round.started"
-	RoundFinalized          = "round.finalized"
+	RoundStartedDiscord     = "round.started_discord"
+	RoundFinalized          = "round.finalized" // Backend-only: DB state updated to finalized
+	RoundCompleted          = "round.completed" // External apps: Round fully processed and ready for display
 	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
 	RoundReminder           = "round.reminder"
-	DiscordRoundReminder    = "discord.reminder"
-	DiscordRoundFinalized   = "discord.round.finalized"
+	RoundDiscordReminder    = "round.reminder.discord"
 
 	// Tag Events
 	RoundTagNumberRequest          = "round.tag.number.request"
@@ -101,20 +98,20 @@ const (
 
 	LeaderboardGetTagNumberResponse = "round.get.tag.number.response"
 	TagUpdateForScheduledRounds     = "round.tag.update.for.scheduled.rounds"
-	TagsUpdatedForScheduledRounds   = "discord.tags.updated.for.scheduled.rounds"
+	TagsUpdatedForScheduledRounds   = "round.tags.updated.for.scheduled.rounds"
 
 	// Authorization Events
 	RoundUserRoleCheckRequest = "round.user.role.check.request"
 	RoundUserRoleCheckResult  = "round.user.role.check.result"
 	RoundUserRoleCheckError   = "round.user.role.check.error"
 
-	// Discord Events
-	DiscordEventsSubject   = "discord.round.event"
+	// Special Events
+	RoundEventsSubject     = "round.event"
 	DelayedMessagesSubject = "delayed.messages"
 
 	// Round Retrieval Events
 	GetRoundRequest = "round.get.request"
-	RoundRetrieved  = "discord.round.retrieved"
+	RoundRetrieved  = "round.retrieved"
 )
 
 // Event Payloads - structured by extending base payloads where possible
@@ -530,6 +527,15 @@ type ProcessRoundScoresRequestPayload struct {
 // ---- Round Lifecycle Payloads ----
 
 type RoundFinalizedPayload struct {
+	GuildID   sharedtypes.GuildID               `json:"guild_id"`
+	RoundID   sharedtypes.RoundID               `json:"round_id"`
+	RoundData roundtypes.Round                  `json:"round_data"`
+	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
+}
+
+// RoundCompletedPayload is published after backend completes all score processing
+// This is what Discord/PWA should consume to update their UI
+type RoundCompletedPayload struct {
 	GuildID   sharedtypes.GuildID               `json:"guild_id"`
 	RoundID   sharedtypes.RoundID               `json:"round_id"`
 	RoundData roundtypes.Round                  `json:"round_data"`

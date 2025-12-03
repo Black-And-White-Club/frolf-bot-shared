@@ -38,7 +38,7 @@ const (
 	UserPermissionsCheckResponse  = "user.permissions.check.response"
 	UserPermissionsCheckFailed    = "user.permissions.check.failed"
 	TagAvailable                  = "user.tag.available"
-	TagUnavailable                = "discord.user.tag.unavailable"
+	TagUnavailable                = "user.tag.unavailable"
 	TagAvailabilityCheckRequested = "leaderboard.tag.availability.check.requested"
 	TagAssignmentRequested        = "user.tag.assignment.requested"
 	TagAssignedForUserCreation    = "user.tag.assigned.for.creation"
