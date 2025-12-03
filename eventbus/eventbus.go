@@ -608,7 +608,7 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	case "backend":
 		streams = []string{"user", "leaderboard", "round", "score", "guild"}
 	case "discord":
-		// Discord only creates its own internal stream
+		// Discord creates its own internal stream and the shared guild stream
 		// It will subscribe to backend streams (which backend creates)
 		streams = []string{"discord", "guild"}
 	default:
