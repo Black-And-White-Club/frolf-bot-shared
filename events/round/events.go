@@ -88,7 +88,7 @@ const (
 	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
 	RoundReminder           = "round.reminder"
-	RoundDiscordReminder    = "round.discord_reminder"
+	RoundDiscordReminder    = "round.reminder.discord"
 
 	// Tag Events
 	RoundTagNumberRequest          = "round.tag.number.request"
