@@ -296,7 +296,7 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		FilterSubject:     topic,
 		AckPolicy:         jetstream.AckExplicitPolicy,
 		MaxAckPending:     100, // Reduced from 2048 for better flow control
-		DeliverPolicy:     jetstream.DeliverNewPolicy,
+		DeliverPolicy:     jetstream.DeliverAllPolicy,
 		MaxDeliver:        3,
 		BackOff:           []time.Duration{1 * time.Second, 5 * time.Second}, // Increased backoff
 		AckWait:           30 * time.Second,                                  // Explicit ack wait timeout
