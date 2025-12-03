@@ -82,13 +82,13 @@ const (
 
 	// Round Lifecycle Events
 	RoundStarted            = "round.started"
-	RoundStartedDiscord     = "round.started_discord"
+	RoundStartedDiscord     = "round.started.discord"
 	RoundFinalized          = "round.finalized" // Backend-only: DB state updated to finalized
 	RoundCompleted          = "round.completed" // External apps: Round fully processed and ready for display
 	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
 	RoundReminder           = "round.reminder"
-	RoundDiscordReminder    = "round.discord_reminder"
+	RoundDiscordReminder    = "round.reminder.discord"
 
 	// Tag Events
 	RoundTagNumberRequest          = "round.tag.number.request"
