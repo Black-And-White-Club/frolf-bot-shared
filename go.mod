@@ -1,6 +1,6 @@
 module github.com/Black-And-White-Club/frolf-bot-shared
 
-go 1.24.4
+go 1.25
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
