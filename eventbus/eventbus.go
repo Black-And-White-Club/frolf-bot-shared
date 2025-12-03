@@ -302,7 +302,7 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		AckWait:           30 * time.Second,                                  // Explicit ack wait timeout
 		ReplayPolicy:      jetstream.ReplayInstantPolicy,
 		MaxWaiting:        512,            // Limit pull requests
-		InactiveThreshold: 24 * time.Hour, // Keep consumers active for 24 hours
+		InactiveThreshold: 5 * time.Minute, // Reduce inactive threshold to 5 minutes (default)
 	}
 
 	cons, err := eb.js.Consumer(ctx, streamName, consumerName)
