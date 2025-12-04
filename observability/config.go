@@ -22,6 +22,7 @@ type Config struct {
 	// Default is "grpc" when empty. Value is case-insensitive.
 	// Note: current build supports gRPC only; "http" will return an error.
 	OTLPTransport string
+	LogsEnabled   bool
 
 	// OTEL log batching (optional; zeros use sensible defaults)
 	LogBatchMaxQueueSize       int // e.g., 256 dev, 2048 prod
@@ -31,7 +32,7 @@ type Config struct {
 }
 
 func (c Config) LokiEnabled() bool {
-	return c.LokiURL != ""
+	return c.LokiURL != "" && c.LogsEnabled
 }
 
 func (c Config) TracingEnabled() bool {

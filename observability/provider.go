@@ -95,10 +95,17 @@ func Setup(ctx context.Context, cfg Config) (*Provider, error) {
 }
 
 func setupLogging(ctx context.Context, cfg Config, res *resource.Resource) (*slog.Logger, func(context.Context) error, error) {
+	if !cfg.LogsEnabled {
+		return newStdoutLogger(cfg), func(context.Context) error { return nil }, nil
+	}
+
 	if cfg.LokiEnabled() {
-		// Use OTLP log exporter to send to Alloy, which forwards to Loki.
-		// If endpoint is empty, we'll fallback to stdout inside setupOTLPLogging.
-		return setupOTLPLogging(ctx, cfg, res)
+		logger, shutdown, err := setupOTLPLogging(ctx, cfg, res)
+		if err != nil {
+			fmt.Printf("WARN: failed to enable OTLP logging (%v); falling back to stdout logging\n", err)
+			return newStdoutLogger(cfg), func(context.Context) error { return nil }, nil
+		}
+		return logger, shutdown, nil
 	}
 
 	// Fallback to stdout logging when Loki/OTLP logging not configured
