@@ -9,7 +9,9 @@ import (
 
 // Stream names
 const (
-	UserStreamName = "user"
+	UserUDiscMatchConfirmationRequired = "user.udisc.match.confirmation_required"
+	UserUDiscMatchConfirmed            = "user.udisc.match.confirmed"
+	UserStreamName                     = "user"
 	// Note: Changed to use the request/response pattern consistently
 	LeaderboardTagAvailabilityCheckRequest = "leaderboard.tag.availability.check.request"
 	UserCreatedDLQ                         = "user.created.dlq"            // DLQ for UserCreated
@@ -57,6 +59,11 @@ const (
 	GetUserRoleRequest  = "user.role.get.request"
 	GetUserRoleResponse = "discord.user.role.get.response"
 	GetUserRoleFailed   = "discord.user.role.get.failed"
+
+	// UDisc identity management
+	UpdateUDiscIdentityRequest = "user.udisc.identity.update.request"
+	UDiscIdentityUpdated       = "user.udisc.identity.updated"
+	UDiscIdentityUpdateFailed  = "user.udisc.identity.update.failed"
 )
 
 // BaseEventPayload is a struct that can be embedded in other event structs to provide common fields.
@@ -67,15 +74,19 @@ type BaseEventPayload struct {
 
 // Payload types
 type CreateUserRequestedPayload struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
+	GuildID       sharedtypes.GuildID    `json:"guild_id"`
+	UserID        sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber     *sharedtypes.TagNumber `json:"tag_number"`
+	UDiscUsername *string                `json:"udisc_username,omitempty"`
+	UDiscName     *string                `json:"udisc_name,omitempty"`
 }
 
 type UserSignupRequestPayload struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
+	GuildID       sharedtypes.GuildID    `json:"guild_id"`
+	UserID        sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber     *sharedtypes.TagNumber `json:"tag_number,omitempty"`
+	UDiscUsername *string                `json:"udisc_username,omitempty"`
+	UDiscName     *string                `json:"udisc_name,omitempty"`
 }
 
 type UserSignupFailedPayload struct {
@@ -167,6 +178,26 @@ type GetUserFailedPayload struct {
 	Reason  string                `json:"reason"`
 }
 
+type UpdateUDiscIdentityRequestPayload struct {
+	GuildID  sharedtypes.GuildID   `json:"guild_id"`
+	UserID   sharedtypes.DiscordID `json:"user_id"`
+	Username *string               `json:"username,omitempty"`
+	Name     *string               `json:"name,omitempty"`
+}
+
+type UDiscIdentityUpdatedPayload struct {
+	GuildID  sharedtypes.GuildID   `json:"guild_id"`
+	UserID   sharedtypes.DiscordID `json:"user_id"`
+	Username *string               `json:"username,omitempty"`
+	Name     *string               `json:"name,omitempty"`
+}
+
+type UDiscIdentityUpdateFailedPayload struct {
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	Reason  string                `json:"reason"`
+}
+
 type UserPermissionsCheckRequestPayload struct {
 	GuildID     sharedtypes.GuildID      `json:"guild_id"`
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
@@ -188,6 +219,34 @@ type UserPermissionsCheckFailedPayload struct {
 	UserID      sharedtypes.DiscordID    `json:"user_id"`
 	Role        sharedtypes.UserRoleEnum `json:"role"`
 	RequesterID sharedtypes.DiscordID    `json:"requester_id"`
+}
+
+// UDiscMatchConfirmationRequiredPayload is published when player matches require admin confirmation
+type UDiscMatchConfirmationRequiredPayload struct {
+	ImportID         string                `json:"import_id"`
+	GuildID          sharedtypes.GuildID   `json:"guild_id"`
+	RoundID          sharedtypes.RoundID   `json:"round_id"`
+	UserID           sharedtypes.DiscordID `json:"user_id"`
+	ChannelID        string                `json:"channel_id"`
+	UnmatchedPlayers []string              `json:"unmatched_players"`
+	Timestamp        time.Time             `json:"timestamp"`
+}
+
+// UDiscMatchConfirmedPayload is published when an admin confirms player matches
+type UDiscMatchConfirmedPayload struct {
+	ImportID  string                  `json:"import_id"`
+	GuildID   sharedtypes.GuildID     `json:"guild_id"`
+	RoundID   sharedtypes.RoundID     `json:"round_id"`
+	UserID    sharedtypes.DiscordID   `json:"user_id"`
+	ChannelID string                  `json:"channel_id"`
+	Timestamp time.Time               `json:"timestamp"`
+	Mappings  []UDiscConfirmedMapping `json:"mappings"`
+}
+
+// UDiscConfirmedMapping represents a resolved player match
+type UDiscConfirmedMapping struct {
+	PlayerName    string                `json:"player_name"`
+	DiscordUserID sharedtypes.DiscordID `json:"discord_user_id"`
 }
 
 // TagAvailabilityCheckRequestedPayload is the payload for the TagAvailabilityCheckRequested event.
