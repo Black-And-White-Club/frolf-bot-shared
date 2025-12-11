@@ -37,65 +37,65 @@ func NewImporterMetrics(meter metric.Meter) (ImporterMetrics, error) {
 	var err error
 
 	// Import operation counters
-	m.importAttempts, err = meter.Int64Counter("importer.import.attempts.total")
+	m.importAttempts, err = meter.Int64Counter("round.import.attempts.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create import attempts counter: %w", err)
 	}
 
-	m.importSuccess, err = meter.Int64Counter("importer.import.success.total")
+	m.importSuccess, err = meter.Int64Counter("round.import.success.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create import success counter: %w", err)
 	}
 
-	m.importFailure, err = meter.Int64Counter("importer.import.failure.total")
+	m.importFailure, err = meter.Int64Counter("round.import.failure.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create import failure counter: %w", err)
 	}
 
 	// Parse phase metrics
-	m.parseDuration, err = meter.Float64Histogram("importer.parse.duration.ms")
+	m.parseDuration, err = meter.Float64Histogram("round.import.parse.duration.ms")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create parse duration histogram: %w", err)
 	}
 
-	m.parseSuccess, err = meter.Int64Counter("importer.parse.success.total")
+	m.parseSuccess, err = meter.Int64Counter("round.import.parse.success.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create parse success counter: %w", err)
 	}
 
-	m.parseFailure, err = meter.Int64Counter("importer.parse.failure.total")
+	m.parseFailure, err = meter.Int64Counter("round.import.parse.failure.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create parse failure counter: %w", err)
 	}
 
 	// Match phase metrics
-	m.matchDuration, err = meter.Float64Histogram("importer.match.duration.ms")
+	m.matchDuration, err = meter.Float64Histogram("round.import.match.duration.ms")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create match duration histogram: %w", err)
 	}
 
-	m.matchSuccess, err = meter.Int64Counter("importer.match.success.total")
+	m.matchSuccess, err = meter.Int64Counter("round.import.match.success.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create match success counter: %w", err)
 	}
 
-	m.matchFailure, err = meter.Int64Counter("importer.match.failure.total")
+	m.matchFailure, err = meter.Int64Counter("round.import.match.failure.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create match failure counter: %w", err)
 	}
 
 	// Score ingestion metrics
-	m.scoreIngestionDuration, err = meter.Float64Histogram("importer.score.ingestion.duration.ms")
+	m.scoreIngestionDuration, err = meter.Float64Histogram("round.import.score.ingestion.duration.ms")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create score ingestion duration histogram: %w", err)
 	}
 
-	m.scoresIngested, err = meter.Int64Counter("importer.scores.ingested.total")
+	m.scoresIngested, err = meter.Int64Counter("round.import.scores.ingested.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scores ingested counter: %w", err)
 	}
 
-	m.scoreIngestionFailure, err = meter.Int64Counter("importer.score.ingestion.failure.total")
+	m.scoreIngestionFailure, err = meter.Int64Counter("round.import.score.ingestion.failure.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create score ingestion failure counter: %w", err)
 	}
