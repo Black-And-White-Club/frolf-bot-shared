@@ -128,3 +128,10 @@ type PlayerScoreRow struct {
 	HoleScores []int  `json:"hole_scores"`
 	Total      int    `json:"total"`
 }
+
+// MatchedPlayer represents a player successfully matched and imported.
+type MatchedPlayer struct {
+	DiscordID sharedtypes.DiscordID `json:"discord_id"`
+	UDiscName string                `json:"udisc_name"`
+	Score     int                   `json:"score"`
+}

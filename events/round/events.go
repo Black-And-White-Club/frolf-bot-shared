@@ -98,6 +98,14 @@ const (
 	RoundTagNumberNotFound         = "round.leaderboard.tag.not.found"
 	LeaderboardGetTagNumberRequest = "leaderboard.round.tag.get.by.user.id.request"
 
+	// Import Events
+	ScorecardUploaded    = "udisc.scorecard.uploaded"
+	ScorecardParsed      = "udisc.scorecard.parsed"
+	ImportCompleted      = "udisc.import.completed"
+	ImportFailed         = "udisc.import.failed"
+	ParticipantAutoAdded = "round.participant.auto_added"
+	ScoresImported       = "round.scores.imported"
+
 	LeaderboardGetTagNumberResponse = "round.get.tag.number.response"
 	TagUpdateForScheduledRounds     = "round.tag.update.for.scheduled.rounds"
 	TagsUpdatedForScheduledRounds   = "round.tags.updated.for.scheduled.rounds"
@@ -797,9 +805,9 @@ func (p *ParticipantJoinRequestPayload) GetJoinedLate() *bool {
 
 // ScorecardUploadedPayload is published when a user uploads a scorecard file or URL
 type ScorecardUploadedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	MessageID string                `json:"message_id"`
@@ -813,9 +821,9 @@ type ScorecardUploadedPayload struct {
 
 // ScorecardURLRequestedPayload is published when a user requests to import from a UDisc URL
 type ScorecardURLRequestedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	MessageID string                `json:"message_id"`
@@ -826,9 +834,9 @@ type ScorecardURLRequestedPayload struct {
 
 // ScorecardParseFailedPayload is published when scorecard parsing fails
 type ScorecardParseFailedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	Error     string                `json:"error"`
@@ -837,9 +845,9 @@ type ScorecardParseFailedPayload struct {
 
 // ImportFailedPayload is published when an import fails
 type ImportFailedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	Error     string                `json:"error"`
@@ -849,9 +857,9 @@ type ImportFailedPayload struct {
 
 // ParsedScorecardPayload is published when a scorecard is successfully parsed
 type ParsedScorecardPayload struct {
-	ImportID   string                      `json:"import_id"`
 	GuildID    sharedtypes.GuildID         `json:"guild_id"`
 	RoundID    sharedtypes.RoundID         `json:"round_id"`
+	ImportID   string                      `json:"import_id"`
 	UserID     sharedtypes.DiscordID       `json:"user_id"`
 	ChannelID  string                      `json:"channel_id"`
 	ParsedData *roundtypes.ParsedScorecard `json:"parsed_data"`
@@ -860,23 +868,25 @@ type ParsedScorecardPayload struct {
 
 // ImportCompletedPayload is published when an import completes successfully with all scores ingested
 type ImportCompletedPayload struct {
-	ImportID         string                `json:"import_id"`
-	GuildID          sharedtypes.GuildID   `json:"guild_id"`
-	RoundID          sharedtypes.RoundID   `json:"round_id"`
-	UserID           sharedtypes.DiscordID `json:"user_id"`
-	ChannelID        string                `json:"channel_id"`
-	ScoresIngested   int                   `json:"scores_ingested"`
-	MatchedPlayers   int                   `json:"matched_players"`
-	UnmatchedPlayers int                   `json:"unmatched_players"`
-	PlayersAutoAdded int                   `json:"players_auto_added"`
-	Timestamp        time.Time             `json:"timestamp"`
+	GuildID            sharedtypes.GuildID        `json:"guild_id"`
+	RoundID            sharedtypes.RoundID        `json:"round_id"`
+	ImportID           string                     `json:"import_id"`
+	UserID             sharedtypes.DiscordID      `json:"user_id"`
+	ChannelID          string                     `json:"channel_id"`
+	ScoresIngested     int                        `json:"scores_ingested"`
+	MatchedPlayers     int                        `json:"matched_players"`
+	UnmatchedPlayers   int                        `json:"unmatched_players"`
+	PlayersAutoAdded   int                        `json:"players_auto_added"`
+	MatchedPlayersList []roundtypes.MatchedPlayer `json:"matched_players_list,omitempty"`
+	SkippedPlayers     []string                   `json:"skipped_players,omitempty"`
+	Timestamp          time.Time                  `json:"timestamp"`
 }
 
 // RoundParticipantAutoAddedPayload is published when a player is auto-added to a round
 type RoundParticipantAutoAddedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	AddedUser sharedtypes.DiscordID `json:"added_user"`
@@ -885,9 +895,9 @@ type RoundParticipantAutoAddedPayload struct {
 
 // RoundScoresImportedPayload is published when scores are successfully ingested into a round
 type RoundScoresImportedPayload struct {
-	ImportID  string                `json:"import_id"`
 	GuildID   sharedtypes.GuildID   `json:"guild_id"`
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
 	Count     int                   `json:"count"`

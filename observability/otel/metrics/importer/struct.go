@@ -85,17 +85,17 @@ func NewImporterMetrics(meter metric.Meter) (ImporterMetrics, error) {
 	}
 
 	// Score ingestion metrics
-	m.scoreIngestionDuration, err = meter.Float64Histogram("importer.score_ingestion.duration.ms")
+	m.scoreIngestionDuration, err = meter.Float64Histogram("importer.score.ingestion.duration.ms")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create score ingestion duration histogram: %w", err)
 	}
 
-	m.scoresIngested, err = meter.Int64Counter("importer.scores_ingested.total")
+	m.scoresIngested, err = meter.Int64Counter("importer.scores.ingested.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scores ingested counter: %w", err)
 	}
 
-	m.scoreIngestionFailure, err = meter.Int64Counter("importer.score_ingestion.failure.total")
+	m.scoreIngestionFailure, err = meter.Int64Counter("importer.score.ingestion.failure.total")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create score ingestion failure counter: %w", err)
 	}
