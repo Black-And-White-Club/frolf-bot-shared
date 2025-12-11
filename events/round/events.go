@@ -1,6 +1,8 @@
 package roundevents
 
 import (
+	"time"
+
 	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
@@ -112,6 +114,20 @@ const (
 	// Round Retrieval Events
 	GetRoundRequest = "round.get.request"
 	RoundRetrieved  = "round.retrieved"
+
+	// Scorecard import event topics
+	ScorecardUploadedTopic         = "round.scorecard.uploaded"
+	ScorecardURLRequestedTopic     = "round.scorecard.url_requested"
+	ScorecardParseRequestTopic     = "round.scorecard.parse_request"
+	ScorecardParsedTopic           = "round.scorecard.parsed"
+	ScorecardParseFailedTopic      = "round.scorecard.parse_failed"
+	ImportConflictDetectedTopic    = "round.import.conflict_detected"
+	ImportOverwriteConfirmedTopic  = "round.import.overwrite_confirmed"
+	ImportCompletedTopic           = "round.import.completed"
+	ImportFailedTopic              = "round.import.failed"
+	RoundParticipantAutoAddedTopic = "round.participant.auto_added"
+	RoundScoresImportedTopic       = "round.scores.imported"
+	RoundScoresFinalizedTopic      = "round.scores.finalized"
 )
 
 // Event Payloads - structured by extending base payloads where possible
@@ -777,4 +793,105 @@ func (p *ParticipantJoinRequestPayload) GetTagNumber() *sharedtypes.TagNumber {
 
 func (p *ParticipantJoinRequestPayload) GetJoinedLate() *bool {
 	return p.JoinedLate
+}
+
+// ScorecardUploadedPayload is published when a user uploads a scorecard file or URL
+type ScorecardUploadedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	MessageID string                `json:"message_id"`
+	FileData  []byte                `json:"file_data,omitempty"`
+	FileURL   string                `json:"file_url,omitempty"`
+	FileName  string                `json:"file_name,omitempty"`
+	UDiscURL  string                `json:"udisc_url,omitempty"`
+	Notes     string                `json:"notes,omitempty"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// ScorecardURLRequestedPayload is published when a user requests to import from a UDisc URL
+type ScorecardURLRequestedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	MessageID string                `json:"message_id"`
+	UDiscURL  string                `json:"udisc_url"`
+	Notes     string                `json:"notes,omitempty"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// ScorecardParseFailedPayload is published when scorecard parsing fails
+type ScorecardParseFailedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	Error     string                `json:"error"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// ImportFailedPayload is published when an import fails
+type ImportFailedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	Error     string                `json:"error"`
+	ErrorCode string                `json:"error_code"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// ParsedScorecardPayload is published when a scorecard is successfully parsed
+type ParsedScorecardPayload struct {
+	GuildID    sharedtypes.GuildID         `json:"guild_id"`
+	RoundID    sharedtypes.RoundID         `json:"round_id"`
+	ImportID   string                      `json:"import_id"`
+	UserID     sharedtypes.DiscordID       `json:"user_id"`
+	ChannelID  string                      `json:"channel_id"`
+	ParsedData *roundtypes.ParsedScorecard `json:"parsed_data"`
+	Timestamp  time.Time                   `json:"timestamp"`
+}
+
+// ImportCompletedPayload is published when an import completes successfully with all scores ingested
+type ImportCompletedPayload struct {
+	GuildID            sharedtypes.GuildID        `json:"guild_id"`
+	RoundID            sharedtypes.RoundID        `json:"round_id"`
+	ImportID           string                     `json:"import_id"`
+	UserID             sharedtypes.DiscordID      `json:"user_id"`
+	ChannelID          string                     `json:"channel_id"`
+	ScoresIngested     int                        `json:"scores_ingested"`
+	MatchedPlayers     int                        `json:"matched_players"`
+	UnmatchedPlayers   int                        `json:"unmatched_players"`
+	PlayersAutoAdded   int                        `json:"players_auto_added"`
+	MatchedPlayersList []roundtypes.MatchedPlayer `json:"matched_players_list,omitempty"`
+	SkippedPlayers     []string                   `json:"skipped_players,omitempty"`
+	Timestamp          time.Time                  `json:"timestamp"`
+}
+
+// RoundParticipantAutoAddedPayload is published when a player is auto-added to a round
+type RoundParticipantAutoAddedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	AddedUser sharedtypes.DiscordID `json:"added_user"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// RoundScoresImportedPayload is published when scores are successfully ingested into a round
+type RoundScoresImportedPayload struct {
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	ImportID  string                `json:"import_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	ChannelID string                `json:"channel_id"`
+	Count     int                   `json:"count"`
+	Timestamp time.Time             `json:"timestamp"`
 }

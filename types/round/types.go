@@ -1,6 +1,8 @@
 package roundtypes
 
 import (
+	"time"
+
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
@@ -60,6 +62,20 @@ type Round struct {
 	Participants   []Participant          `json:"participants"`
 	EventMessageID string                 `json:"event_message_id"`
 	GuildID        sharedtypes.GuildID    `json:"guild_id"`
+	// Import/scorecard fields
+	ImportID        string     `json:"import_id,omitempty"`
+	ImportStatus    string     `json:"import_status,omitempty"`
+	ImportType      string     `json:"import_type,omitempty"`
+	FileData        []byte     `json:"file_data,omitempty"`
+	FileName        string     `json:"file_name,omitempty"`
+	UDiscURL        string     `json:"udisc_url,omitempty"`
+	ImportNotes     string     `json:"import_notes,omitempty"`
+	ImportError     string     `json:"import_error,omitempty"`
+	ImportErrorCode string     `json:"import_error_code,omitempty"`
+	ImportedAt      *time.Time `json:"imported_at,omitempty"`
+	// Import context - who initiated and where to respond
+	ImportUserID    sharedtypes.DiscordID `json:"import_user_id,omitempty"`
+	ImportChannelID string                `json:"import_channel_id,omitempty"`
 }
 
 const DefaultEventType = EventType("casual")
@@ -93,4 +109,29 @@ type CreateRoundInput struct {
 	Location    *Location             `json:"location,omitempty"`
 	StartTime   string                `json:"start_time"` // StartTime comes in as a string before it's processed
 	UserID      sharedtypes.DiscordID `json:"user_id"`
+}
+
+// ParsedScorecard represents the result of parsing a scorecard file
+type ParsedScorecard struct {
+	ImportID     string              `json:"import_id"`
+	RoundID      sharedtypes.RoundID `json:"round_id"`
+	GuildID      sharedtypes.GuildID `json:"guild_id"`
+	ParScores    []int               `json:"par_scores"`
+	PlayerScores []PlayerScoreRow    `json:"player_scores"`
+	StartTime    *time.Time          `json:"start_time,omitempty"`
+	EndTime      *time.Time          `json:"end_time,omitempty"`
+}
+
+// PlayerScoreRow represents a single player's scores from a parsed scorecard
+type PlayerScoreRow struct {
+	PlayerName string `json:"player_name"`
+	HoleScores []int  `json:"hole_scores"`
+	Total      int    `json:"total"`
+}
+
+// MatchedPlayer represents a player successfully matched and imported.
+type MatchedPlayer struct {
+	DiscordID sharedtypes.DiscordID `json:"discord_id"`
+	UDiscName string                `json:"udisc_name"`
+	Score     int                   `json:"score"`
 }

@@ -25,11 +25,12 @@ const (
 	ProcessRoundScoresFailure  = "score.process.round.scores.fail"
 )
 
-// ProcessRoundScoresRequestPayload is the payload for the ProcessRoundScoresRequest event.
+// Event payloads
 type ProcessRoundScoresRequestPayload struct {
-	GuildID sharedtypes.GuildID     `json:"guild_id"`
-	RoundID sharedtypes.RoundID     `json:"round_id"`
-	Scores  []sharedtypes.ScoreInfo `json:"scores"`
+	GuildID   sharedtypes.GuildID     `json:"guild_id"`
+	RoundID   sharedtypes.RoundID     `json:"round_id"`
+	Scores    []sharedtypes.ScoreInfo `json:"scores"`
+	Overwrite bool                    `json:"overwrite"`
 }
 
 // ProcessRoundScoresSuccessPayload is the payload for the ProcessRoundScoresSuccess event.
