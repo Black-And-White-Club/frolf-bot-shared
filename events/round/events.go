@@ -98,14 +98,6 @@ const (
 	RoundTagNumberNotFound         = "round.leaderboard.tag.not.found"
 	LeaderboardGetTagNumberRequest = "leaderboard.round.tag.get.by.user.id.request"
 
-	// Import Events
-	ScorecardUploaded    = "udisc.scorecard.uploaded"
-	ScorecardParsed      = "udisc.scorecard.parsed"
-	ImportCompleted      = "udisc.import.completed"
-	ImportFailed         = "udisc.import.failed"
-	ParticipantAutoAdded = "round.participant.auto_added"
-	ScoresImported       = "round.scores.imported"
-
 	LeaderboardGetTagNumberResponse = "round.get.tag.number.response"
 	TagUpdateForScheduledRounds     = "round.tag.update.for.scheduled.rounds"
 	TagsUpdatedForScheduledRounds   = "round.tags.updated.for.scheduled.rounds"

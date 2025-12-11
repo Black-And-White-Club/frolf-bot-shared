@@ -9,9 +9,7 @@ import (
 
 // Stream names
 const (
-	UserUDiscMatchConfirmationRequired = "user.udisc.match.confirmation_required"
-	UserUDiscMatchConfirmed            = "user.udisc.match.confirmed"
-	UserStreamName                     = "user"
+	UserStreamName = "user"
 	// Note: Changed to use the request/response pattern consistently
 	LeaderboardTagAvailabilityCheckRequest = "leaderboard.tag.availability.check.request"
 	UserCreatedDLQ                         = "user.created.dlq"            // DLQ for UserCreated
@@ -61,9 +59,11 @@ const (
 	GetUserRoleFailed   = "discord.user.role.get.failed"
 
 	// UDisc identity management
-	UpdateUDiscIdentityRequest = "user.udisc.identity.update.request"
-	UDiscIdentityUpdated       = "user.udisc.identity.updated"
-	UDiscIdentityUpdateFailed  = "user.udisc.identity.update.failed"
+	UpdateUDiscIdentityRequest         = "user.udisc.identity.update.request"
+	UDiscIdentityUpdated               = "user.udisc.identity.updated"
+	UDiscIdentityUpdateFailed          = "user.udisc.identity.update.failed"
+	UserUDiscMatchConfirmationRequired = "user.udisc.match.confirmation_required"
+	UserUDiscMatchConfirmed            = "user.udisc.match.confirmed"
 )
 
 // BaseEventPayload is a struct that can be embedded in other event structs to provide common fields.
@@ -223,9 +223,9 @@ type UserPermissionsCheckFailedPayload struct {
 
 // UDiscMatchConfirmationRequiredPayload is published when player matches require admin confirmation
 type UDiscMatchConfirmationRequiredPayload struct {
-	ImportID         string                `json:"import_id"`
 	GuildID          sharedtypes.GuildID   `json:"guild_id"`
 	RoundID          sharedtypes.RoundID   `json:"round_id"`
+	ImportID         string                `json:"import_id"`
 	UserID           sharedtypes.DiscordID `json:"user_id"`
 	ChannelID        string                `json:"channel_id"`
 	UnmatchedPlayers []string              `json:"unmatched_players"`
@@ -234,9 +234,9 @@ type UDiscMatchConfirmationRequiredPayload struct {
 
 // UDiscMatchConfirmedPayload is published when an admin confirms player matches
 type UDiscMatchConfirmedPayload struct {
-	ImportID  string                  `json:"import_id"`
 	GuildID   sharedtypes.GuildID     `json:"guild_id"`
 	RoundID   sharedtypes.RoundID     `json:"round_id"`
+	ImportID  string                  `json:"import_id"`
 	UserID    sharedtypes.DiscordID   `json:"user_id"`
 	ChannelID string                  `json:"channel_id"`
 	Timestamp time.Time               `json:"timestamp"`
