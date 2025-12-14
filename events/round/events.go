@@ -116,10 +116,14 @@ const (
 	RoundRetrieved  = "round.retrieved"
 
 	// Scorecard import event topics
-	ScorecardUploadedTopic         = "round.scorecard.uploaded"
-	ScorecardURLRequestedTopic     = "round.scorecard.url_requested"
-	ScorecardParseRequestTopic     = "round.scorecard.parse_request"
-	ScorecardParsedTopic           = "round.scorecard.parsed"
+	ScorecardUploadedTopic     = "round.scorecard.uploaded"
+	ScorecardURLRequestedTopic = "round.scorecard.url_requested"
+	ScorecardParseRequestTopic = "round.scorecard.parse_request"
+	ScorecardParsedTopic       = "round.scorecard.parsed"
+	// ScorecardParsedForUserTopic is a fan-out copy of ScorecardParsedTopic intended for the user module.
+	// We intentionally use a different subject so the backend can keep a single durable consumer per subject
+	// (queue semantics) while still letting both modules receive the same parsed payload.
+	ScorecardParsedForUserTopic    = "round.scorecard.parsed.user"
 	ScorecardParseFailedTopic      = "round.scorecard.parse_failed"
 	ImportConflictDetectedTopic    = "round.import.conflict_detected"
 	ImportOverwriteConfirmedTopic  = "round.import.overwrite_confirmed"
