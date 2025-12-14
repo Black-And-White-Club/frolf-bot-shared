@@ -871,6 +871,8 @@ type ImportCompletedPayload struct {
 	PlayersAutoAdded   int                        `json:"players_auto_added"`
 	MatchedPlayersList []roundtypes.MatchedPlayer `json:"matched_players_list,omitempty"`
 	SkippedPlayers     []string                   `json:"skipped_players,omitempty"`
+	AutoAddedUserIDs   []sharedtypes.DiscordID    `json:"auto_added_user_ids,omitempty"`
+	Scores             []sharedtypes.ScoreInfo    `json:"scores,omitempty"`
 	Timestamp          time.Time                  `json:"timestamp"`
 }
 
