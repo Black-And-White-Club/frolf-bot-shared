@@ -234,13 +234,14 @@ type UDiscMatchConfirmationRequiredPayload struct {
 
 // UDiscMatchConfirmedPayload is published when an admin confirms player matches
 type UDiscMatchConfirmedPayload struct {
-	GuildID   sharedtypes.GuildID     `json:"guild_id"`
-	RoundID   sharedtypes.RoundID     `json:"round_id"`
-	ImportID  string                  `json:"import_id"`
-	UserID    sharedtypes.DiscordID   `json:"user_id"`
-	ChannelID string                  `json:"channel_id"`
-	Timestamp time.Time               `json:"timestamp"`
-	Mappings  []UDiscConfirmedMapping `json:"mappings"`
+	GuildID      sharedtypes.GuildID     `json:"guild_id"`
+	RoundID      sharedtypes.RoundID     `json:"round_id"`
+	ImportID     string                  `json:"import_id"`
+	UserID       sharedtypes.DiscordID   `json:"user_id"`
+	ChannelID    string                  `json:"channel_id"`
+	Timestamp    time.Time               `json:"timestamp"`
+	Mappings     []UDiscConfirmedMapping `json:"mappings"`
+	ParsedScores interface{}             `json:"parsed_scores,omitempty"` // Contains the parsed scorecard data for round module
 }
 
 // UDiscConfirmedMapping represents a resolved player match
