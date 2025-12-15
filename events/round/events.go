@@ -830,36 +830,39 @@ type ScorecardURLRequestedPayload struct {
 
 // ScorecardParseFailedPayload is published when scorecard parsing fails
 type ScorecardParseFailedPayload struct {
-	GuildID   sharedtypes.GuildID   `json:"guild_id"`
-	RoundID   sharedtypes.RoundID   `json:"round_id"`
-	ImportID  string                `json:"import_id"`
-	UserID    sharedtypes.DiscordID `json:"user_id"`
-	ChannelID string                `json:"channel_id"`
-	Error     string                `json:"error"`
-	Timestamp time.Time             `json:"timestamp"`
+	GuildID        sharedtypes.GuildID   `json:"guild_id"`
+	RoundID        sharedtypes.RoundID   `json:"round_id"`
+	ImportID       string                `json:"import_id"`
+	EventMessageID string                `json:"event_message_id"`
+	UserID         sharedtypes.DiscordID `json:"user_id"`
+	ChannelID      string                `json:"channel_id"`
+	Error          string                `json:"error"`
+	Timestamp      time.Time             `json:"timestamp"`
 }
 
 // ImportFailedPayload is published when an import fails
 type ImportFailedPayload struct {
-	GuildID   sharedtypes.GuildID   `json:"guild_id"`
-	RoundID   sharedtypes.RoundID   `json:"round_id"`
-	ImportID  string                `json:"import_id"`
-	UserID    sharedtypes.DiscordID `json:"user_id"`
-	ChannelID string                `json:"channel_id"`
-	Error     string                `json:"error"`
-	ErrorCode string                `json:"error_code"`
-	Timestamp time.Time             `json:"timestamp"`
+	GuildID        sharedtypes.GuildID   `json:"guild_id"`
+	RoundID        sharedtypes.RoundID   `json:"round_id"`
+	ImportID       string                `json:"import_id"`
+	EventMessageID string                `json:"event_message_id"`
+	UserID         sharedtypes.DiscordID `json:"user_id"`
+	ChannelID      string                `json:"channel_id"`
+	Error          string                `json:"error"`
+	ErrorCode      string                `json:"error_code"`
+	Timestamp      time.Time             `json:"timestamp"`
 }
 
 // ParsedScorecardPayload is published when a scorecard is successfully parsed
 type ParsedScorecardPayload struct {
-	GuildID    sharedtypes.GuildID         `json:"guild_id"`
-	RoundID    sharedtypes.RoundID         `json:"round_id"`
-	ImportID   string                      `json:"import_id"`
-	UserID     sharedtypes.DiscordID       `json:"user_id"`
-	ChannelID  string                      `json:"channel_id"`
-	ParsedData *roundtypes.ParsedScorecard `json:"parsed_data"`
-	Timestamp  time.Time                   `json:"timestamp"`
+	GuildID        sharedtypes.GuildID         `json:"guild_id"`
+	RoundID        sharedtypes.RoundID         `json:"round_id"`
+	ImportID       string                      `json:"import_id"`
+	EventMessageID string                      `json:"event_message_id"`
+	UserID         sharedtypes.DiscordID       `json:"user_id"`
+	ChannelID      string                      `json:"channel_id"`
+	ParsedData     *roundtypes.ParsedScorecard `json:"parsed_data"`
+	Timestamp      time.Time                   `json:"timestamp"`
 }
 
 // ImportCompletedPayload is published when an import completes successfully with all scores ingested
@@ -867,6 +870,7 @@ type ImportCompletedPayload struct {
 	GuildID            sharedtypes.GuildID        `json:"guild_id"`
 	RoundID            sharedtypes.RoundID        `json:"round_id"`
 	ImportID           string                     `json:"import_id"`
+	EventMessageID     string                     `json:"event_message_id"`
 	UserID             sharedtypes.DiscordID      `json:"user_id"`
 	ChannelID          string                     `json:"channel_id"`
 	ScoresIngested     int                        `json:"scores_ingested"`
