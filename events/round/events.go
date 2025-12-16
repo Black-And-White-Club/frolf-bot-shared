@@ -134,6 +134,16 @@ const (
 	RoundScoresFinalizedTopic      = "round.scores.finalized"
 )
 
+// Payload emitted by service after imported scores are applied (no publishing performed by service).
+type ImportScoresAppliedPayload struct {
+	GuildID        sharedtypes.GuildID      `json:"guild_id"`
+	RoundID        sharedtypes.RoundID      `json:"round_id"`
+	ImportID       string                   `json:"import_id"`
+	Participants   []roundtypes.Participant `json:"participants"`
+	EventMessageID string                   `json:"event_message_id"`
+	Timestamp      time.Time                `json:"timestamp"`
+}
+
 // Event Payloads - structured by extending base payloads where possible
 
 type GetRoundRequestPayload struct {
