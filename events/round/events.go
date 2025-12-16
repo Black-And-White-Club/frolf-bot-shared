@@ -83,9 +83,14 @@ const (
 	ScoreModuleNotificationError = "score.module.notification.error"
 
 	// Round Lifecycle Events
-	RoundStarted            = "round.started"
-	RoundStartedDiscord     = "round.started_discord"
-	RoundFinalized          = "round.finalized" // Backend-only: DB state updated to finalized
+	RoundStarted        = "round.started"
+	RoundStartedDiscord = "round.started_discord"
+	RoundFinalized      = "round.finalized" // Backend-only: DB state updated to finalized
+	// RoundFinalizedDiscord is emitted for Discord-specific finalization consumers
+	// and contains the fields required to update/patch the Discord embed. This
+	// keeps the domain/backend finalization event payload separate from the
+	// Discord integration payload to avoid type mismatches and NACKs.
+	RoundFinalizedDiscord   = "round.finalized.discord"
 	RoundCompleted          = "round.completed" // External apps: Round fully processed and ready for display
 	RoundFinalizationError  = "round.finalization.error"
 	RoundScoresNotification = "round.scores.notification"
@@ -214,6 +219,22 @@ type RoundFinalizedEmbedUpdatePayload struct {
 	// This struct intentionally contains only a single GuildID field as the first field,
 	// to avoid redundancy and potential confusion. The payload is designed to reference
 	// the guild only once for clarity and consistency.
+}
+
+// RoundFinalizedDiscordPayload is a Discord-specific payload emitted when a round
+// has been finalized. It contains the snapshot of the round needed by Discord
+// consumers to update or finalize the scorecard embed. This payload is kept
+// separate from the backend RoundFinalizedPayload to avoid mixing domain and
+// integration concerns.
+type RoundFinalizedDiscordPayload struct {
+	GuildID          sharedtypes.GuildID      `json:"guild_id"`
+	RoundID          sharedtypes.RoundID      `json:"round_id"`
+	Title            roundtypes.Title         `json:"title"`
+	StartTime        *sharedtypes.StartTime   `json:"start_time"`
+	Location         *roundtypes.Location     `json:"location"`
+	Participants     []roundtypes.Participant `json:"participants"`
+	EventMessageID   string                   `json:"event_message_id"`
+	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
 }
 
 // ---- Round Creation Payloads ----
