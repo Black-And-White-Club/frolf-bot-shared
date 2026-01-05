@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "channel_id": {
+      "type": "string"
+    },
+    "error_message": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

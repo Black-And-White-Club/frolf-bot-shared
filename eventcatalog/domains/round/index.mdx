@@ -1,0 +1,37 @@
+---
+id: round
+name: Round
+version: 1.0.0
+summary: Manages disc golf rounds including creation, scheduling, participant management, and scoring workflows.
+owners:
+    - frolf-bot-team
+badges:
+    - content: DDD
+      backgroundColor: '#10b981'
+      textColor: '#ffffff'
+services:
+    - id: frolf-bot
+      version: 1.0.0
+    - id: discord-frolf-bot
+      version: 1.0.0
+---
+
+Manages disc golf rounds including creation, scheduling, participant management, and scoring workflows.
+
+## Overview
+
+The **Round** domain is a bounded context within the Frolf Bot system that encapsulates all business logic related to round.
+
+## Architecture
+
+<NodeGraph />
+
+## Event Patterns
+
+All events in this domain follow:
+- **Event Notification Pattern** (Martin Fowler) - Events contain complete data snapshots
+- **V1 Versioning** - Topic names include `.v1` suffix for version compatibility
+
+## Services
+
+Both the backend service (frolf-bot) and Discord bot (discord-frolf-bot) participate in this domain's workflows.

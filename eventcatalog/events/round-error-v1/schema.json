@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    }
+  },
+  "type": "object"
+}

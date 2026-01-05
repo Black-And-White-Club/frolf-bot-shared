@@ -1,0 +1,401 @@
+---
+id: frolf-bot
+name: Frolf Bot Backend
+version: 1.0.0
+summary: >-
+  Core backend service that handles business logic for rounds, scores, users,
+  leaderboards, and guilds. Built with Go and Watermill, it processes requests
+  from the Discord bot and emits domain events.
+owners:
+  - frolf-bot-team
+badges:
+  - content: Go
+    backgroundColor: '#00ADD8'
+    textColor: '#ffffff'
+  - content: Watermill
+    backgroundColor: '#4A90D9'
+    textColor: '#ffffff'
+sends:
+  - id: leaderboard-tag-swap-processed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-entity-created-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-removal-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-delete-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-finalized-discord-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-join-validated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-joined-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-scheduled-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-declined-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-reminder-sent-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-score-update-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-scores-partially-submitted-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: score-process-round-scores-succeeded-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-creation-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-get-response-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-created-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-delete-validated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-finalized-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-validation-passed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-get-response-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-schedule-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-update-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-role-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-retrieved-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-datetime-parsed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-deleted-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-removed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-created-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-update-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-entity-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-score-updated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-score-update-validated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-to-delete-fetched-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-creation-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-delete-authorized-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-update-success-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: score-process-round-scores-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-tag-swap-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-all-scores-submitted-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-event-message-id-update-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-join-error-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-validation-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-created-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-fetched-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-started-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-update-validated-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-get-failed-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-started-discord-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-stored-v1
+    version: 1.0.0
+    to:
+      - id: nats-jetstream
+        version: 1.0.0
+receives:
+  - id: round-score-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-tag-number-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-get-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-creation-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-removal-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-status-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-creation-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-role-update-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-creation-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: score-process-round-scores-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-get-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: user-get-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: leaderboard-tag-swap-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-participant-join-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: round-delete-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+  - id: guild-config-retrieval-requested-v1
+    version: 1.0.0
+    from:
+      - id: nats-jetstream
+        version: 1.0.0
+---
+
+Core backend service that handles business logic for rounds, scores, users, leaderboards, and guilds. Built with Go and Watermill, it processes requests from the Discord bot and emits domain events.
+
+## Architecture
+
+<NodeGraph />
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Language | Go |
+| Message Broker | NATS JetStream |
+| Event Library | Watermill |
+| Database | PostgreSQL |
+
+## Event Summary
+
+| Direction | Count |
+|-----------|-------|
+| **Publishes** | 53 events |
+| **Subscribes** | 19 events |
+
+## Integration
+
+This service communicates exclusively through events via NATS JetStream. It does not expose HTTP APIs directly.

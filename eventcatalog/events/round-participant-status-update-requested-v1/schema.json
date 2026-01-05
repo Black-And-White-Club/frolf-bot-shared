@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

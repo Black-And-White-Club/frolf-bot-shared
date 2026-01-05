@@ -1,0 +1,37 @@
+---
+id: guild
+name: Guild
+version: 1.0.0
+summary: Handles Discord guild configuration and settings management.
+owners:
+    - frolf-bot-team
+badges:
+    - content: DDD
+      backgroundColor: '#ec4899'
+      textColor: '#ffffff'
+services:
+    - id: frolf-bot
+      version: 1.0.0
+    - id: discord-frolf-bot
+      version: 1.0.0
+---
+
+Handles Discord guild configuration and settings management.
+
+## Overview
+
+The **Guild** domain is a bounded context within the Frolf Bot system that encapsulates all business logic related to guild.
+
+## Architecture
+
+<NodeGraph />
+
+## Event Patterns
+
+All events in this domain follow:
+- **Event Notification Pattern** (Martin Fowler) - Events contain complete data snapshots
+- **V1 Versioning** - Topic names include `.v1` suffix for version compatibility
+
+## Services
+
+Both the backend service (frolf-bot) and Discord bot (discord-frolf-bot) participate in this domain's workflows.

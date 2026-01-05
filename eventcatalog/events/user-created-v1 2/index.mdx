@@ -1,0 +1,33 @@
+---
+id: user-created-v1
+name: User Created
+version: 1.0.0
+summary: User created successfully
+owners:
+    - frolf-bot-team
+badges:
+    - content: user
+      backgroundColor: '#3b82f6'
+      textColor: '#ffffff'
+    - content: v1
+      backgroundColor: '#6366f1'
+      textColor: '#ffffff'
+schemaPath: schema.json
+channels:
+    - id: nats-jetstream
+      version: 1.0.0
+---
+
+User created successfully
+
+## Topic
+
+This event is published on the `user.created.v1` topic via NATS JetStream.
+
+## Schema
+
+<SchemaViewer file="schema.json" />
+
+## Producers & Consumers
+
+Use the node graph above to see which services produce and consume this event.

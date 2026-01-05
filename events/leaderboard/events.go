@@ -1,3 +1,11 @@
+// Package leaderboardevents contains leaderboard-related domain events.
+//
+// MIGRATION NOTICE: This file contains legacy event constants.
+// New code should use the versioned events from the flow-based files:
+//   - updates.go: LeaderboardUpdateRequestedV1, LeaderboardUpdatedV1, etc.
+//   - tags.go: TagAvailabilityCheckRequestedV1, LeaderboardTagAssignedV1, TagSwapRequestedV1, etc.
+//
+// See each file for detailed flow documentation and versioning information.
 package leaderboardevents
 
 import (
@@ -15,55 +23,88 @@ const (
 )
 
 // Leaderboard-related events
+// Deprecated: Use versioned constants from updates.go and tags.go
 const (
 	// Leaderboard Update
-	RoundFinalized              = "leaderboard.round.finalized"
-	LeaderboardUpdateRequested  = "leaderboard.update.requested"
-	LeaderboardUpdated          = "leaderboard.batch.tag.assigned"
-	LeaderboardUpdateFailed     = "leaderboard.update.failed"
-	DeactivateOldLeaderboard    = "leaderboard.deactivate"
+	// Deprecated: Use LeaderboardRoundFinalizedV1 from updates.go
+	RoundFinalized = "leaderboard.round.finalized"
+	// Deprecated: Use LeaderboardUpdateRequestedV1 from updates.go
+	LeaderboardUpdateRequested = "leaderboard.update.requested"
+	// Deprecated: Use LeaderboardUpdatedV1 from updates.go
+	LeaderboardUpdated = "leaderboard.batch.tag.assigned"
+	// Deprecated: Use LeaderboardUpdateFailedV1 from updates.go
+	LeaderboardUpdateFailed = "leaderboard.update.failed"
+	// Deprecated: Use DeactivateOldLeaderboardV1 from updates.go
+	DeactivateOldLeaderboard = "leaderboard.deactivate"
+	// Deprecated: Use TagUpdateForScheduledRoundsV1 from updates.go
 	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
 
 	// Tag Assignment
-	TagAvailabilityCheckRequest            = "leaderboard.tag.availability.check.requested"
-	LeaderboardTagAssignmentRequested      = "leaderboard.tag.assignment.requested"
-	LeaderboardTagAssignmentFailed         = "leaderboard.tag.assignment.failed"
-	LeaderboardTagAssignmentSuccess        = "leaderboard.tag.assignment.success"
-	TagAvailable                           = "user.tag.available"
-	TagUnavailable                         = "user.tag.unavailable"
-	TagAvailableCheckFailure               = "leaderboard.tag.availability.failure"
+	// Deprecated: Use TagAvailabilityCheckRequestedV1 from tags.go
+	TagAvailabilityCheckRequest = "leaderboard.tag.availability.check.requested"
+	// Deprecated: Use LeaderboardTagAssignmentRequestedV1 from tags.go
+	LeaderboardTagAssignmentRequested = "leaderboard.tag.assignment.requested"
+	// Deprecated: Use LeaderboardTagAssignmentFailedV1 from tags.go
+	LeaderboardTagAssignmentFailed = "leaderboard.tag.assignment.failed"
+	// Deprecated: Use LeaderboardTagAssignedV1 from tags.go
+	LeaderboardTagAssignmentSuccess = "leaderboard.tag.assignment.success"
+	// Deprecated: Use LeaderboardTagAvailableV1 from tags.go
+	TagAvailable = "user.tag.available"
+	// Deprecated: Use LeaderboardTagUnavailableV1 from tags.go
+	TagUnavailable = "user.tag.unavailable"
+	// Deprecated: Use TagAvailabilityCheckFailedV1 from tags.go
+	TagAvailableCheckFailure = "leaderboard.tag.availability.failure"
+	// Deprecated: Use LeaderboardBatchTagAssignmentRequestedV1 from tags.go
 	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
-	LeaderboardBatchTagAssignmentFailed    = "leaderboard.batch.tag.assignment.failed"
-	LeaderboardBatchTagAssigned            = "leaderboard.batch.tag.assigned"
+	// Deprecated: Use LeaderboardBatchTagAssignmentFailedV1 from tags.go
+	LeaderboardBatchTagAssignmentFailed = "leaderboard.batch.tag.assignment.failed"
+	// Deprecated: Use LeaderboardBatchTagAssignedV1 from tags.go
+	LeaderboardBatchTagAssigned = "leaderboard.batch.tag.assigned"
 
 	// Tag Swap
+	// Deprecated: Use TagSwapRequestedV1 from tags.go
 	TagSwapRequested = "leaderboard.tag.swap.requested"
+	// Deprecated: Use TagSwapInitiatedV1 from tags.go
 	TagSwapInitiated = "leaderboard.tag.swap.initiated"
-	TagSwapFailed    = "leaderboard.tag.swap.failed"
+	// Deprecated: Use TagSwapFailedV1 from tags.go
+	TagSwapFailed = "leaderboard.tag.swap.failed"
+	// Deprecated: Use TagSwapProcessedV1 from tags.go
 	TagSwapProcessed = "leaderboard.tag.swap.processed"
 
 	// Leaderboard Requests
-	GetLeaderboardRequest  = "leaderboard.get.request"
+	// Deprecated: Use GetLeaderboardRequestedV1 from updates.go
+	GetLeaderboardRequest = "leaderboard.get.request"
+	// Deprecated: Use GetLeaderboardResponseV1 from updates.go
 	GetLeaderboardResponse = "leaderboard.get.success"
-	GetLeaderboardFailed   = "leaderboard.get.failed"
+	// Deprecated: Use GetLeaderboardFailedV1 from updates.go
+	GetLeaderboardFailed = "leaderboard.get.failed"
 
 	// Tag Requests
+	// Deprecated: Use LeaderboardTraceEventV1 from tags.go
 	LeaderboardTraceEvent = "leaderboard.trace.event"
 
 	// Request events
-	GetTagByUserIDRequest      = "leaderboard.tag.get.by.user.id.request"
+	// Deprecated: Use GetTagByUserIDRequestedV1 from tags.go
+	GetTagByUserIDRequest = "leaderboard.tag.get.by.user.id.request"
+	// Deprecated: Use RoundGetTagByUserIDRequestedV1 from tags.go
 	RoundGetTagByUserIDRequest = "leaderboard.round.tag.get.by.user.id.request"
 
 	// Response events
-	GetTagNumberResponse   = "round.leaderboard.tag.get.by.user.id.response"
+	// Deprecated: Use GetTagNumberResponseV1 from tags.go
+	GetTagNumberResponse = "round.leaderboard.tag.get.by.user.id.response"
+	// Deprecated: Use GetTagNumberResponseV1 from tags.go
 	GetTagByUserIDResponse = "round.leaderboard.tag.get.by.user.id.response"
+	// Deprecated: Use RoundTagNumberNotFoundV1 from tags.go
 	GetTagByUserIDNotFound = "round.leaderboard.tag.get.by.user.id.not.found"
 
 	// Round-specific response events
-	RoundTagNumberFound    = "round.leaderboard.tag.found"
+	// Deprecated: Use RoundTagNumberFoundV1 from tags.go
+	RoundTagNumberFound = "round.leaderboard.tag.found"
+	// Deprecated: Use RoundTagNumberNotFoundV1 from tags.go
 	RoundTagNumberNotFound = "round.leaderboard.tag.not.found"
 
 	// Failure events
+	// Deprecated: Use GetTagNumberFailedV1 from tags.go
 	GetTagNumberFailed = "leaderboard.tag.get.by.user.id.failed"
 )
 

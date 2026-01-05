@@ -1,0 +1,42 @@
+{
+  "properties": {
+    "admin_role_id": {
+      "type": "string"
+    },
+    "auto_setup_completed": {
+      "type": "boolean"
+    },
+    "editor_role_id": {
+      "type": "string"
+    },
+    "event_channel_id": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "leaderboard_channel_id": {
+      "type": "string"
+    },
+    "setup_completed_at": {
+      "format": "date-time",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "signup_channel_id": {
+      "type": "string"
+    },
+    "signup_emoji": {
+      "type": "string"
+    },
+    "signup_message_id": {
+      "type": "string"
+    },
+    "user_role_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

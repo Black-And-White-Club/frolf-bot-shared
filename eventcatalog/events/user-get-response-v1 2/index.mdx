@@ -1,0 +1,33 @@
+---
+id: user-get-response-v1
+name: User Retrieved
+version: 1.0.0
+summary: User details retrieved
+owners:
+    - frolf-bot-team
+badges:
+    - content: user
+      backgroundColor: '#3b82f6'
+      textColor: '#ffffff'
+    - content: v1
+      backgroundColor: '#6366f1'
+      textColor: '#ffffff'
+schemaPath: schema.json
+channels:
+    - id: nats-jetstream
+      version: 1.0.0
+---
+
+User details retrieved
+
+## Topic
+
+This event is published on the `user.get.response.v1` topic via NATS JetStream.
+
+## Schema
+
+<SchemaViewer file="schema.json" />
+
+## Producers & Consumers
+
+Use the node graph above to see which services produce and consume this event.
