@@ -20,123 +20,212 @@ const (
 // Event names - grouped by functionality
 const (
 	// Round Creation Events
-	RoundCreateRequest         = "round.create.request"
-	RoundValidated             = "round.validated"
-	RoundValidationFailed      = "round.validation.failed"
-	RoundDateTimeParsed        = "round.datetime.parsed"
-	RoundEntityCreated         = "round.entity.created"
-	RoundStored                = "round.stored"
-	RoundScheduled             = "round.scheduled"
-	RoundCreated               = "round.created"
-	RoundCreationFailed        = "round.creation.failed"
-	RoundError                 = "round.error"
+	// Deprecated: Use RoundCreationRequestedV1 from creation.go. Will be removed in v2.0.
+	RoundCreateRequest = "round.create.request"
+	// Deprecated: Use RoundValidationPassedV1 from creation.go. Will be removed in v2.0.
+	RoundValidated = "round.validated"
+	// Deprecated: Use RoundValidationFailedV1 from creation.go. Will be removed in v2.0.
+	RoundValidationFailed = "round.validation.failed"
+	// Deprecated: Use RoundDateTimeParsedV1 from creation.go. Will be removed in v2.0.
+	RoundDateTimeParsed = "round.datetime.parsed"
+	// Deprecated: Use RoundEntityCreatedV1 from creation.go. Will be removed in v2.0.
+	RoundEntityCreated = "round.entity.created"
+	// Deprecated: Use RoundStoredV1 from creation.go. Will be removed in v2.0.
+	RoundStored = "round.stored"
+	// Deprecated: Use RoundScheduledV1 from creation.go. Will be removed in v2.0.
+	RoundScheduled = "round.scheduled"
+	// Deprecated: Use RoundCreatedV1 from creation.go. Will be removed in v2.0.
+	RoundCreated = "round.created"
+	// Deprecated: Use RoundCreationFailedV1 from creation.go. Will be removed in v2.0.
+	RoundCreationFailed = "round.creation.failed"
+	// Deprecated: Use RoundErrorV1 from creation.go. Will be removed in v2.0.
+	RoundError = "round.error"
+	// Deprecated: Use RoundEventMessageIDUpdatedV1 from creation.go. Will be removed in v2.0.
 	RoundEventMessageIDUpdated = "round.event.message.id.updated"
-	RoundEventMessageIDUpdate  = "round.event.message.id.update"
-	RoundTraceEvent            = "round.trace.event"
+	// Deprecated: Use RoundEventMessageIDUpdateV1 from creation.go. Will be removed in v2.0.
+	RoundEventMessageIDUpdate = "round.event.message.id.update"
+	// Deprecated: Use RoundTraceEventV1 from creation.go. Will be removed in v2.0.
+	RoundTraceEvent = "round.trace.event"
 
 	// Round Update Events
-	RoundUpdateRequest    = "round.update.request"
-	RoundUpdateValidated  = "round.update.validated"
-	RoundFetched          = "round.fetched"
-	RoundEntityUpdated    = "round.entity.updated"
-	RoundUpdateSuccess    = "round.update.success"
-	RoundUpdateError      = "round.update.error"
-	RoundUpdated          = "round.updated"
-	RoundScheduleUpdate   = "round.schedule.updated"
-	RoundStateUpdated     = "round.state.updated"
-	RoundsUpdated         = "round.rounds.updated"
+	// Deprecated: Use RoundUpdateRequestedV1 from update.go. Will be removed in v2.0.
+	RoundUpdateRequest = "round.update.request"
+	// Deprecated: Use RoundUpdateValidatedV1 from update.go. Will be removed in v2.0.
+	RoundUpdateValidated = "round.update.validated"
+	// Deprecated: Use RoundFetchedV1 from update.go. Will be removed in v2.0.
+	RoundFetched = "round.fetched"
+	// Deprecated: Use RoundEntityUpdatedV1 from update.go. Will be removed in v2.0.
+	RoundEntityUpdated = "round.entity.updated"
+	// Deprecated: Use RoundUpdateSuccessV1 from update.go. Will be removed in v2.0.
+	RoundUpdateSuccess = "round.update.success"
+	// Deprecated: Use RoundUpdateErrorV1 from update.go. Will be removed in v2.0.
+	RoundUpdateError = "round.update.error"
+	// Deprecated: Use RoundUpdatedV1 from update.go. Will be removed in v2.0.
+	RoundUpdated = "round.updated"
+	// Deprecated: Use RoundScheduleUpdatedV1 from update.go. Will be removed in v2.0.
+	RoundScheduleUpdate = "round.schedule.updated"
+	// Deprecated: Use RoundStateUpdatedV1 from update.go. Will be removed in v2.0.
+	RoundStateUpdated = "round.state.updated"
+	// Deprecated: Use RoundsUpdatedV1 from update.go. Will be removed in v2.0.
+	RoundsUpdated = "round.rounds.updated"
+	// Deprecated: Use RoundUpdateRescheduleV1 from update.go. Will be removed in v2.0.
 	RoundUpdateReschedule = "round.update.reschedule"
 
 	// Round Delete Events
-	RoundDeleteRequest      = "round.delete.request"
-	RoundDeleted            = "round.deleted"
-	RoundDeleteValidated    = "round.delete.validated"
-	RoundToDeleteFetched    = "round.to.delete.fetched"
-	RoundDeleteAuthorized   = "round.delete.authorized"
+	// Deprecated: Use RoundDeleteRequestedV1 from delete.go. Will be removed in v2.0.
+	RoundDeleteRequest = "round.delete.request"
+	// Deprecated: Use RoundDeletedV1 from delete.go. Will be removed in v2.0.
+	RoundDeleted = "round.deleted"
+	// Deprecated: Use RoundDeleteValidatedV1 from delete.go. Will be removed in v2.0.
+	RoundDeleteValidated = "round.delete.validated"
+	// Deprecated: Use RoundToDeleteFetchedV1 from delete.go. Will be removed in v2.0.
+	RoundToDeleteFetched = "round.to.delete.fetched"
+	// Deprecated: Use RoundDeleteAuthorizedV1 from delete.go. Will be removed in v2.0.
+	RoundDeleteAuthorized = "round.delete.authorized"
+	// Deprecated: Use RoundDeleteUnauthorizedV1 from delete.go. Will be removed in v2.0.
 	RoundDeleteUnauthorized = "round.delete.unauthorized"
-	RoundDeleteError        = "round.delete.error"
+	// Deprecated: Use RoundDeleteErrorV1 from delete.go. Will be removed in v2.0.
+	RoundDeleteError = "round.delete.error"
 
 	// Participant Events
-	RoundParticipantJoinRequest           = "round.participant.join.request"
-	RoundParticipantJoinValidated         = "round.participant.join.validated"
-	RoundParticipantJoinError             = "round.participant.join.error"
-	RoundParticipantDeclined              = "round.participant.declined"
-	RoundParticipantJoined                = "round.participant.joined"
-	RoundParticipantRemovalRequest        = "round.participant.removal.request"
-	RoundParticipantRemoved               = "round.participant.removed"
+	// Deprecated: Use RoundParticipantJoinRequestedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantJoinRequest = "round.participant.join.request"
+	// Deprecated: Use RoundParticipantJoinValidatedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantJoinValidated = "round.participant.join.validated"
+	// Deprecated: Use RoundParticipantJoinErrorV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantJoinError = "round.participant.join.error"
+	// Deprecated: Use RoundParticipantDeclinedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantDeclined = "round.participant.declined"
+	// Deprecated: Use RoundParticipantJoinedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantJoined = "round.participant.joined"
+	// Deprecated: Use RoundParticipantRemovalRequestedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantRemovalRequest = "round.participant.removal.request"
+	// Deprecated: Use RoundParticipantRemovedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantRemoved = "round.participant.removed"
+	// Deprecated: Use RoundParticipantJoinValidationRequestedV1 from participants.go. Will be removed in v2.0.
 	RoundParticipantJoinValidationRequest = "round.participant.join.validation.request"
-	RoundParticipantStatusError           = "round.participant.error"
-	RoundParticipantStatusFound           = "round.participant.found"
-	RoundParticipantStatusCheckError      = "round.participant.status.check.error"
-	RoundParticipantRemovalError          = "round.participant.removal.error"
-	RoundParticipantUpdateError           = "round.participant.update.error"
-	RoundParticipantStatusUpdateRequest   = "round.participant.status.update.request"
+	// Deprecated: Use RoundParticipantStatusErrorV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantStatusError = "round.participant.error"
+	// Deprecated: Use RoundParticipantStatusFoundV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantStatusFound = "round.participant.found"
+	// Deprecated: Use RoundParticipantStatusCheckErrorV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantStatusCheckError = "round.participant.status.check.error"
+	// Deprecated: Use RoundParticipantRemovalErrorV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantRemovalError = "round.participant.removal.error"
+	// Deprecated: Use RoundParticipantUpdateErrorV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantUpdateError = "round.participant.update.error"
+	// Deprecated: Use RoundParticipantStatusUpdateRequestedV1 from participants.go. Will be removed in v2.0.
+	RoundParticipantStatusUpdateRequest = "round.participant.status.update.request"
 
 	// Score Events
-	RoundScoreUpdateRequest      = "round.score.update.request"
-	RoundScoreUpdateValidated    = "round.score.update.validated"
+	// Deprecated: Use RoundScoreUpdateRequestedV1 from scoring.go. Will be removed in v2.0.
+	RoundScoreUpdateRequest = "round.score.update.request"
+	// Deprecated: Use RoundScoreUpdateValidatedV1 from scoring.go. Will be removed in v2.0.
+	RoundScoreUpdateValidated = "round.score.update.validated"
+	// Deprecated: Use RoundParticipantScoreUpdatedV1 from scoring.go. Will be removed in v2.0.
 	RoundParticipantScoreUpdated = "round.participant.score.updated"
-	RoundAllScoresSubmitted      = "round.all.scores.submitted"
-	RoundNotAllScoresSubmitted   = "round.not.all.scores.submitted"
-	RoundScoreUpdateError        = "round.score.update.error"
-	ProcessRoundScoresRequest    = "score.process.round.scores.request"
+	// Deprecated: Use RoundAllScoresSubmittedV1 from scoring.go. Will be removed in v2.0.
+	RoundAllScoresSubmitted = "round.all.scores.submitted"
+	// Deprecated: Use RoundScoresPartiallySubmittedV1 from scoring.go. Will be removed in v2.0.
+	RoundNotAllScoresSubmitted = "round.not.all.scores.submitted"
+	// Deprecated: Use RoundScoreUpdateErrorV1 from scoring.go. Will be removed in v2.0.
+	RoundScoreUpdateError = "round.score.update.error"
+	// Deprecated: Use ProcessRoundScoresRequestedV1 from scoring.go. Will be removed in v2.0.
+	ProcessRoundScoresRequest = "score.process.round.scores.request"
+	// Deprecated: Use ScoreModuleNotificationErrorV1 from scoring.go. Will be removed in v2.0.
 	ScoreModuleNotificationError = "score.module.notification.error"
 
 	// Round Lifecycle Events
-	RoundStarted        = "round.started"
+	// Deprecated: Use RoundStartedV1 from lifecycle.go. Will be removed in v2.0.
+	RoundStarted = "round.started"
+	// Deprecated: Use RoundStartedDiscordV1 from lifecycle.go. Will be removed in v2.0.
 	RoundStartedDiscord = "round.started_discord"
-	RoundFinalized      = "round.finalized" // Backend-only: DB state updated to finalized
+	// Deprecated: Use RoundFinalizedV1 from lifecycle.go. Will be removed in v2.0.
+	RoundFinalized = "round.finalized" // Backend-only: DB state updated to finalized
+	// Deprecated: Use RoundFinalizedDiscordV1 from lifecycle.go. Will be removed in v2.0.
 	// RoundFinalizedDiscord is emitted for Discord-specific finalization consumers
 	// and contains the fields required to update/patch the Discord embed. This
 	// keeps the domain/backend finalization event payload separate from the
 	// Discord integration payload to avoid type mismatches and NACKs.
-	RoundFinalizedDiscord   = "round.finalized.discord"
-	RoundCompleted          = "round.completed" // External apps: Round fully processed and ready for display
-	RoundFinalizationError  = "round.finalization.error"
+	RoundFinalizedDiscord = "round.finalized.discord"
+	// Deprecated: Use RoundCompletedV1 from lifecycle.go. Will be removed in v2.0.
+	RoundCompleted = "round.completed" // External apps: Round fully processed and ready for display
+	// Deprecated: Use RoundFinalizationErrorV1 from lifecycle.go. Will be removed in v2.0.
+	RoundFinalizationError = "round.finalization.error"
+	// Deprecated: Use RoundScoresNotificationV1 from scoring.go. Will be removed in v2.0.
 	RoundScoresNotification = "round.scores.notification"
-	RoundReminder           = "round.reminder"
-	RoundDiscordReminder    = "round.reminder.discord"
+	// Deprecated: Use RoundReminderScheduledV1 from lifecycle.go. Will be removed in v2.0.
+	RoundReminder = "round.reminder"
+	// Deprecated: Use RoundReminderSentV1 from lifecycle.go. Will be removed in v2.0.
+	RoundDiscordReminder = "round.reminder.discord"
 
 	// Tag Events
-	RoundTagNumberRequest          = "round.tag.number.request"
-	RoundTagNumberFound            = "round.leaderboard.tag.found"
-	RoundTagNumberNotFound         = "round.leaderboard.tag.not.found"
+	// Deprecated: Use RoundTagNumberRequestedV1 from tags.go. Will be removed in v2.0.
+	RoundTagNumberRequest = "round.tag.number.request"
+	// Deprecated: Use RoundTagNumberFoundV1 from tags.go. Will be removed in v2.0.
+	RoundTagNumberFound = "round.leaderboard.tag.found"
+	// Deprecated: Use RoundTagNumberNotFoundV1 from tags.go. Will be removed in v2.0.
+	RoundTagNumberNotFound = "round.leaderboard.tag.not.found"
+	// Deprecated: Use LeaderboardGetTagNumberRequestedV1 from tags.go. Will be removed in v2.0.
 	LeaderboardGetTagNumberRequest = "leaderboard.round.tag.get.by.user.id.request"
 
+	// Deprecated: Use LeaderboardGetTagNumberResponseV1 from tags.go. Will be removed in v2.0.
 	LeaderboardGetTagNumberResponse = "round.get.tag.number.response"
-	TagUpdateForScheduledRounds     = "round.tag.update.for.scheduled.rounds"
-	TagsUpdatedForScheduledRounds   = "round.tags.updated.for.scheduled.rounds"
+	// Deprecated: Use TagUpdateForScheduledRoundsV1 from tags.go. Will be removed in v2.0.
+	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
+	// Deprecated: Use TagsUpdatedForScheduledRoundsV1 from tags.go. Will be removed in v2.0.
+	TagsUpdatedForScheduledRounds = "round.tags.updated.for.scheduled.rounds"
 
 	// Authorization Events
+	// Deprecated: Use RoundUserRoleCheckRequestedV1 from retrieval.go. Will be removed in v2.0.
 	RoundUserRoleCheckRequest = "round.user.role.check.request"
-	RoundUserRoleCheckResult  = "round.user.role.check.result"
-	RoundUserRoleCheckError   = "round.user.role.check.error"
+	// Deprecated: Use RoundUserRoleCheckResultV1 from retrieval.go. Will be removed in v2.0.
+	RoundUserRoleCheckResult = "round.user.role.check.result"
+	// Deprecated: Use RoundUserRoleCheckErrorV1 from retrieval.go. Will be removed in v2.0.
+	RoundUserRoleCheckError = "round.user.role.check.error"
 
 	// Special Events
-	RoundEventsSubject     = "round.event"
+	// Deprecated: Use RoundEventsSubjectV1 from retrieval.go. Will be removed in v2.0.
+	RoundEventsSubject = "round.event"
+	// Deprecated: Use DelayedMessagesSubjectV1 from retrieval.go. Will be removed in v2.0.
 	DelayedMessagesSubject = "delayed.messages"
 
 	// Round Retrieval Events
+	// Deprecated: Use GetRoundRequestedV1 from retrieval.go. Will be removed in v2.0.
 	GetRoundRequest = "round.get.request"
-	RoundRetrieved  = "round.retrieved"
+	// Deprecated: Use RoundRetrievedV1 from retrieval.go. Will be removed in v2.0.
+	RoundRetrieved = "round.retrieved"
 
 	// Scorecard import event topics
-	ScorecardUploadedTopic     = "round.scorecard.uploaded"
+	// Deprecated: Use ScorecardUploadedV1 from import.go. Will be removed in v2.0.
+	ScorecardUploadedTopic = "round.scorecard.uploaded"
+	// Deprecated: Use ScorecardURLRequestedV1 from import.go. Will be removed in v2.0.
 	ScorecardURLRequestedTopic = "round.scorecard.url_requested"
+	// Deprecated: Use ScorecardParseRequestedV1 from import.go. Will be removed in v2.0.
 	ScorecardParseRequestTopic = "round.scorecard.parse_request"
-	ScorecardParsedTopic       = "round.scorecard.parsed"
+	// Deprecated: Use ScorecardParsedV1 from import.go. Will be removed in v2.0.
+	ScorecardParsedTopic = "round.scorecard.parsed"
+	// Deprecated: Use ScorecardParsedForUserV1 from import.go. Will be removed in v2.0.
 	// ScorecardParsedForUserTopic is a fan-out copy of ScorecardParsedTopic intended for the user module.
 	// We intentionally use a different subject so the backend can keep a single durable consumer per subject
 	// (queue semantics) while still letting both modules receive the same parsed payload.
-	ScorecardParsedForUserTopic    = "round.scorecard.parsed.user"
-	ScorecardParseFailedTopic      = "round.scorecard.parse_failed"
-	ImportConflictDetectedTopic    = "round.import.conflict_detected"
-	ImportOverwriteConfirmedTopic  = "round.import.overwrite_confirmed"
-	ImportCompletedTopic           = "round.import.completed"
-	ImportFailedTopic              = "round.import.failed"
+	ScorecardParsedForUserTopic = "round.scorecard.parsed.user"
+	// Deprecated: Use ScorecardParseFailedV1 from import.go. Will be removed in v2.0.
+	ScorecardParseFailedTopic = "round.scorecard.parse_failed"
+	// Deprecated: Use ImportConflictDetectedV1 from import.go. Will be removed in v2.0.
+	ImportConflictDetectedTopic = "round.import.conflict_detected"
+	// Deprecated: Use ImportOverwriteConfirmedV1 from import.go. Will be removed in v2.0.
+	ImportOverwriteConfirmedTopic = "round.import.overwrite_confirmed"
+	// Deprecated: Use ImportCompletedV1 from import.go. Will be removed in v2.0.
+	ImportCompletedTopic = "round.import.completed"
+	// Deprecated: Use ImportFailedV1 from import.go. Will be removed in v2.0.
+	ImportFailedTopic = "round.import.failed"
+	// Deprecated: Use RoundParticipantAutoAddedV1 from import.go. Will be removed in v2.0.
 	RoundParticipantAutoAddedTopic = "round.participant.auto_added"
-	RoundScoresImportedTopic       = "round.scores.imported"
-	RoundScoresFinalizedTopic      = "round.scores.finalized"
+	// Deprecated: Use RoundScoresImportedV1 from import.go. Will be removed in v2.0.
+	RoundScoresImportedTopic = "round.scores.imported"
+	// Deprecated: Use RoundScoresFinalizedV1 from import.go. Will be removed in v2.0.
+	RoundScoresFinalizedTopic = "round.scores.finalized"
 )
 
 // Payload emitted by service after imported scores are applied (no publishing performed by service).

@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "requestor_id": {
+      "type": "string"
+    },
+    "target_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

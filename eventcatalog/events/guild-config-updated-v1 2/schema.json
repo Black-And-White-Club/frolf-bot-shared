@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "config": {
+      "$ref": "#/components/schemas/GuildGuildConfig"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "updated_fields": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "type": "object"
+}

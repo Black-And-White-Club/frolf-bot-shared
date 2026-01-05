@@ -1,0 +1,1890 @@
+asyncapi: 2.4.0
+info:
+  title: Frolf Bot Event API
+  version: 1.0.0
+  description: |-
+    Event-driven architecture for the Frolf Bot ecosystem.
+
+    This specification documents all events published and consumed across the Frolf Bot services:
+    - **frolf-bot** (Backend): Core business logic, database operations, scheduling
+    - **discord-frolf-bot** (Discord Bot): User interactions, Discord API integration
+
+    ## Domains
+    - **Round**: Golf round lifecycle (creation, updates, deletion, participants, scoring)
+    - **Score**: Score processing and leaderboard updates
+    - **User**: User registration and tag number management
+    - **Leaderboard**: Weekly/monthly leaderboard calculations
+    - **Guild**: Discord server configuration
+
+    ## Architecture
+    All events flow through NATS JetStream with the Event Notification pattern.
+    Each event contains a complete snapshot of the data needed for processing.
+servers:
+  development:
+    url: nats://localhost:4222
+    description: Local development NATS server
+    protocol: nats
+  production:
+    url: nats://nats:4222
+    description: Production NATS JetStream server
+    protocol: nats
+defaultContentType: application/json
+channels:
+  guild.config.created.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigCreatedPayloadV1'
+  guild.config.creation.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigCreationRequestedPayloadV1'
+  guild.config.retrieval.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigRetrievalRequestedPayloadV1'
+  guild.config.retrieved.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigRetrievedPayloadV1'
+  guild.config.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigUpdateRequestedPayloadV1'
+  guild.config.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/GuildGuildConfigUpdatedPayloadV1'
+  leaderboard.get.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardGetLeaderboardRequestedPayloadV1'
+  leaderboard.get.response.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardGetLeaderboardResponsePayloadV1'
+  leaderboard.tag.swap.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardTagSwapFailedPayloadV1'
+  leaderboard.tag.swap.processed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardTagSwapProcessedPayloadV1'
+  leaderboard.tag.swap.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardTagSwapRequestedPayloadV1'
+  leaderboard.update.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardLeaderboardUpdateFailedPayloadV1'
+  leaderboard.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardLeaderboardUpdateRequestedPayloadV1'
+  leaderboard.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/LeaderboardLeaderboardUpdatedPayloadV1'
+  round.all.scores.submitted.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundAllScoresSubmittedPayloadV1'
+  round.created.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundCreatedPayloadV1'
+  round.creation.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundCreationFailedPayloadV1'
+  round.creation.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundCreateRoundRequestedPayloadV1'
+  round.datetime.parsed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDateTimeParsedPayloadV1'
+  round.delete.authorized.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDeleteAuthorizedPayloadV1'
+  round.delete.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDeleteErrorPayloadV1'
+  round.delete.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDeleteRequestPayloadV1'
+  round.delete.validated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDeleteValidatedPayloadV1'
+  round.deleted.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundDeletedPayloadV1'
+  round.entity.created.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundEntityCreatedPayloadV1'
+  round.entity.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundEntityUpdatedPayloadV1'
+  round.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundErrorPayloadV1'
+  round.event.message.id.update.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundMessageIDUpdatePayloadV1'
+  round.fetched.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundFetchedPayloadV1'
+  round.finalized.discord.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundFinalizedDiscordPayloadV1'
+  round.finalized.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundFinalizedPayloadV1'
+  round.get.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundGetRoundRequestPayloadV1'
+  round.participant.declined.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantDeclinedPayloadV1'
+  round.participant.join.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundParticipantJoinErrorPayloadV1'
+  round.participant.join.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantJoinRequestPayloadV1'
+  round.participant.join.validated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantJoinValidatedPayloadV1'
+  round.participant.joined.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantJoinedPayloadV1'
+  round.participant.removal.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantRemovalErrorPayloadV1'
+  round.participant.removal.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantRemovalRequestPayloadV1'
+  round.participant.removed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantRemovedPayloadV1'
+  round.participant.score.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantScoreUpdatedPayloadV1'
+  round.participant.status.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundParticipantStatusRequestPayloadV1'
+  round.reminder.sent.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundDiscordReminderPayloadV1'
+  round.schedule.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundScheduleUpdatePayloadV1'
+  round.scheduled.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundScheduledPayloadV1'
+  round.score.update.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundScoreUpdateErrorPayloadV1'
+  round.score.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundScoreUpdateRequestPayloadV1'
+  round.score.update.validated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundScoreUpdateValidatedPayloadV1'
+  round.scores.partially.submitted.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundScoresPartiallySubmittedPayloadV1'
+  round.started.discord.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundDiscordRoundStartPayloadV1'
+  round.started.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundStartedPayloadV1'
+  round.stored.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundStoredPayloadV1'
+  round.tag.number.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundTagNumberRequestPayloadV1'
+  round.to.delete.fetched.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundToDeleteFetchedPayloadV1'
+  round.trace.event.v1:
+    publish:
+      message:
+        payload:
+          additionalProperties: {}
+          type:
+          - "null"
+          - object
+        summary: Trace Event
+        description: Distributed tracing event for observability
+  round.update.error.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundUpdateErrorPayloadV1'
+  round.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundUpdateRoundRequestedPayloadV1'
+  round.update.success.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundUpdateSuccessPayloadV1'
+  round.update.validated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundUpdateValidatedPayloadV1'
+  round.validation.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundValidationFailedPayloadV1'
+  round.validation.passed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/RoundRoundValidationPassedPayloadV1'
+  score.process.round.scores.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/ScoreProcessRoundScoresFailedPayloadV1'
+  score.process.round.scores.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/ScoreProcessRoundScoresRequestedPayloadV1'
+  score.process.round.scores.succeeded.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/ScoreProcessRoundScoresSucceededPayloadV1'
+  user.created.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserUserCreatedPayloadV1'
+  user.creation.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserUserCreationFailedPayloadV1'
+  user.creation.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserUserCreationRequestedPayloadV1'
+  user.get.failed.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserGetUserFailedPayloadV1'
+  user.get.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserGetUserRequestedPayloadV1'
+  user.get.response.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserGetUserResponsePayloadV1'
+  user.role.update.requested.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserUserRoleUpdateRequestedPayloadV1'
+  user.role.updated.v1:
+    publish:
+      message:
+        $ref: '#/components/messages/UserUserRoleUpdatedPayloadV1'
+components:
+  schemas:
+    GuildGuildConfig:
+      properties:
+        guild_id:
+          type: string
+      type: object
+    GuildGuildConfigCreatedPayloadV1:
+      properties:
+        config:
+          $ref: '#/components/schemas/GuildGuildConfig'
+        guild_id:
+          type: string
+      type: object
+    GuildGuildConfigCreationRequestedPayloadV1:
+      properties:
+        admin_role_id:
+          type: string
+        auto_setup_completed:
+          type: boolean
+        editor_role_id:
+          type: string
+        event_channel_id:
+          type: string
+        guild_id:
+          type: string
+        leaderboard_channel_id:
+          type: string
+        setup_completed_at:
+          format: date-time
+          type:
+          - "null"
+          - string
+        signup_channel_id:
+          type: string
+        signup_emoji:
+          type: string
+        signup_message_id:
+          type: string
+        user_role_id:
+          type: string
+      type: object
+    GuildGuildConfigRetrievalRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+      type: object
+    GuildGuildConfigRetrievedPayloadV1:
+      properties:
+        config:
+          $ref: '#/components/schemas/GuildGuildConfig'
+        guild_id:
+          type: string
+      type: object
+    GuildGuildConfigUpdateRequestedPayloadV1:
+      properties:
+        admin_role_id:
+          type: string
+        auto_setup_completed:
+          type: boolean
+        editor_role_id:
+          type: string
+        event_channel_id:
+          type: string
+        guild_id:
+          type: string
+        leaderboard_channel_id:
+          type: string
+        setup_completed_at:
+          format: date-time
+          type:
+          - "null"
+          - string
+        signup_channel_id:
+          type: string
+        signup_emoji:
+          type: string
+        signup_message_id:
+          type: string
+        user_role_id:
+          type: string
+      type: object
+    GuildGuildConfigUpdatedPayloadV1:
+      properties:
+        config:
+          $ref: '#/components/schemas/GuildGuildConfig'
+        guild_id:
+          type: string
+        updated_fields:
+          items:
+            type: string
+          type: array
+      type: object
+    LeaderboardGetLeaderboardRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+      type: object
+    LeaderboardGetLeaderboardResponsePayloadV1:
+      properties:
+        guild_id:
+          type: string
+        leaderboard:
+          $ref: '#/components/schemas/LeaderboardLeaderboardData'
+      type: object
+    LeaderboardLeaderboardData:
+      items:
+        $ref: '#/components/schemas/LeaderboardLeaderboardEntry'
+      type:
+      - array
+      - "null"
+    LeaderboardLeaderboardEntry:
+      properties:
+        tag_number:
+          type: integer
+        user_id:
+          type: string
+      type: object
+    LeaderboardLeaderboardUpdateFailedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        reason:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    LeaderboardLeaderboardUpdateRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        sorted_participant_tags:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        source:
+          type: string
+        update_id:
+          type: string
+      type: object
+    LeaderboardLeaderboardUpdatedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        leaderboard_data:
+          additionalProperties:
+            type: string
+          type:
+          - object
+          - "null"
+        leaderboard_id:
+          type: integer
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    LeaderboardTagSwapFailedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        reason:
+          type: string
+        requestor_id:
+          type: string
+        target_id:
+          type: string
+      type: object
+    LeaderboardTagSwapProcessedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        requestor_id:
+          type: string
+        target_id:
+          type: string
+      type: object
+    LeaderboardTagSwapRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        requestor_id:
+          type: string
+        target_id:
+          type: string
+      type: object
+    RoundAllScoresSubmittedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type: array
+        round_data:
+          $ref: '#/components/schemas/RoundRound'
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundCreateRoundRequestedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        description:
+          type: string
+        guild_id:
+          type: string
+        location:
+          type: string
+        start_time:
+          type: string
+        timezone:
+          type: string
+        title:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundDiscordReminderPayloadV1:
+      properties:
+        discord_channel_id:
+          type: string
+        discord_guild_id:
+          type: string
+        event_message_id:
+          type: string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        reminder_type:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        round_title:
+          type: string
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        user_ids:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+      type: object
+    RoundDiscordRoundStartPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        discord_channel_id:
+          type: string
+        discord_guild_id:
+          type: string
+        event_message_id:
+          type: string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundRoundParticipantV1'
+          type:
+          - array
+          - "null"
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+      type: object
+    RoundGetRoundRequestPayloadV1:
+      properties:
+        event_message_id:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundParticipant:
+      properties:
+        response:
+          type: string
+        score:
+          type:
+          - "null"
+          - integer
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    RoundParticipantDeclinedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundParticipantJoinRequestPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        joined_late:
+          type:
+          - "null"
+          - boolean
+        response:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    RoundParticipantJoinValidatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        participant_join_request_payload:
+          $ref: '#/components/schemas/RoundParticipantJoinRequestPayloadV1'
+      type: object
+    RoundParticipantJoinedPayloadV1:
+      properties:
+        accepted_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        declined_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        joined_late:
+          type:
+          - "null"
+          - boolean
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        tentative_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+      type: object
+    RoundParticipantRemovalErrorPayloadV1:
+      properties:
+        error:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundParticipantRemovalRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundParticipantRemovedPayloadV1:
+      properties:
+        accepted_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        declined_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        tentative_participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        user_id:
+          type: string
+      type: object
+    RoundParticipantScoreUpdatedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        participant:
+          type: string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type: array
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        score:
+          type:
+          - integer
+          - "null"
+      type: object
+    RoundParticipantScoreV1:
+      properties:
+        guild_id:
+          type: string
+        score:
+          type: integer
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    RoundParticipantStatusRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundProcessRoundScoresRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        scores:
+          items:
+            $ref: '#/components/schemas/RoundParticipantScoreV1'
+          type:
+          - array
+          - "null"
+      type: object
+    RoundRound:
+      properties:
+        created_by:
+          type: string
+        description:
+          type:
+          - "null"
+          - string
+        event_message_id:
+          type: string
+        event_type:
+          type:
+          - "null"
+          - string
+        file_data:
+          format: base64
+          type: string
+        file_name:
+          type: string
+        finalized:
+          type: boolean
+        guild_id:
+          type: string
+        id:
+          $ref: '#/components/schemas/SharedRoundID'
+        import_channel_id:
+          type: string
+        import_error:
+          type: string
+        import_error_code:
+          type: string
+        import_id:
+          type: string
+        import_notes:
+          type: string
+        import_status:
+          type: string
+        import_type:
+          type: string
+        import_user_id:
+          type: string
+        imported_at:
+          format: date-time
+          type:
+          - "null"
+          - string
+        location:
+          type:
+          - "null"
+          - string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        state:
+          type: string
+        title:
+          type: string
+        udisc_url:
+          type: string
+      type: object
+    RoundRoundCreateRequestPayloadV1:
+      properties:
+        description:
+          type:
+          - "null"
+          - string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        timezone:
+          type: string
+        title:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundCreatedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        description:
+          type:
+          - "null"
+          - string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundCreationFailedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        error_message:
+          type: string
+        guild_id:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundDateTimeParsedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_create_request_payload:
+          $ref: '#/components/schemas/RoundRoundCreateRequestPayloadV1'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+      type: object
+    RoundRoundDeleteAuthorizedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundDeleteErrorPayloadV1:
+      properties:
+        error:
+          type: string
+        guild_id:
+          type: string
+        round_delete_request:
+          $ref: '#/components/schemas/RoundRoundDeleteRequestPayloadV1'
+      type: object
+    RoundRoundDeleteRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        requesting_user_user_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundDeleteValidatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_delete_request_payload:
+          $ref: '#/components/schemas/RoundRoundDeleteRequestPayloadV1'
+      type: object
+    RoundRoundDeletedPayloadV1:
+      properties:
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundEntityCreatedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        discord_channel_id:
+          type: string
+        discord_guild_id:
+          type: string
+        guild_id:
+          type: string
+        round:
+          $ref: '#/components/schemas/RoundRound'
+      type: object
+    RoundRoundEntityUpdatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round:
+          $ref: '#/components/schemas/RoundRound'
+      type: object
+    RoundRoundErrorPayloadV1:
+      properties:
+        error:
+          type: string
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundFetchedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round:
+          $ref: '#/components/schemas/RoundRound'
+        round_update_request_payload:
+          $ref: '#/components/schemas/RoundRoundUpdateRequestPayloadV1'
+      type: object
+    RoundRoundFinalizedDiscordPayloadV1:
+      properties:
+        discord_channel_id:
+          type: string
+        event_message_id:
+          type: string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+      type: object
+    RoundRoundFinalizedPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        round_data:
+          $ref: '#/components/schemas/RoundRound'
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundMessageIDUpdatePayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundParticipantJoinErrorPayloadV1:
+      properties:
+        discord_message_id:
+          type: string
+        error:
+          type: string
+        guild_id:
+          type: string
+        participant_join_request:
+          $ref: '#/components/schemas/RoundParticipantJoinRequestPayloadV1'
+      type: object
+    RoundRoundParticipantV1:
+      properties:
+        guild_id:
+          type: string
+        response:
+          type: string
+        score:
+          type:
+          - "null"
+          - integer
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    RoundRoundScheduleUpdatePayloadV1:
+      properties:
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+      type: object
+    RoundRoundScheduledPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        description:
+          type:
+          - "null"
+          - string
+        discord_message_id:
+          type: string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundScoreUpdateErrorPayloadV1:
+      properties:
+        error:
+          type: string
+        guild_id:
+          type: string
+        score_update_request:
+          $ref: '#/components/schemas/RoundScoreUpdateRequestPayloadV1'
+      type: object
+    RoundRoundStartedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+      type: object
+    RoundRoundStoredPayloadV1:
+      properties:
+        config_fragment:
+          $ref: '#/components/schemas/SharedGuildConfigFragment'
+        guild_id:
+          type: string
+        round:
+          $ref: '#/components/schemas/RoundRound'
+      type: object
+    RoundRoundToDeleteFetchedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round:
+          $ref: '#/components/schemas/RoundRound'
+        round_delete_request_payload:
+          $ref: '#/components/schemas/RoundRoundDeleteRequestPayloadV1'
+      type: object
+    RoundRoundUpdateErrorPayloadV1:
+      properties:
+        error:
+          type: string
+        guild_id:
+          type: string
+        round_update_request:
+          $ref: '#/components/schemas/RoundRoundUpdateRequestPayloadV1'
+      type: object
+    RoundRoundUpdateRequestPayloadV1:
+      properties:
+        description:
+          type:
+          - "null"
+          - string
+        event_type:
+          type:
+          - "null"
+          - string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          $ref: '#/components/schemas/SharedStartTime'
+        title:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundUpdateSuccessPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    RoundRoundUpdateValidatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_update_request_payload:
+          $ref: '#/components/schemas/RoundRoundUpdateRequestPayloadV1'
+      type: object
+    RoundRoundValidationFailedPayloadV1:
+      properties:
+        error_messages:
+          items:
+            type: string
+          type:
+          - array
+          - "null"
+        guild_id:
+          type: string
+        user_id:
+          type: string
+      type: object
+    RoundRoundValidationPassedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_create_request_payload:
+          $ref: '#/components/schemas/RoundCreateRoundRequestedPayloadV1'
+      type: object
+    RoundScoreUpdateRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        participant:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        score:
+          type:
+          - "null"
+          - integer
+      type: object
+    RoundScoreUpdateValidatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        score_update_request_payload:
+          $ref: '#/components/schemas/RoundScoreUpdateRequestPayloadV1'
+      type: object
+    RoundScoresPartiallySubmittedPayloadV1:
+      properties:
+        event_message_id:
+          type: string
+        guild_id:
+          type: string
+        participant:
+          type: string
+        participants:
+          items:
+            $ref: '#/components/schemas/RoundParticipant'
+          type:
+          - array
+          - "null"
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        score:
+          type:
+          - integer
+          - "null"
+        scores:
+          items:
+            $ref: '#/components/schemas/RoundParticipantScoreV1'
+          type:
+          - array
+          - "null"
+      type: object
+    RoundTagNumberRequestPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        user_id:
+          type: string
+      type: object
+    RoundUpdateRoundRequestedPayloadV1:
+      properties:
+        channel_id:
+          type: string
+        description:
+          type:
+          - "null"
+          - string
+        guild_id:
+          type: string
+        location:
+          type:
+          - "null"
+          - string
+        message_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        start_time:
+          type:
+          - "null"
+          - string
+        timezone:
+          type:
+          - "null"
+          - string
+        title:
+          type:
+          - "null"
+          - string
+        user_id:
+          type: string
+      type: object
+    ScoreProcessRoundScoresFailedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        reason:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+      type: object
+    ScoreProcessRoundScoresRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        overwrite:
+          type: boolean
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        scores:
+          items:
+            $ref: '#/components/schemas/SharedScoreInfo'
+          type:
+          - array
+          - "null"
+      type: object
+    ScoreProcessRoundScoresSucceededPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        round_id:
+          $ref: '#/components/schemas/SharedRoundID'
+        tag_mappings:
+          items:
+            $ref: '#/components/schemas/SharedTagMapping'
+          type:
+          - array
+          - "null"
+      type: object
+    SharedGuildConfigFragment:
+      properties:
+        admin_role_id:
+          type: string
+        editor_role_id:
+          type: string
+        event_channel_id:
+          type: string
+        guild_id:
+          type: string
+        leaderboard_channel_id:
+          type: string
+        signup_channel_id:
+          type: string
+        signup_emoji:
+          type: string
+        signup_message_id:
+          type: string
+        user_role_id:
+          type: string
+      type: object
+    SharedRoundID:
+      items:
+        minimum: 0
+        type: integer
+      type:
+      - array
+      - "null"
+    SharedScoreInfo:
+      properties:
+        score:
+          type: integer
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    SharedStartTime:
+      type: object
+    SharedTagMapping:
+      properties:
+        discord_id:
+          type: string
+        tag_number:
+          type: integer
+      type: object
+    UserGetUserFailedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        reason:
+          type: string
+        user_id:
+          type: string
+      type: object
+    UserGetUserRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        user_id:
+          type: string
+      type: object
+    UserGetUserResponsePayloadV1:
+      properties:
+        guild_id:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserUserData'
+      type: object
+    UserUserCreatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    UserUserCreationFailedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        reason:
+          type: string
+        tag_number:
+          type:
+          - "null"
+          - integer
+        user_id:
+          type: string
+      type: object
+    UserUserCreationRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        tag_number:
+          type:
+          - "null"
+          - integer
+        udisc_name:
+          type:
+          - "null"
+          - string
+        udisc_username:
+          type:
+          - "null"
+          - string
+        user_id:
+          type: string
+      type: object
+    UserUserData:
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+        user_id:
+          type: string
+      type: object
+    UserUserRoleUpdateRequestedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        requester_id:
+          type: string
+        role:
+          type: string
+        user_id:
+          type: string
+      type: object
+    UserUserRoleUpdatedPayloadV1:
+      properties:
+        guild_id:
+          type: string
+        role:
+          type: string
+        user_id:
+          type: string
+      type: object
+  messages:
+    GuildGuildConfigCreatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigCreatedPayloadV1'
+      summary: Guild Config Created
+      description: Guild configuration created successfully
+    GuildGuildConfigCreationRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigCreationRequestedPayloadV1'
+      summary: Guild Config Creation Request
+      description: Request to create guild configuration
+    GuildGuildConfigRetrievalRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigRetrievalRequestedPayloadV1'
+      summary: Guild Config Retrieval Request
+      description: Request to retrieve guild configuration
+    GuildGuildConfigRetrievedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigRetrievedPayloadV1'
+      summary: Guild Config Retrieved
+      description: Guild configuration retrieved successfully
+    GuildGuildConfigUpdateRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigUpdateRequestedPayloadV1'
+      summary: Guild Config Update Request
+      description: Request to update guild configuration
+    GuildGuildConfigUpdatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/GuildGuildConfigUpdatedPayloadV1'
+      summary: Guild Config Updated
+      description: Guild configuration updated successfully
+    LeaderboardGetLeaderboardRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardGetLeaderboardRequestedPayloadV1'
+      summary: Leaderboard Retrieval Request
+      description: Request to retrieve leaderboard
+    LeaderboardGetLeaderboardResponsePayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardGetLeaderboardResponsePayloadV1'
+      summary: Leaderboard Retrieved
+      description: Leaderboard retrieved successfully
+    LeaderboardLeaderboardUpdateFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardLeaderboardUpdateFailedPayloadV1'
+      summary: Leaderboard Update Error
+      description: Leaderboard update failed
+    LeaderboardLeaderboardUpdateRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardLeaderboardUpdateRequestedPayloadV1'
+      summary: Leaderboard Update Request
+      description: Request to update leaderboard with new scores
+    LeaderboardLeaderboardUpdatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardLeaderboardUpdatedPayloadV1'
+      summary: Leaderboard Updated
+      description: Leaderboard updated successfully
+    LeaderboardTagSwapFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardTagSwapFailedPayloadV1'
+      summary: Tag Swap Error
+      description: Tag swap failed
+    LeaderboardTagSwapProcessedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardTagSwapProcessedPayloadV1'
+      summary: Tag Swap Completed
+      description: Tag swap completed successfully
+    LeaderboardTagSwapRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/LeaderboardTagSwapRequestedPayloadV1'
+      summary: Tag Swap Request
+      description: Request to swap tag numbers between users
+    RoundAllScoresSubmittedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundAllScoresSubmittedPayloadV1'
+      summary: All Scores Submitted
+      description: All participants have submitted scores
+    RoundCreateRoundRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundCreateRoundRequestedPayloadV1'
+      summary: Round Creation Request
+      description: Round creation initiated by user via Discord
+    RoundDiscordReminderPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundDiscordReminderPayloadV1'
+      summary: Round Reminder Sent
+      description: Round reminder sent
+    RoundDiscordRoundStartPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundDiscordRoundStartPayloadV1'
+      summary: Round Started Discord
+      description: Round started notification for Discord
+    RoundGetRoundRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundGetRoundRequestPayloadV1'
+      summary: Round Retrieval Request
+      description: Request to retrieve round details
+    RoundParticipantDeclinedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantDeclinedPayloadV1'
+      summary: Participant Declined
+      description: Participant declined to join round
+    RoundParticipantJoinRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantJoinRequestPayloadV1'
+      summary: Participant Join Request
+      description: User requested to join a round
+    RoundParticipantJoinValidatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantJoinValidatedPayloadV1'
+      summary: Participant Join Validated
+      description: Participant join request validated
+    RoundParticipantJoinedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantJoinedPayloadV1'
+      summary: Participant Joined
+      description: Participant successfully joined round
+    RoundParticipantRemovalErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantRemovalErrorPayloadV1'
+      summary: Participant Removal Error
+      description: Error occurred while removing participant
+    RoundParticipantRemovalRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantRemovalRequestPayloadV1'
+      summary: Participant Removal Request
+      description: Request to remove participant from round
+    RoundParticipantRemovedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantRemovedPayloadV1'
+      summary: Participant Removed
+      description: Participant removed from round
+    RoundParticipantScoreUpdatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantScoreUpdatedPayloadV1'
+      summary: Participant Score Updated
+      description: Participant score updated successfully
+    RoundParticipantStatusRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundParticipantStatusRequestPayloadV1'
+      summary: Participant Status Update Request
+      description: Request to update participant status
+    RoundProcessRoundScoresRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundProcessRoundScoresRequestPayloadV1'
+      summary: Process Round Scores Request
+      description: Request to process round scores for leaderboard
+    RoundRoundCreatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundCreatedPayloadV1'
+      summary: Round Created
+      description: Round creation completed successfully
+    RoundRoundCreationFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundCreationFailedPayloadV1'
+      summary: Round Creation Failed
+      description: Round creation failed
+    RoundRoundDateTimeParsedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDateTimeParsedPayloadV1'
+      summary: DateTime Parsed
+      description: Natural language datetime successfully parsed
+    RoundRoundDeleteAuthorizedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDeleteAuthorizedPayloadV1'
+      summary: Round Delete Authorized
+      description: User authorized to delete round
+    RoundRoundDeleteErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDeleteErrorPayloadV1'
+      summary: Round Delete Error
+      description: Round deletion failed
+    RoundRoundDeleteRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDeleteRequestPayloadV1'
+      summary: Round Delete Request
+      description: Round deletion requested by user
+    RoundRoundDeleteValidatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDeleteValidatedPayloadV1'
+      summary: Round Delete Validated
+      description: Round deletion request validated
+    RoundRoundDeletedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundDeletedPayloadV1'
+      summary: Round Deleted
+      description: Round deleted successfully
+    RoundRoundEntityCreatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundEntityCreatedPayloadV1'
+      summary: Round Entity Created
+      description: Round entity created in memory
+    RoundRoundEntityUpdatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundEntityUpdatedPayloadV1'
+      summary: Round Entity Updated
+      description: Round entity updated in database
+    RoundRoundErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundErrorPayloadV1'
+      summary: Round Error
+      description: Generic round operation error
+    RoundRoundFetchedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundFetchedPayloadV1'
+      summary: Round Fetched
+      description: Round fetched from database for update
+    RoundRoundFinalizedDiscordPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundFinalizedDiscordPayloadV1'
+      summary: Round Finalized Discord
+      description: Round finalized notification for Discord embed update
+    RoundRoundFinalizedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundFinalizedPayloadV1'
+      summary: Round Finalized
+      description: Round finalized in database
+    RoundRoundMessageIDUpdatePayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundMessageIDUpdatePayloadV1'
+      summary: Message ID Update Request
+      description: Request to update Discord message ID for round
+    RoundRoundParticipantJoinErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundParticipantJoinErrorPayloadV1'
+      summary: Participant Join Error
+      description: Error occurred while joining round
+    RoundRoundScheduleUpdatePayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundScheduleUpdatePayloadV1'
+      summary: Round Schedule Updated
+      description: Round schedule updated
+    RoundRoundScheduledPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundScheduledPayloadV1'
+      summary: Round Scheduled
+      description: Round reminders scheduled
+    RoundRoundScoreUpdateErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundScoreUpdateErrorPayloadV1'
+      summary: Score Update Error
+      description: Score update failed
+    RoundRoundStartedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundStartedPayloadV1'
+      summary: Round Started
+      description: Round has started (scheduled time reached)
+    RoundRoundStoredPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundStoredPayloadV1'
+      summary: Round Stored
+      description: Round persisted to database
+    RoundRoundToDeleteFetchedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundToDeleteFetchedPayloadV1'
+      summary: Round To Delete Fetched
+      description: Round fetched for deletion verification
+    RoundRoundUpdateErrorPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundUpdateErrorPayloadV1'
+      summary: Round Update Error
+      description: Round update failed
+    RoundRoundUpdateSuccessPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundUpdateSuccessPayloadV1'
+      summary: Round Update Success
+      description: Round update completed successfully
+    RoundRoundUpdateValidatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundUpdateValidatedPayloadV1'
+      summary: Round Update Validated
+      description: Round update validated
+    RoundRoundValidationFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundValidationFailedPayloadV1'
+      summary: Round Validation Failed
+      description: Round creation input failed validation
+    RoundRoundValidationPassedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundRoundValidationPassedPayloadV1'
+      summary: Round Validation Passed
+      description: Round creation input passed validation
+    RoundScoreUpdateRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundScoreUpdateRequestPayloadV1'
+      summary: Score Update Request
+      description: Score update requested for participant
+    RoundScoreUpdateValidatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundScoreUpdateValidatedPayloadV1'
+      summary: Score Update Validated
+      description: Score update validated
+    RoundScoresPartiallySubmittedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundScoresPartiallySubmittedPayloadV1'
+      summary: Scores Partially Submitted
+      description: Some participants still missing scores
+    RoundTagNumberRequestPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundTagNumberRequestPayloadV1'
+      summary: Tag Lookup Request
+      description: Request to look up user tag number
+    RoundUpdateRoundRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/RoundUpdateRoundRequestedPayloadV1'
+      summary: Round Update Request
+      description: Round update requested by user
+    ScoreProcessRoundScoresFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/ScoreProcessRoundScoresFailedPayloadV1'
+      summary: Score Processing Error
+      description: Score processing failed
+    ScoreProcessRoundScoresRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/ScoreProcessRoundScoresRequestedPayloadV1'
+      summary: Score Processing Request
+      description: Request to process scores for a round
+    ScoreProcessRoundScoresSucceededPayloadV1:
+      payload:
+        $ref: '#/components/schemas/ScoreProcessRoundScoresSucceededPayloadV1'
+      summary: Score Processing Completed
+      description: Score processing completed
+    UserGetUserFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserGetUserFailedPayloadV1'
+      summary: User Not Found
+      description: User not found
+    UserGetUserRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserGetUserRequestedPayloadV1'
+      summary: User Retrieval Request
+      description: Request to retrieve user details
+    UserGetUserResponsePayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserGetUserResponsePayloadV1'
+      summary: User Retrieved
+      description: User details retrieved
+    UserUserCreatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserUserCreatedPayloadV1'
+      summary: User Created
+      description: User created successfully
+    UserUserCreationFailedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserUserCreationFailedPayloadV1'
+      summary: User Creation Error
+      description: User creation failed
+    UserUserCreationRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserUserCreationRequestedPayloadV1'
+      summary: User Creation Request
+      description: Request to create new user
+    UserUserRoleUpdateRequestedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserUserRoleUpdateRequestedPayloadV1'
+      summary: User Role Update Request
+      description: Request to update user role
+    UserUserRoleUpdatedPayloadV1:
+      payload:
+        $ref: '#/components/schemas/UserUserRoleUpdatedPayloadV1'
+      summary: User Role Updated
+      description: User role updated successfully

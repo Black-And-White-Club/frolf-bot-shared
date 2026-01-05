@@ -1,0 +1,33 @@
+---
+id: round-scheduled-v1
+name: Round Scheduled
+version: 1.0.0
+summary: Round reminders scheduled
+owners:
+    - frolf-bot-team
+badges:
+    - content: round
+      backgroundColor: '#10b981'
+      textColor: '#ffffff'
+    - content: v1
+      backgroundColor: '#6366f1'
+      textColor: '#ffffff'
+schemaPath: schema.json
+channels:
+    - id: nats-jetstream
+      version: 1.0.0
+---
+
+Round reminders scheduled
+
+## Topic
+
+This event is published on the `round.scheduled.v1` topic via NATS JetStream.
+
+## Schema
+
+<SchemaViewer file="schema.json" />
+
+## Producers & Consumers
+
+Use the node graph above to see which services produce and consume this event.

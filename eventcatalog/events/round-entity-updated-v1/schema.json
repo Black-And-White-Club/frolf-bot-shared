@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "round": {
+      "$ref": "#/components/schemas/RoundRound"
+    }
+  },
+  "type": "object"
+}

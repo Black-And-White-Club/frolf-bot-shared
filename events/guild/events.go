@@ -1,3 +1,10 @@
+// Package guildevents contains guild-related domain events.
+//
+// MIGRATION NOTICE: This file contains legacy event constants.
+// New code should use the versioned events from the flow-based files:
+//   - config.go: GuildConfigCreationRequestedV1, GuildConfigCreatedV1, etc.
+//
+// See each file for detailed flow documentation and versioning information.
 package guildevents
 
 import (
@@ -8,31 +15,47 @@ import (
 )
 
 // Event topics for guild config creation
+// Deprecated: Use versioned constants from config.go
 const (
+	// Deprecated: Use GuildConfigCreationRequestedV1 from config.go
 	GuildConfigCreationRequested = "guild.config.creation_requested"
-	GuildConfigCreated           = "guild.config.created"
-	GuildConfigCreationFailed    = "guild.config.creation_failed"
+	// Deprecated: Use GuildConfigCreatedV1 from config.go
+	GuildConfigCreated = "guild.config.created"
+	// Deprecated: Use GuildConfigCreationFailedV1 from config.go
+	GuildConfigCreationFailed = "guild.config.creation_failed"
 )
 
 // Event topics for guild config retrieval
+// Deprecated: Use versioned constants from config.go
 const (
+	// Deprecated: Use GuildConfigRetrievalRequestedV1 from config.go
 	GuildConfigRetrievalRequested = "guild.config.retrieval_requested"
-	GuildConfigRetrieved          = "guild.config.retrieved"
-	GuildConfigRetrievalFailed    = "guild.config.retrieval_failed"
+	// Deprecated: Use GuildConfigRetrievedV1 from config.go
+	GuildConfigRetrieved = "guild.config.retrieved"
+	// Deprecated: Use GuildConfigRetrievalFailedV1 from config.go
+	GuildConfigRetrievalFailed = "guild.config.retrieval_failed"
 )
 
 // Event topics for guild config update
+// Deprecated: Use versioned constants from config.go
 const (
+	// Deprecated: Use GuildConfigUpdateRequestedV1 from config.go
 	GuildConfigUpdateRequested = "guild.config.update_requested"
-	GuildConfigUpdated         = "guild.config.updated"
-	GuildConfigUpdateFailed    = "guild.config.update_failed"
+	// Deprecated: Use GuildConfigUpdatedV1 from config.go
+	GuildConfigUpdated = "guild.config.updated"
+	// Deprecated: Use GuildConfigUpdateFailedV1 from config.go
+	GuildConfigUpdateFailed = "guild.config.update_failed"
 )
 
 // Event topics for guild config deletion
+// Deprecated: Use versioned constants from config.go
 const (
+	// Deprecated: Use GuildConfigDeletionRequestedV1 from config.go
 	GuildConfigDeletionRequested = "guild.config.deletion_requested"
-	GuildConfigDeleted           = "guild.config.deleted"
-	GuildConfigDeletionFailed    = "guild.config.deletion_failed"
+	// Deprecated: Use GuildConfigDeletedV1 from config.go
+	GuildConfigDeleted = "guild.config.deleted"
+	// Deprecated: Use GuildConfigDeletionFailedV1 from config.go
+	GuildConfigDeletionFailed = "guild.config.deletion_failed"
 )
 
 // Emitted when a new guild config is created

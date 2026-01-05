@@ -1,3 +1,10 @@
+// Package sharedevents contains cross-module shared events.
+//
+// MIGRATION NOTICE: This file contains legacy event constants.
+// New code should use the versioned events from the flow-based files:
+//   - tags.go: RoundTagLookupRequestedV1, DiscordTagLookupRequestedV1, etc.
+//
+// See each file for detailed flow documentation and versioning information.
 package sharedevents
 
 import (
@@ -10,24 +17,31 @@ type ScopedGuildID struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 }
 
+// Cross-module event constants
+// Deprecated: Use versioned constants from tags.go
 const (
-	// RoundTagLookupRequest is the topic for requesting a tag number lookup from the Leaderboard module.
+	// Deprecated: Use RoundTagLookupRequestedV1 from tags.go
 	RoundTagLookupRequest = "round.tag.lookup.request"
 
-	// RoundTagLookupFound is the topic for the result when a tag number is found.
+	// Deprecated: Use RoundTagLookupFoundV1 from tags.go
 	RoundTagLookupFound = "round.tag.lookup.found"
 
-	// RoundTagLookupNotFound is the topic for the result when a tag number is not found.
+	// Deprecated: Use RoundTagLookupNotFoundV1 from tags.go
 	RoundTagLookupNotFound = "round.tag.lookup.not.found"
 
+	// Deprecated: Use TagUpdateForScheduledRoundsV1 from tags.go
 	TagUpdateForScheduledRounds = "round.tag.update.for.scheduled.rounds"
 
-	DiscordTagLookUpByUserIDRequest  = "leaderboard.tag.lookup.by.user.id.request"
-	DiscordTagLookupByUserIDFailed   = "discord.leaderboard.tag.lookup.by.user.id.failed"
-	DiscordTagLookupByUserIDSuccess  = "discord.leaderboard.tag.lookup.by.user.id.success"
+	// Deprecated: Use DiscordTagLookupRequestedV1 from tags.go
+	DiscordTagLookUpByUserIDRequest = "leaderboard.tag.lookup.by.user.id.request"
+	// Deprecated: Use DiscordTagLookupFailedV1 from tags.go
+	DiscordTagLookupByUserIDFailed = "discord.leaderboard.tag.lookup.by.user.id.failed"
+	// Deprecated: Use DiscordTagLookupSucceededV1 from tags.go
+	DiscordTagLookupByUserIDSuccess = "discord.leaderboard.tag.lookup.by.user.id.success"
+	// Deprecated: Use DiscordTagLookupNotFoundV1 from tags.go
 	DiscordTagLookupByUserIDNotFound = "discord.leaderboard.tag.lookup.by.user.id.not.found"
 
-	// LeaderboardBatchTagAssignmentRequested is the topic for triggering batch tag updates to the leaderboard.
+	// Deprecated: Use LeaderboardBatchTagAssignmentRequestedV1 from tags.go
 	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
 )
 

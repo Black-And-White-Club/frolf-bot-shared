@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "discord_message_id": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    }
+  },
+  "type": "object"
+}

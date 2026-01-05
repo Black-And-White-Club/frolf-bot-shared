@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "tag_mappings": {
+      "items": {
+        "$ref": "#/components/schemas/SharedTagMapping"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "type": "object"
+}

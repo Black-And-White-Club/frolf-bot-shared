@@ -1,3 +1,14 @@
+// Package userevents contains user-related domain events.
+//
+// MIGRATION NOTICE: This file contains legacy event constants.
+// New code should use the versioned events from the flow-based files:
+//   - creation.go: UserCreationRequestedV1, UserCreatedV1, UserSignupRequestedV1, etc.
+//   - roles.go: UserRoleUpdateRequestedV1, UserRoleUpdatedV1, etc.
+//   - retrieval.go: GetUserRequestedV1, GetUserResponseV1, etc.
+//   - tags.go: TagAvailabilityCheckRequestedV1, TagAvailableV1, etc.
+//   - udisc.go: UpdateUDiscIdentityRequestedV1, UDiscMatchConfirmedV1, etc.
+//
+// See each file for detailed flow documentation and versioning information.
 package userevents
 
 import (
@@ -7,7 +18,7 @@ import (
 	usertypes "github.com/Black-And-White-Club/frolf-bot-shared/types/user"
 )
 
-// Stream names
+// Stream names and DLQ topics
 const (
 	UserStreamName = "user"
 	// Note: Changed to use the request/response pattern consistently
@@ -23,47 +34,82 @@ const (
 )
 
 // Event names
+// Deprecated: Use versioned constants from creation.go, roles.go, retrieval.go, tags.go, udisc.go
 const (
-	CreateUserRequested           = "user.create.requested"
-	UserSignupRequest             = "user.signup.request"
-	UserSignupFailed              = "discord.user.signup.failed"
-	UserCreated                   = "user.created"
-	UserSignupSuccess             = "discord.user.signup.success"
-	UserCreationFailed            = "user.creation.failed"
-	UserRoleUpdateRequest         = "user.role.update.request"
-	UpdateUserRoleRequested       = "user.role.update.requested"
-	UserRoleUpdated               = "user.role.updated"
-	UserRoleUpdateFailed          = "user.role.update.failed"
-	UserPermissionsCheckRequest   = "user.permissions.check.request"
-	UserPermissionsCheckResponse  = "user.permissions.check.response"
-	UserPermissionsCheckFailed    = "user.permissions.check.failed"
-	TagAvailable                  = "user.tag.available"
-	TagUnavailable                = "user.tag.unavailable"
+	// Deprecated: Use UserCreationRequestedV1 from creation.go
+	CreateUserRequested = "user.create.requested"
+	// Deprecated: Use UserSignupRequestedV1 from creation.go
+	UserSignupRequest = "user.signup.request"
+	// Deprecated: Use UserSignupFailedV1 from creation.go (Discord-specific: use discord/user/signup.go)
+	UserSignupFailed = "discord.user.signup.failed"
+	// Deprecated: Use UserCreatedV1 from creation.go
+	UserCreated = "user.created"
+	// Deprecated: Use UserSignupSucceededV1 from creation.go (Discord-specific: use discord/user/signup.go)
+	UserSignupSuccess = "discord.user.signup.success"
+	// Deprecated: Use UserCreationFailedV1 from creation.go
+	UserCreationFailed = "user.creation.failed"
+	// Deprecated: Use UserRoleUpdateRequestedV1 from roles.go
+	UserRoleUpdateRequest = "user.role.update.request"
+	// Deprecated: Use UserRoleUpdateRequestedV1 from roles.go
+	UpdateUserRoleRequested = "user.role.update.requested"
+	// Deprecated: Use UserRoleUpdatedV1 from roles.go
+	UserRoleUpdated = "user.role.updated"
+	// Deprecated: Use UserRoleUpdateFailedV1 from roles.go
+	UserRoleUpdateFailed = "user.role.update.failed"
+	// Deprecated: Use UserPermissionsCheckRequestedV1 from roles.go
+	UserPermissionsCheckRequest = "user.permissions.check.request"
+	// Deprecated: Use UserPermissionsCheckResponseV1 from roles.go
+	UserPermissionsCheckResponse = "user.permissions.check.response"
+	// Deprecated: Use UserPermissionsCheckFailedV1 from roles.go
+	UserPermissionsCheckFailed = "user.permissions.check.failed"
+	// Deprecated: Use TagAvailableV1 from tags.go
+	TagAvailable = "user.tag.available"
+	// Deprecated: Use TagUnavailableV1 from tags.go
+	TagUnavailable = "user.tag.unavailable"
+	// Deprecated: Use TagAvailabilityCheckRequestedV1 from tags.go
 	TagAvailabilityCheckRequested = "leaderboard.tag.availability.check.requested"
-	TagAssignmentRequested        = "user.tag.assignment.requested"
-	TagAssignedForUserCreation    = "user.tag.assigned.for.creation"
-	TagAssignmentFailed           = "user.tag.assignment.failed"
+	// Deprecated: Use TagAssignmentRequestedV1 from tags.go
+	TagAssignmentRequested = "user.tag.assignment.requested"
+	// Deprecated: Use TagAssignedForUserCreationV1 from tags.go
+	TagAssignedForUserCreation = "user.tag.assigned.for.creation"
+	// Deprecated: Use TagAssignmentFailedV1 from tags.go
+	TagAssignmentFailed = "user.tag.assignment.failed"
+
 	// Discord-specific topics for user role updates
+	// Deprecated: Use discord/user/roles.go events
 	DiscordUserRoleUpdateRequest = "discord.user.role.update.request"
-	DiscordUserRoleUpdated       = "discord.user.role.updated"
-	DiscordUserRoleUpdateFailed  = "discord.user.role.update.failed"
+	// Deprecated: Use discord/user/roles.go events
+	DiscordUserRoleUpdated = "discord.user.role.updated"
+	// Deprecated: Use discord/user/roles.go events
+	DiscordUserRoleUpdateFailed = "discord.user.role.update.failed"
 
 	// User retrieval flow
-	GetUserRequest  = "user.get.request"
+	// Deprecated: Use GetUserRequestedV1 from retrieval.go
+	GetUserRequest = "user.get.request"
+	// Deprecated: Use GetUserResponseV1 from retrieval.go
 	GetUserResponse = "user.get.response"
-	GetUserFailed   = "user.get.failed"
+	// Deprecated: Use GetUserFailedV1 from retrieval.go
+	GetUserFailed = "user.get.failed"
 
 	// User role retrieval flow
-	GetUserRoleRequest  = "user.role.get.request"
+	// Deprecated: Use GetUserRoleRequestedV1 from roles.go
+	GetUserRoleRequest = "user.role.get.request"
+	// Deprecated: Use GetUserRoleResponseV1 from roles.go
 	GetUserRoleResponse = "discord.user.role.get.response"
-	GetUserRoleFailed   = "discord.user.role.get.failed"
+	// Deprecated: Use GetUserRoleFailedV1 from roles.go
+	GetUserRoleFailed = "discord.user.role.get.failed"
 
 	// UDisc identity management
-	UpdateUDiscIdentityRequest         = "user.udisc.identity.update.request"
-	UDiscIdentityUpdated               = "user.udisc.identity.updated"
-	UDiscIdentityUpdateFailed          = "user.udisc.identity.update.failed"
+	// Deprecated: Use UpdateUDiscIdentityRequestedV1 from udisc.go
+	UpdateUDiscIdentityRequest = "user.udisc.identity.update.request"
+	// Deprecated: Use UDiscIdentityUpdatedV1 from udisc.go
+	UDiscIdentityUpdated = "user.udisc.identity.updated"
+	// Deprecated: Use UDiscIdentityUpdateFailedV1 from udisc.go
+	UDiscIdentityUpdateFailed = "user.udisc.identity.update.failed"
+	// Deprecated: Use UDiscMatchConfirmationRequiredV1 from udisc.go
 	UserUDiscMatchConfirmationRequired = "user.udisc.match.confirmation_required"
-	UserUDiscMatchConfirmed            = "user.udisc.match.confirmed"
+	// Deprecated: Use UDiscMatchConfirmedV1 from udisc.go
+	UserUDiscMatchConfirmed = "user.udisc.match.confirmed"
 )
 
 // BaseEventPayload is a struct that can be embedded in other event structs to provide common fields.

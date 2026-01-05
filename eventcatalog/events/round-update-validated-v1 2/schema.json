@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "round_update_request_payload": {
+      "$ref": "#/components/schemas/RoundRoundUpdateRequestPayloadV1"
+    }
+  },
+  "type": "object"
+}

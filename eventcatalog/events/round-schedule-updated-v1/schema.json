@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "start_time": {
+      "$ref": "#/components/schemas/SharedStartTime"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

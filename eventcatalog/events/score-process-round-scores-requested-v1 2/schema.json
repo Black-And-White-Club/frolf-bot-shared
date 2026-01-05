@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "overwrite": {
+      "type": "boolean"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "scores": {
+      "items": {
+        "$ref": "#/components/schemas/SharedScoreInfo"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "type": "object"
+}

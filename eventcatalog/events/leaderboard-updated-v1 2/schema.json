@@ -1,0 +1,26 @@
+{
+  "properties": {
+    "config_fragment": {
+      "$ref": "#/components/schemas/SharedGuildConfigFragment"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "leaderboard_data": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "leaderboard_id": {
+      "type": "integer"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    }
+  },
+  "type": "object"
+}

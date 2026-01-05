@@ -1,0 +1,29 @@
+{
+  "properties": {
+    "channel_id": {
+      "type": "string"
+    },
+    "config_fragment": {
+      "$ref": "#/components/schemas/SharedGuildConfigFragment"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "location": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "start_time": {
+      "$ref": "#/components/schemas/SharedStartTime"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

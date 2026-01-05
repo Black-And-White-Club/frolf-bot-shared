@@ -1,0 +1,33 @@
+---
+id: round-datetime-parsed-v1
+name: DateTime Parsed
+version: 1.0.0
+summary: Natural language datetime successfully parsed
+owners:
+    - frolf-bot-team
+badges:
+    - content: round
+      backgroundColor: '#10b981'
+      textColor: '#ffffff'
+    - content: v1
+      backgroundColor: '#6366f1'
+      textColor: '#ffffff'
+schemaPath: schema.json
+channels:
+    - id: nats-jetstream
+      version: 1.0.0
+---
+
+Natural language datetime successfully parsed
+
+## Topic
+
+This event is published on the `round.datetime.parsed.v1` topic via NATS JetStream.
+
+## Schema
+
+<SchemaViewer file="schema.json" />
+
+## Producers & Consumers
+
+Use the node graph above to see which services produce and consume this event.

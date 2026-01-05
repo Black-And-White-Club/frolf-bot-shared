@@ -45,4 +45,33 @@ clean:
 	@echo "Mocks cleaned successfully."
 .PHONY: clean
 
+# Generate AsyncAPI specification from Go event definitions
+asyncapi:
+	@echo "Generating AsyncAPI specification..."
+	go run ./cmd/asyncapi-gen > asyncapi/asyncapi.yaml
+	@echo "AsyncAPI spec generated at asyncapi/asyncapi.yaml"
+.PHONY: asyncapi
 
+# Generate EventCatalog content from AsyncAPI specification
+eventcatalog:
+	@echo "Generating EventCatalog content..."
+	go run ./cmd/eventcatalog-gen
+	@echo "EventCatalog content generated"
+.PHONY: eventcatalog
+
+# Build EventCatalog static site
+eventcatalog-build: eventcatalog
+	@echo "Building EventCatalog static site..."
+	cd eventcatalog && bun run build
+	@echo "EventCatalog built at eventcatalog/dist/"
+.PHONY: eventcatalog-build
+
+# Start EventCatalog dev server
+eventcatalog-dev:
+	cd eventcatalog && bun run dev
+.PHONY: eventcatalog-dev
+
+# Generate all documentation (AsyncAPI + EventCatalog)
+docs: asyncapi eventcatalog
+	@echo "All documentation generated"
+.PHONY: docs
