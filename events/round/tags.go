@@ -46,6 +46,10 @@ const RoundTagNumberRequestedV1 = "round.tag.number.requested.v1"
 
 // RoundTagNumberFoundV1 is published when a tag number is found.
 //
+// DEPRECATED: This event is superseded by sharedevents.RoundTagLookupFoundV1.
+// Use round.tag.lookup.found.v1 (from events/shared/tags.go) instead.
+// This constant will be removed in v2.0.
+//
 // Pattern: Event Notification
 // Subject: round.leaderboard.tag.found.v1
 // Producer: backend-service (tag lookup handler)
@@ -54,6 +58,10 @@ const RoundTagNumberRequestedV1 = "round.tag.number.requested.v1"
 const RoundTagNumberFoundV1 = "round.leaderboard.tag.found.v1"
 
 // RoundTagNumberNotFoundV1 is published when a tag number is not found.
+//
+// DEPRECATED: This event is superseded by sharedevents.RoundTagLookupNotFoundV1.
+// Use round.tag.lookup.not.found.v1 (from events/shared/tags.go) instead.
+// This constant will be removed in v2.0.
 //
 // Pattern: Event Notification
 // Subject: round.leaderboard.tag.not.found.v1

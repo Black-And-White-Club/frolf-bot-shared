@@ -13,8 +13,7 @@
 // ## Round Finalization Flow
 //  1. All scores submitted -> RoundFinalizedV1 (backend state updated)
 //  2. Discord UI updated -> RoundFinalizedDiscordV1
-//  3. All processing complete -> RoundCompletedV1 (external apps notified)
-//  4. OR Finalization fails -> RoundFinalizationErrorV1
+//  3. OR Finalization fails -> RoundFinalizationErrorV1
 //
 // ## Reminder Flow
 //  1. Reminder scheduled -> RoundReminderScheduledV1
@@ -93,15 +92,19 @@ const RoundFinalizedV1 = "round.finalized.v1"
 // Version: v1 (December 2024)
 const RoundFinalizedDiscordV1 = "round.finalized.discord.v1"
 
-// RoundCompletedV1 is published after backend completes all processing.
-// This signals to external apps (Discord, PWA) that the round is ready for display.
+// RoundCompletedV1 was intended for external app notification after round processing.
+//
+// DEPRECATED: This event is redundant with RoundFinalizedV1 and RoundFinalizedDiscordV1.
+// RoundFinalizedV1 already signals completion of all backend processing to domain consumers.
+// RoundFinalizedDiscordV1 provides Discord-specific finalization data.
+// External apps (PWA, mobile apps) should subscribe to RoundFinalizedV1 instead.
+// This constant will be removed in v2.0.
 //
 // Pattern: Event Notification
 // Subject: round.completed.v1
-// Producer: backend-service (completion handler)
-// Consumers: discord-service, PWA, external integrations
-// Triggers: UI updates in all consuming applications
-// Version: v1 (December 2024)
+// Producer: NONE - Never implemented
+// Consumers: NONE - Never implemented
+// Version: v1 (December 2024) - Deprecated before implementation
 const RoundCompletedV1 = "round.completed.v1"
 
 // RoundFinalizationErrorV1 is published when round finalization fails.
