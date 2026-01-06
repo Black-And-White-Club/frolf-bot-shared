@@ -80,9 +80,21 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	}
 	newEvent.Payload = payloadBytes
 
-	// Set domain and handler
+	// Set handler
 	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
-	newEvent.Metadata.Set("domain", "discord")
+	
+	// Set event_name to match the topic
+	newEvent.Metadata.Set("event_name", topic)
+	
+	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
+	// Only set domain if not already present in metadata
+	if newEvent.Metadata.Get("domain") == "" {
+		// Extract domain from topic (first segment before first dot)
+		domain := extractDomainFromTopic(topic)
+		if domain != "" {
+			newEvent.Metadata.Set("domain", domain)
+		}
+	}
 
 	return newEvent, nil
 }
@@ -99,7 +111,13 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 
 	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
 	newEvent.Metadata.Set("topic", topic)
-	newEvent.Metadata.Set("domain", "discord")
+	newEvent.Metadata.Set("event_name", topic)
+	
+	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
+	domain := extractDomainFromTopic(topic)
+	if domain != "" {
+		newEvent.Metadata.Set("domain", domain)
+	}
 
 	return newEvent, nil
 }
@@ -158,4 +176,17 @@ func getNATSMessage(msg *message.Message) jetstream.Msg {
 	// This would require access to the NATS connection, which we don't have here
 
 	return nil
+}
+
+// extractDomainFromTopic extracts the domain from a topic string.
+// For example: "user.tag.available.v1" → "user", "score.update.requested.v1" → "score"
+func extractDomainFromTopic(topic string) string {
+	// Find the first dot
+	for i := 0; i < len(topic); i++ {
+		if topic[i] == '.' {
+			return topic[:i]
+		}
+	}
+	// If no dot found, return the whole topic
+	return topic
 }
