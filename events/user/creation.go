@@ -104,10 +104,12 @@ type UserCreationRequestedPayloadV1 struct {
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
+//   - v1.1 (January 2026): Added IsReturningUser flag to distinguish new vs returning users
 type UserCreatedPayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
+	GuildID         sharedtypes.GuildID    `json:"guild_id"`
+	UserID          sharedtypes.DiscordID  `json:"user_id"`
+	TagNumber       *sharedtypes.TagNumber `json:"tag_number,omitempty"`
+	IsReturningUser bool                   `json:"is_returning_user"`
 }
 
 // UserCreationFailedPayloadV1 contains user creation failure data.

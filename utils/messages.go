@@ -82,10 +82,10 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 
 	// Set handler
 	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
-	
+
 	// Set event_name to match the topic
 	newEvent.Metadata.Set("event_name", topic)
-	
+
 	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
 	// Only set domain if not already present in metadata
 	if newEvent.Metadata.Get("domain") == "" {
@@ -112,7 +112,7 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
 	newEvent.Metadata.Set("topic", topic)
 	newEvent.Metadata.Set("event_name", topic)
-	
+
 	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
 	domain := extractDomainFromTopic(topic)
 	if domain != "" {
