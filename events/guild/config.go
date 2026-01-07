@@ -179,6 +179,17 @@ const GuildConfigDeletedV1 = "guild.config.deleted.v1"
 // Version: v1 (December 2024)
 const GuildConfigDeletionFailedV1 = "guild.config.deletion.failed.v1"
 
+// GuildConfigDeletionResultsV1 is published after the Discord worker attempts
+// to delete resources that were snapshot at config deletion time. It contains
+// per-resource outcomes so integrators and admins can audit what happened.
+//
+// Pattern: Event Notification
+// Subject: guild.config.deletion.results.v1
+// Producer: discord-service (discord worker)
+// Consumers: ops/monitoring, any interested services
+// Version: v1 (January 2026)
+const GuildConfigDeletionResultsV1 = "guild.config.deletion.results.v1"
+
 // =============================================================================
 // GUILD CONFIG FLOW - Payload Types
 // =============================================================================
@@ -311,7 +322,11 @@ type GuildConfigDeletionRequestedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type GuildConfigDeletedPayloadV1 struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
+	GuildID sharedtypes.GuildID    `json:"guild_id"`
+	// ResourceState is an optional snapshot of the resources that were present
+	// at deletion time. Consumers (Discord worker) should use this to perform
+	// deletions and record per-resource outcomes.
+	ResourceState guildtypes.ResourceState `json:"resource_state,omitempty"`
 }
 
 // GuildConfigDeletionFailedPayloadV1 contains guild config deletion failure data.
@@ -321,4 +336,16 @@ type GuildConfigDeletedPayloadV1 struct {
 type GuildConfigDeletionFailedPayloadV1 struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 	Reason  string              `json:"reason"`
+}
+
+// GuildConfigDeletionResultsPayloadV1 contains the per-resource deletion
+// results produced by the Discord worker after processing a
+// GuildConfigDeletedV1 event.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type GuildConfigDeletionResultsPayloadV1 struct {
+	GuildID       sharedtypes.GuildID        `json:"guild_id"`
+	ResourceState guildtypes.ResourceState   `json:"resource_state,omitempty"`
+	Results       map[string]guildtypes.DeletionResult `json:"results,omitempty"`
 }

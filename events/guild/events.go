@@ -103,7 +103,8 @@ type GuildConfigDeletionRequestedPayload struct {
 
 // Emitted when a guild config is deleted
 type GuildConfigDeletedPayload struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
+	GuildID       sharedtypes.GuildID    `json:"guild_id"`
+	ResourceState guildtypes.ResourceState `json:"resource_state,omitempty"`
 }
 
 // Emitted when a guild config deletion fails
