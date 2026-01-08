@@ -58,10 +58,15 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 		newEvent.Metadata.Set(key, value)
 	}
 
-	// Overwrite topic deterministically
+	// MIGRATION NOTE: Router now owns topic resolution via getPublishTopic()
+	// Keep metadata["topic"] temporarily for backward compatibility during gradual migration
+	// TODO: Remove after all routers implement getPublishTopic()
 	newEvent.Metadata.Set("topic", topic)
 	// Remove conflicting alternate casing like "Topic", if present
 	delete(newEvent.Metadata, "Topic")
+
+	// Set topic_hint for debugging/logging (not used for routing)
+	newEvent.Metadata.Set("topic_hint", topic)
 
 	// Ensure correlation ID exists
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
@@ -110,13 +115,26 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 	newEvent.Payload = payloadBytes
 
 	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
+	// MIGRATION NOTE: Keep metadata["topic"] temporarily for backward compatibility
+	// TODO: Remove after all routers implement getPublishTopic()
 	newEvent.Metadata.Set("topic", topic)
+	newEvent.Metadata.Set("topic_hint", topic)
 	newEvent.Metadata.Set("event_name", topic)
 
 	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
 	domain := extractDomainFromTopic(topic)
 	if domain != "" {
 		newEvent.Metadata.Set("domain", domain)
+	}
+
+	// Ensure a correlation id exists on newly created messages so downstream services
+	// and CreateResultMessage can propagate it back to originators (e.g., Discord interactions).
+	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
+		newCID := watermill.NewUUID()
+		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
+		if h.Logger != nil {
+			h.Logger.Debug("generated correlation id for new message", slog.String("correlation_id", newCID))
+		}
 	}
 
 	return newEvent, nil

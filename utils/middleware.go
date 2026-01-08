@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 )
 
 const (
@@ -54,6 +55,7 @@ func (mh *Middleware) AddRoutingMetadata(from *message.Message, to *message.Mess
 	for _, key := range []string{
 		"domain",
 		"event_name",
+		middleware.CorrelationIDMetadataKey,
 		MetadataChannelID,
 		MetadataMessageID,
 		MetadataGuildID,
