@@ -28,6 +28,7 @@
 package sharedevents
 
 import (
+	discordleaderboard "github.com/Black-And-White-Club/frolf-bot-shared/events/discord/leaderboard"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
@@ -87,32 +88,56 @@ const TagUpdateForScheduledRoundsV1 = "round.tag.update.for.scheduled.rounds.v1"
 // Version: v1 (December 2024)
 const DiscordTagLookupRequestedV1 = "leaderboard.tag.lookup.by.user.id.requested.v1"
 
-// DiscordTagLookupSucceededV1 is published when Discord tag lookup succeeds.
-//
-// Pattern: Event Notification
-// Subject: discord.leaderboard.tag.lookup.by.user.id.success.v1
-// Producer: leaderboard-service
-// Consumers: discord-service
-// Version: v1 (December 2024)
-const DiscordTagLookupSucceededV1 = "discord.leaderboard.tag.lookup.by.user.id.success.v1"
+// -----------------------------------------------------------------------------
+// DEPRECATED: Discord-prefixed lookup response topics
+// -----------------------------------------------------------------------------
+// These constants are deprecated aliases that remain for compatibility while the
+// leaderboard-owned canonical topics are adopted. They are now defined in the
+// Discord-specific package so that discord-prefixed subjects live under
+// `events/discord` per ownership rules.
+const (
+	// DiscordTagLookupSucceededV1 is the deprecated alias for the Discord-prefixed success topic.
+	DiscordTagLookupSucceededV1 = discordleaderboard.LeaderboardTagLookupSucceededV1
 
-// DiscordTagLookupNotFoundV1 is published when Discord tag lookup finds nothing.
-//
-// Pattern: Event Notification
-// Subject: discord.leaderboard.tag.lookup.by.user.id.not.found.v1
-// Producer: leaderboard-service
-// Consumers: discord-service
-// Version: v1 (December 2024)
-const DiscordTagLookupNotFoundV1 = "discord.leaderboard.tag.lookup.by.user.id.not.found.v1"
+	// DiscordTagLookupNotFoundV1 is the deprecated alias for the Discord-prefixed not-found topic.
+	DiscordTagLookupNotFoundV1 = discordleaderboard.LeaderboardTagLookupNotFoundV1
 
-// DiscordTagLookupFailedV1 is published when Discord tag lookup fails.
-//
+	// DiscordTagLookupFailedV1 is the deprecated alias for the Discord-prefixed failed topic.
+	DiscordTagLookupFailedV1 = discordleaderboard.LeaderboardTagLookupFailedV1
+)
+
+// -----------------------------------------------------------------------------
+// Canonical Leaderboard-owned Topics (for backend responses)
+// -----------------------------------------------------------------------------
+
+// LeaderboardTagLookupRequestedV1 is the canonical request topic for tag lookups
+// where the consumer is the leaderboard service. This is an alias of the
+// previously named DiscordTagLookupRequestedV1 to smooth migration.
+const LeaderboardTagLookupRequestedV1 = DiscordTagLookupRequestedV1
+
+// LeaderboardTagLookupSucceededV1 is published when a tag lookup succeeds.
 // Pattern: Event Notification
-// Subject: discord.leaderboard.tag.lookup.by.user.id.failed.v1
+// Subject: leaderboard.tag.lookup.by.user.id.success.v1
 // Producer: leaderboard-service
-// Consumers: discord-service
-// Version: v1 (December 2024)
-const DiscordTagLookupFailedV1 = "discord.leaderboard.tag.lookup.by.user.id.failed.v1"
+// Consumers: requesters (round or discord via subscription to leaderboard)
+// Version: v1 (January 2026)
+const LeaderboardTagLookupSucceededV1 = "leaderboard.tag.lookup.by.user.id.success.v1"
+
+// LeaderboardTagLookupNotFoundV1 is published when a lookup finds nothing.
+// Pattern: Event Notification
+// Subject: leaderboard.tag.lookup.by.user.id.not.found.v1
+// Producer: leaderboard-service
+// Consumers: requesters (round or discord via subscription to leaderboard)
+// Version: v1 (January 2026)
+const LeaderboardTagLookupNotFoundV1 = "leaderboard.tag.lookup.by.user.id.not.found.v1"
+
+// LeaderboardTagLookupFailedV1 is published when a lookup fails with an error.
+// Pattern: Event Notification
+// Subject: leaderboard.tag.lookup.by.user.id.failed.v1
+// Producer: leaderboard-service
+// Consumers: requesters (round or discord via subscription to leaderboard)
+// Version: v1 (January 2026)
+const LeaderboardTagLookupFailedV1 = "leaderboard.tag.lookup.by.user.id.failed.v1"
 
 // =============================================================================
 // BATCH TAG ASSIGNMENT FLOW - Event Constants

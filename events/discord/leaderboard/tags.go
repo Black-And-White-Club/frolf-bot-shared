@@ -103,6 +103,37 @@ const LeaderboardTagAvailabilityRequestV1 = "discord.leaderboard.tag.availabilit
 const LeaderboardTagAvailabilityResponseV1 = "discord.leaderboard.tag.availability.response.v1"
 
 // -----------------------------------------------------------------------------
+// Discord Leaderboard Lookup Response Events (deprecated Discord-prefixed subjects)
+// -----------------------------------------------------------------------------
+
+// LeaderboardTagLookupSucceededV1 is published when a Discord-initiated lookup succeeds.
+// Subject: discord.leaderboard.tag.lookup.by.user.id.success.v1
+// Producer: leaderboard-service (deprecated for leaderboard.* canonical topics)
+// Consumers: discord-service
+const LeaderboardTagLookupSucceededV1 = "discord.leaderboard.tag.lookup.by.user.id.success.v1"
+
+// LeaderboardTagLookupNotFoundV1 is published when a Discord-initiated lookup finds nothing.
+// Subject: discord.leaderboard.tag.lookup.by.user.id.not.found.v1
+// Producer: leaderboard-service (deprecated for leaderboard.* canonical topics)
+// Consumers: discord-service
+const LeaderboardTagLookupNotFoundV1 = "discord.leaderboard.tag.lookup.by.user.id.not.found.v1"
+
+// LeaderboardTagLookupFailedV1 is published when a Discord-initiated lookup fails.
+// Subject: discord.leaderboard.tag.lookup.by.user.id.failed.v1
+// Producer: leaderboard-service (deprecated for leaderboard.* canonical topics)
+// Consumers: discord-service
+const LeaderboardTagLookupFailedV1 = "discord.leaderboard.tag.lookup.by.user.id.failed.v1"
+
+// Legacy (non-versioned) Discord lookup subjects (deprecated). These exist so
+// older code that references the non-v1 subjects can continue to compile while
+// we centralize Discord-prefixed subjects under `events/discord/leaderboard`.
+const (
+	LeaderboardTagLookupSucceededLegacy = "discord.leaderboard.tag.lookup.by.user.id.success"
+	LeaderboardTagLookupNotFoundLegacy = "discord.leaderboard.tag.lookup.by.user.id.not.found"
+	LeaderboardTagLookupFailedLegacy = "discord.leaderboard.tag.lookup.by.user.id.failed"
+)
+
+// -----------------------------------------------------------------------------
 // Tag Swap Events
 // -----------------------------------------------------------------------------
 

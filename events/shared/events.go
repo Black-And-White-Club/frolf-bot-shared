@@ -8,6 +8,7 @@
 package sharedevents
 
 import (
+	discordleaderboard "github.com/Black-And-White-Club/frolf-bot-shared/events/discord/leaderboard"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
@@ -35,11 +36,11 @@ const (
 	// Deprecated: Use DiscordTagLookupRequestedV1 from tags.go
 	DiscordTagLookUpByUserIDRequest = "leaderboard.tag.lookup.by.user.id.request"
 	// Deprecated: Use DiscordTagLookupFailedV1 from tags.go
-	DiscordTagLookupByUserIDFailed = "discord.leaderboard.tag.lookup.by.user.id.failed"
+	DiscordTagLookupByUserIDFailed = discordleaderboard.LeaderboardTagLookupFailedLegacy
 	// Deprecated: Use DiscordTagLookupSucceededV1 from tags.go
-	DiscordTagLookupByUserIDSuccess = "discord.leaderboard.tag.lookup.by.user.id.success"
+	DiscordTagLookupByUserIDSuccess = discordleaderboard.LeaderboardTagLookupSucceededLegacy
 	// Deprecated: Use DiscordTagLookupNotFoundV1 from tags.go
-	DiscordTagLookupByUserIDNotFound = "discord.leaderboard.tag.lookup.by.user.id.not.found"
+	DiscordTagLookupByUserIDNotFound = discordleaderboard.LeaderboardTagLookupNotFoundLegacy
 
 	// Deprecated: Use LeaderboardBatchTagAssignmentRequestedV1 from tags.go
 	LeaderboardBatchTagAssignmentRequested = "leaderboard.batch.tag.assignment.requested"
