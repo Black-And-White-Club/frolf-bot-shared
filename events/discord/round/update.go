@@ -107,7 +107,7 @@ const RoundDeletedDiscordV1 = "discord.round.deleted.v1"
 type RoundUpdateModalSubmittedPayloadV1 struct {
 	RoundID     sharedtypes.RoundID     `json:"round_id"`
 	UserID      sharedtypes.DiscordID   `json:"user_id"`
-	MessageID   string                  `json:"message_id"`
+	MessageID   string                  `json:"discord_message_id"`
 	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
 	StartTime   *string                 `json:"start_time,omitempty"` // Unparsed
@@ -124,7 +124,7 @@ type RoundUpdateModalSubmittedPayloadV1 struct {
 type RoundUpdateRequestDiscordPayloadV1 struct {
 	RoundID     sharedtypes.RoundID     `json:"round_id"`
 	UserID      sharedtypes.DiscordID   `json:"user_id"`
-	MessageID   string                  `json:"message_id"`
+	MessageID   string                  `json:"discord_message_id"`
 	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
 	StartTime   *sharedtypes.StartTime  `json:"start_time,omitempty"`
@@ -139,7 +139,7 @@ type RoundUpdateRequestDiscordPayloadV1 struct {
 //   - v1.0 (December 2024): Initial version
 type RoundUpdatedDiscordPayloadV1 struct {
 	RoundID     sharedtypes.RoundID     `json:"round_id"`
-	MessageID   string                  `json:"message_id"`
+	MessageID   string                  `json:"discord_message_id"`
 	ChannelID   string                  `json:"channel_id"`
 	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
@@ -160,7 +160,7 @@ type RoundDeleteRequestDiscordPayloadV1 struct {
 	RoundID   sharedtypes.RoundID   `json:"round_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"message_id"`
+	MessageID string                `json:"discord_message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -171,6 +171,6 @@ type RoundDeleteRequestDiscordPayloadV1 struct {
 type RoundDeletedDiscordPayloadV1 struct {
 	RoundID   sharedtypes.RoundID `json:"round_id"`
 	ChannelID string              `json:"channel_id"`
-	MessageID string              `json:"message_id"`
+	MessageID string              `json:"discord_message_id"`
 	GuildID   string              `json:"guild_id"`
 }

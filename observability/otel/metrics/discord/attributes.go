@@ -18,7 +18,7 @@ const (
 	CommandNameKey   key = "command_name"
 	InteractionType  key = "interaction_type"
 	CorrelationIDKey key = "correlation_id"
-	MessageIDKey     key = "message_id"
+	MessageIDKey     key = "discord_message_id"
 )
 
 func WithValue[T any](ctx context.Context, k key, val T) context.Context {

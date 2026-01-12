@@ -453,7 +453,7 @@ package eventbus
 // 	delayedSubject := fmt.Sprintf("%s.%v", DelayedMessagesSubject, roundID)
 
 // 	ctxLogger.Info("Publishing delayed message",
-// 		attr.String("message_id", msg.UUID),
+// 		attr.String("discord_message_id", msg.UUID),
 // 		attr.String("delayed_subject", delayedSubject),
 // 	)
 
@@ -463,7 +463,7 @@ package eventbus
 // 	}
 
 // 	ctxLogger.Info("Successfully scheduled delayed message",
-// 		attr.String("message_id", msg.UUID),
+// 		attr.String("discord_message_id", msg.UUID),
 // 		attr.String("delayed_subject", delayedSubject),
 // 	)
 
