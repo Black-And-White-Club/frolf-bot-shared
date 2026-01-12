@@ -23,7 +23,7 @@ func LoggingMiddleware(logger watermill.LoggerAdapter) message.HandlerMiddleware
 			ctxLogger := logger.With(watermill.LogFields{
 				"correlation_id": correlationID,
 				"topic":          topic,
-				"discord_message_id":     msg.UUID,
+				"message_id":     msg.UUID,
 				"handler":        msg.Metadata.Get("handler_name"),
 				"domain":         msg.Metadata.Get("domain"),
 			})

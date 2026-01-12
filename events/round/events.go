@@ -390,7 +390,7 @@ type UpdateRoundRequestedPayload struct {
 	RoundID     sharedtypes.RoundID     `json:"round_id"`
 	UserID      sharedtypes.DiscordID   `json:"user_id"`
 	ChannelID   string                  `json:"channel_id"`
-	MessageID   string                  `json:"discord_message_id"`
+	MessageID   string                  `json:"message_id"`
 	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
 	StartTime   *string                 `json:"start_time,omitempty"`
@@ -926,7 +926,7 @@ type ScorecardUploadedPayload struct {
 	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	FileData  []byte                `json:"file_data,omitempty"`
 	FileURL   string                `json:"file_url,omitempty"`
 	FileName  string                `json:"file_name,omitempty"`
@@ -942,7 +942,7 @@ type ScorecardURLRequestedPayload struct {
 	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	UDiscURL  string                `json:"udisc_url"`
 	Notes     string                `json:"notes,omitempty"`
 	Timestamp time.Time             `json:"timestamp"`

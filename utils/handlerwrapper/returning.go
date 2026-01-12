@@ -143,10 +143,6 @@ func WrapTransformingTyped[T any](
 				if outMsg.Metadata.Get("discord_message_id") == "" {
 					outMsg.Metadata.Set("discord_message_id", dID)
 				}
-				// Also set legacy key for consumers that still look for `message_id`.
-				if outMsg.Metadata.Get("discord_message_id") == "" {
-					outMsg.Metadata.Set("discord_message_id", dID)
-				}
 			}
 
 			// Type-safe fallback

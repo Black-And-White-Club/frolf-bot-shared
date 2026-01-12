@@ -194,7 +194,7 @@ type ScorecardUploadedPayloadV1 struct {
 	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	FileData  []byte                `json:"file_data,omitempty"`
 	FileURL   string                `json:"file_url,omitempty"`
 	FileName  string                `json:"file_name,omitempty"`
@@ -213,7 +213,7 @@ type ScorecardURLRequestedPayloadV1 struct {
 	ImportID  string                `json:"import_id"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	UDiscURL  string                `json:"udisc_url"`
 	Notes     string                `json:"notes,omitempty"`
 	Timestamp time.Time             `json:"timestamp"`
