@@ -23,6 +23,7 @@ import (
 )
 
 type eventBus struct {
+	appType        string
 	publisher      message.Publisher
 	subscriber     message.Subscriber
 	js             jetstream.JetStream
@@ -135,6 +136,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 	}
 
 	eventBus := &eventBus{
+		appType:        appType,
 		publisher:      publisher,
 		subscriber:     subscriber,
 		js:             js,
@@ -168,6 +170,12 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 	if eb.marshaler == nil {
 		ctxLogger.Error("Failed to publish message", "error", "marshaler not set")
 		return fmt.Errorf("eventBus marshaler is not set")
+	}
+
+	// Guard: prevent non-discord apps from publishing discord.* topics per boundary rules
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		ctxLogger.Error("Publish forbidden: app not allowed to publish discord topics", "app_type", eb.appType, "topic", topic)
+		return fmt.Errorf("publishing to discord topics is forbidden for app type %q", eb.appType)
 	}
 
 	ctxLogger.Debug("Publishing messages")
@@ -270,6 +278,12 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 
 	if eb.metrics != nil {
 		eb.metrics.RecordMessageSubscribe(ctx, topic)
+	}
+
+	// Guard: enforce that only the Discord app may subscribe to discord.* topics.
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		ctxLogger.Error("Subscription forbidden: app not allowed to subscribe to discord topics", "app_type", eb.appType, "topic", topic)
+		return nil, fmt.Errorf("subscription to discord topics is forbidden for app type %q", eb.appType)
 	}
 
 	var appType string
@@ -481,6 +495,12 @@ func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan 
 		"operation", "subscribe_for_test",
 		"topic", topic,
 	)
+
+	// Guard: only the Discord app may subscribe to discord.* topics in tests as well.
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		ctxLogger.Error("Subscription forbidden (test): app not allowed to subscribe to discord topics", "app_type", eb.appType, "topic", topic)
+		return nil, fmt.Errorf("subscription to discord topics is forbidden for app type %q", eb.appType)
+	}
 
 	// Determine stream name exactly like Subscribe()
 	var streamName string
