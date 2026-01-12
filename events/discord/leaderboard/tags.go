@@ -129,8 +129,8 @@ const LeaderboardTagLookupFailedV1 = "discord.leaderboard.tag.lookup.by.user.id.
 // we centralize Discord-prefixed subjects under `events/discord/leaderboard`.
 const (
 	LeaderboardTagLookupSucceededLegacy = "discord.leaderboard.tag.lookup.by.user.id.success"
-	LeaderboardTagLookupNotFoundLegacy = "discord.leaderboard.tag.lookup.by.user.id.not.found"
-	LeaderboardTagLookupFailedLegacy = "discord.leaderboard.tag.lookup.by.user.id.failed"
+	LeaderboardTagLookupNotFoundLegacy  = "discord.leaderboard.tag.lookup.by.user.id.not.found"
+	LeaderboardTagLookupFailedLegacy    = "discord.leaderboard.tag.lookup.by.user.id.failed"
 )
 
 // -----------------------------------------------------------------------------

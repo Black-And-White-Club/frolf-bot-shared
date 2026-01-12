@@ -322,7 +322,7 @@ type GuildConfigDeletionRequestedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type GuildConfigDeletedPayloadV1 struct {
-	GuildID sharedtypes.GuildID    `json:"guild_id"`
+	GuildID sharedtypes.GuildID `json:"guild_id"`
 	// ResourceState is an optional snapshot of the resources that were present
 	// at deletion time. Consumers (Discord worker) should use this to perform
 	// deletions and record per-resource outcomes.
@@ -345,7 +345,7 @@ type GuildConfigDeletionFailedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (January 2026): Initial version
 type GuildConfigDeletionResultsPayloadV1 struct {
-	GuildID       sharedtypes.GuildID        `json:"guild_id"`
-	ResourceState guildtypes.ResourceState   `json:"resource_state,omitempty"`
+	GuildID       sharedtypes.GuildID                  `json:"guild_id"`
+	ResourceState guildtypes.ResourceState             `json:"resource_state,omitempty"`
 	Results       map[string]guildtypes.DeletionResult `json:"results,omitempty"`
 }

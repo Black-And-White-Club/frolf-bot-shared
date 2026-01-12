@@ -40,12 +40,17 @@ import (
 // RoundTagLookupRequestedV1 is published when round needs a tag lookup.
 //
 // Pattern: Event Notification
-// Subject: round.tag.lookup.requested.v1
-// Producer: round-service
+// Subject: leaderboard.tag.lookup.requested.v1
+// Producer: requesting services (round-service, discord-service)
 // Consumers: leaderboard-service (lookup handler)
+// Note: The exported constant name is preserved as `RoundTagLookupRequestedV1` for
+// API stability, but the subject is owned by the leaderboard service and therefore
+// uses the `leaderboard.` prefix (consumer-owned). This keeps the producer-side
+// code referencing `sharedevents.RoundTagLookupRequestedV1` while aligning the
+// actual subject with ownership rules.
 // Triggers: RoundTagLookupFoundV1 OR RoundTagLookupNotFoundV1
-// Version: v1 (December 2024)
-const RoundTagLookupRequestedV1 = "round.tag.lookup.requested.v1"
+// Version: v1 (January 2026)
+const RoundTagLookupRequestedV1 = "leaderboard.tag.lookup.requested.v1"
 
 // RoundTagLookupFoundV1 is published when a tag is found for a round request.
 //

@@ -153,10 +153,10 @@ type InteractionRespondedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type InteractionResponseV1 struct {
-	InteractionID string        `json:"interaction_id"`
-	Token         string        `json:"token"`
-	Message       string        `json:"message"`
-	RetryData     *RetryDataV1  `json:"retry_data,omitempty"`
+	InteractionID string       `json:"interaction_id"`
+	Token         string       `json:"token"`
+	Message       string       `json:"message"`
+	RetryData     *RetryDataV1 `json:"retry_data,omitempty"`
 }
 
 // RetryDataV1 contains data for retrying a failed round creation.

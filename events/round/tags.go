@@ -177,7 +177,7 @@ type GetTagNumberResponsePayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type ScheduledRoundTagUpdatePayloadV1 struct {
-	GuildID     sharedtypes.GuildID                          `json:"guild_id"`
+	GuildID     sharedtypes.GuildID                              `json:"guild_id"`
 	ChangedTags map[sharedtypes.DiscordID]*sharedtypes.TagNumber `json:"changed_tags"`
 }
 

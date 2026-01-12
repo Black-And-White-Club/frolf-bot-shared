@@ -237,9 +237,9 @@ type ParticipantScoreV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type RoundScoresNotificationPayloadV1 struct {
-	GuildID sharedtypes.GuildID    `json:"guild_id"`
-	RoundID sharedtypes.RoundID    `json:"round_id"`
-	Scores  []ParticipantScoreV1   `json:"scores"`
+	GuildID sharedtypes.GuildID  `json:"guild_id"`
+	RoundID sharedtypes.RoundID  `json:"round_id"`
+	Scores  []ParticipantScoreV1 `json:"scores"`
 }
 
 // ProcessRoundScoresRequestPayloadV1 contains the score processing request.

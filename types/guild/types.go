@@ -21,7 +21,7 @@ type GuildConfig struct {
 	AutoSetupCompleted   bool
 	SetupCompletedAt     *time.Time
 	// Optional snapshot of resources (used for deletion flow)
-	ResourceState        ResourceState `json:"resource_state,omitempty"`
+	ResourceState ResourceState `json:"resource_state,omitempty"`
 	// ...add any other fields you want to expose...
 }
 
@@ -41,8 +41,8 @@ type ResourceState struct {
 
 // DeletionResult records the outcome of an attempted deletion for a single resource.
 type DeletionResult struct {
-	Status    string     `json:"status"`              // e.g., "pending", "success", "failed"
-	Error     string     `json:"error,omitempty"`     // error message if any
+	Status    string     `json:"status"`          // e.g., "pending", "success", "failed"
+	Error     string     `json:"error,omitempty"` // error message if any
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
 

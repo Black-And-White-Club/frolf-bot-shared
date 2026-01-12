@@ -14,6 +14,7 @@
 //  7. Overwrite confirmed (optional) -> ImportOverwriteConfirmedV1
 //  8. Scores imported -> RoundScoresImportedV1
 //  9. Participant auto-added (optional) -> RoundParticipantAutoAddedV1
+//
 // 10. Import completed -> ImportCompletedV1
 // 11. Scores finalized -> RoundScoresFinalizedV1
 // 12. OR Import fails -> ImportFailedV1

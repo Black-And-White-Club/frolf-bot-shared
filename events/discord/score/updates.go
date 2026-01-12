@@ -124,11 +124,11 @@ type ScoreUpdateFailedDiscordPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type ScoreBulkUpdateRequestDiscordPayloadV1 struct {
-	GuildID   sharedtypes.GuildID                   `json:"guild_id"`
-	RoundID   sharedtypes.RoundID                   `json:"round_id"`
-	Updates   []ScoreUpdateRequestDiscordPayloadV1  `json:"updates"`
-	ChannelID string                                `json:"channel_id"`
-	MessageID string                                `json:"message_id"`
+	GuildID   sharedtypes.GuildID                  `json:"guild_id"`
+	RoundID   sharedtypes.RoundID                  `json:"round_id"`
+	Updates   []ScoreUpdateRequestDiscordPayloadV1 `json:"updates"`
+	ChannelID string                               `json:"channel_id"`
+	MessageID string                               `json:"message_id"`
 }
 
 // ScoreBulkUpdateResponseDiscordPayloadV1 contains bulk score update result data for Discord.

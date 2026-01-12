@@ -164,7 +164,7 @@ const RoundRetrievalFailedV1 = "round.retrieval.failed.v1"
 // Schema History:
 //   - v1.0 (January 2026): Initial version
 type RoundRetrievalFailedPayloadV1 struct {
-	GuildID sharedtypes.GuildID   `json:"guild_id"`
-	RoundID sharedtypes.RoundID   `json:"round_id"`
-	Error   string                `json:"error"`
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
 }

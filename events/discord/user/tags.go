@@ -78,8 +78,8 @@ type TagNumberResponsePayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type TagNumberProvidedPayloadV1 struct {
-	UserID      sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber   sharedtypes.TagNumber  `json:"tag_number"`
-	Interaction interface{}            `json:"interaction"` // *discordgo.Interaction in discord-frolf-bot
-	GuildID     string                 `json:"guild_id"`
+	UserID      sharedtypes.DiscordID `json:"user_id"`
+	TagNumber   sharedtypes.TagNumber `json:"tag_number"`
+	Interaction interface{}           `json:"interaction"` // *discordgo.Interaction in discord-frolf-bot
+	GuildID     string                `json:"guild_id"`
 }

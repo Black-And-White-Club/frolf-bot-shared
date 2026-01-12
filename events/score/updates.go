@@ -133,9 +133,9 @@ type ScoreUpdateFailedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type ScoreBulkUpdateRequestedPayloadV1 struct {
-	GuildID sharedtypes.GuildID              `json:"guild_id"`
-	RoundID sharedtypes.RoundID              `json:"round_id"`
-	Updates []ScoreUpdateRequestedPayloadV1  `json:"updates"`
+	GuildID sharedtypes.GuildID             `json:"guild_id"`
+	RoundID sharedtypes.RoundID             `json:"round_id"`
+	Updates []ScoreUpdateRequestedPayloadV1 `json:"updates"`
 }
 
 // ScoreBulkUpdatedPayloadV1 contains bulk score update completion data.
