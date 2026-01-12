@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "tag_number": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

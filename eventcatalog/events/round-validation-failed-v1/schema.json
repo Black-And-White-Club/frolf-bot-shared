@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "error_messages": {
+      "items": {
+        "type": "string"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

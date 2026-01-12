@@ -352,7 +352,7 @@ type RoundStoredPayloadV1 struct {
 type RoundScheduledPayloadV1 struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 	roundtypes.BaseRoundPayload
-	EventMessageID string                            `json:"message_id"`
+	EventMessageID string                            `json:"discord_message_id"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 	ChannelID      string                            `json:"channel_id,omitempty"`
 }
@@ -398,7 +398,7 @@ type RoundCreationFailedPayloadV1 struct {
 type RoundEventCreatedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID `json:"guild_id"`
 	RoundID        sharedtypes.RoundID `json:"round_id"`
-	EventMessageID string              `json:"message_id"`
+	EventMessageID string              `json:"discord_message_id"`
 }
 
 // RoundMessageIDUpdatePayloadV1 contains the message ID update request.

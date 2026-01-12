@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "discord_message_id": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "participant_join_request": {
+      "$ref": "#/components/schemas/RoundParticipantJoinRequestPayloadV1"
+    }
+  },
+  "type": "object"
+}

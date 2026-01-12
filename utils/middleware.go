@@ -7,7 +7,7 @@ import (
 
 const (
 	MetadataChannelID        = "channel_id"
-	MetadataMessageID        = "message_id"
+	MetadataMessageID        = "discord_message_id"
 	MetadataGuildID          = "guild_id"
 	MetadataInteractionID    = "interaction_id"
 	MetadataInteractionToken = "interaction_token"

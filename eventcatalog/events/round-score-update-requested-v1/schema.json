@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "participant": {
+      "type": "string"
+    },
+    "round_id": {
+      "$ref": "#/components/schemas/SharedRoundID"
+    },
+    "score": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    }
+  },
+  "type": "object"
+}

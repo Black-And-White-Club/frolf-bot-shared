@@ -261,7 +261,7 @@ type RoundFinalizedEmbedUpdatePayloadV1 struct {
 	StartTime        *sharedtypes.StartTime   `json:"start_time"`
 	Location         *roundtypes.Location     `json:"location"`
 	Participants     []roundtypes.Participant `json:"participants"`
-	EventMessageID   string                   `json:"message_id"`
+	EventMessageID   string                   `json:"discord_message_id"`
 	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
 }
 

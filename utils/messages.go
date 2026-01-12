@@ -71,7 +71,7 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	for key, value := range originalMsg.Metadata {
 		switch key {
 		// BLOCK LIST: prevent copying IDs and old routing topics
-		case "message_id", "Nats-Msg-Id", "_watermill_message_uuid", "topic", "Topic":
+		case "discord_message_id", "Nats-Msg-Id", "_watermill_message_uuid", "topic", "Topic":
 			continue
 		}
 		newEvent.Metadata.Set(key, value)

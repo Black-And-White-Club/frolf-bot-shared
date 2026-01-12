@@ -90,7 +90,7 @@ type ScoreUpdateRequestDiscordPayloadV1 struct {
 	Score     sharedtypes.Score      `json:"score"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 	ChannelID string                 `json:"channel_id"`
-	MessageID string                 `json:"message_id"`
+	MessageID string                 `json:"discord_message_id"`
 }
 
 // ScoreUpdateResponseDiscordPayloadV1 contains score update success data for Discord.
@@ -103,7 +103,7 @@ type ScoreUpdateResponseDiscordPayloadV1 struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	Score     sharedtypes.Score     `json:"score"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"message_id"`
+	MessageID string                `json:"discord_message_id"`
 }
 
 // ScoreUpdateFailedDiscordPayloadV1 contains score update failure data for Discord.
@@ -116,7 +116,7 @@ type ScoreUpdateFailedDiscordPayloadV1 struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	Reason    string                `json:"reason"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"message_id"`
+	MessageID string                `json:"discord_message_id"`
 }
 
 // ScoreBulkUpdateRequestDiscordPayloadV1 contains bulk score update request data from Discord.
@@ -128,7 +128,7 @@ type ScoreBulkUpdateRequestDiscordPayloadV1 struct {
 	RoundID   sharedtypes.RoundID                  `json:"round_id"`
 	Updates   []ScoreUpdateRequestDiscordPayloadV1 `json:"updates"`
 	ChannelID string                               `json:"channel_id"`
-	MessageID string                               `json:"message_id"`
+	MessageID string                               `json:"discord_message_id"`
 }
 
 // ScoreBulkUpdateResponseDiscordPayloadV1 contains bulk score update result data for Discord.
@@ -143,5 +143,5 @@ type ScoreBulkUpdateResponseDiscordPayloadV1 struct {
 	TotalRequested int                     `json:"total_requested"`
 	UserIDsApplied []sharedtypes.DiscordID `json:"user_ids_applied"`
 	ChannelID      string                  `json:"channel_id"`
-	MessageID      string                  `json:"message_id"`
+	MessageID      string                  `json:"discord_message_id"`
 }

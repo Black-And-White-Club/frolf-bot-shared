@@ -60,7 +60,7 @@ type RoundScoreUpdateRequestDiscordPayloadV1 struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"` // User submitting the score
 	Score     sharedtypes.Score     `json:"score"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"message_id"`
+	MessageID string                `json:"discord_message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -73,6 +73,6 @@ type RoundParticipantScoreUpdatedDiscordPayloadV1 struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	Score     sharedtypes.Score     `json:"score"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"message_id"`
+	MessageID string                `json:"discord_message_id"`
 	GuildID   string                `json:"guild_id"`
 }

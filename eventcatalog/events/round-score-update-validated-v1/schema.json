@@ -1,0 +1,11 @@
+{
+  "properties": {
+    "guild_id": {
+      "type": "string"
+    },
+    "score_update_request_payload": {
+      "$ref": "#/components/schemas/RoundScoreUpdateRequestPayloadV1"
+    }
+  },
+  "type": "object"
+}

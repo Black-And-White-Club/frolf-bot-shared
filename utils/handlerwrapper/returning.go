@@ -66,8 +66,8 @@ func WrapTransformingTyped[T any](
 		defer span.End()
 
 		// 3. Metadata Extraction (The "Discord" Bridge)
-		if dID := msg.Metadata.Get("message_id"); dID != "" {
-			ctx = context.WithValue(ctx, "message_id", dID)
+		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
+			ctx = context.WithValue(ctx, "discord_message_id", dID)
 		}
 		// Propagate response token (used by Discord handlers to carry RSVP choice)
 		if resp := msg.Metadata.Get("response"); resp != "" {
@@ -139,17 +139,17 @@ func WrapTransformingTyped[T any](
 			}
 
 			// Downstream Propagation (Context -> Outbound Metadata)
-			if dID, ok := ctx.Value("message_id").(string); ok && dID != "" {
-				if outMsg.Metadata.Get("message_id") == "" {
-					outMsg.Metadata.Set("message_id", dID)
+			if dID, ok := ctx.Value("discord_message_id").(string); ok && dID != "" {
+				if outMsg.Metadata.Get("discord_message_id") == "" {
+					outMsg.Metadata.Set("discord_message_id", dID)
 				}
 			}
 
 			// Type-safe fallback
 			if carrier, ok := res.Payload.(DiscordMetadataCarrier); ok {
 				if id := carrier.GetEventMessageID(); id != "" {
-					if outMsg.Metadata.Get("message_id") == "" {
-						outMsg.Metadata.Set("message_id", id)
+					if outMsg.Metadata.Get("discord_message_id") == "" {
+						outMsg.Metadata.Set("discord_message_id", id)
 					}
 				}
 			}

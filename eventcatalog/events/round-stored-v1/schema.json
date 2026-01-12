@@ -1,0 +1,14 @@
+{
+  "properties": {
+    "config_fragment": {
+      "$ref": "#/components/schemas/SharedGuildConfigFragment"
+    },
+    "guild_id": {
+      "type": "string"
+    },
+    "round": {
+      "$ref": "#/components/schemas/RoundRound"
+    }
+  },
+  "type": "object"
+}

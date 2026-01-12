@@ -170,7 +170,7 @@ type ParticipantScoreUpdatedPayloadV1 struct {
 	Participant    sharedtypes.DiscordID             `json:"participant"`
 	Score          sharedtypes.Score                 `json:"score"`
 	ChannelID      string                            `json:"channel_id"`
-	EventMessageID string                            `json:"message_id"`
+	EventMessageID string                            `json:"discord_message_id"`
 	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
@@ -196,7 +196,7 @@ type RoundScoreUpdateErrorPayloadV1 struct {
 type AllScoresSubmittedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID               `json:"guild_id"`
 	RoundID        sharedtypes.RoundID               `json:"round_id"`
-	EventMessageID string                            `json:"message_id"`
+	EventMessageID string                            `json:"discord_message_id"`
 	RoundData      roundtypes.Round                  `json:"round_data"`
 	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`

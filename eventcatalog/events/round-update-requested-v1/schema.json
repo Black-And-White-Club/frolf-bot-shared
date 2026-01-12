@@ -1,0 +1,35 @@
+{
+	"properties": {
+		"channel_id": {
+			"type": "string"
+		},
+		"description": {
+			"type": ["null", "string"]
+		},
+		"guild_id": {
+			"type": "string"
+		},
+		"location": {
+			"type": ["null", "string"]
+		},
+		"discord_message_id": {
+			"type": "string"
+		},
+		"round_id": {
+			"$ref": "#/components/schemas/SharedRoundID"
+		},
+		"start_time": {
+			"type": ["null", "string"]
+		},
+		"timezone": {
+			"type": ["null", "string"]
+		},
+		"title": {
+			"type": ["null", "string"]
+		},
+		"user_id": {
+			"type": "string"
+		}
+	},
+	"type": "object"
+}
