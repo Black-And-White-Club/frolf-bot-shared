@@ -171,10 +171,11 @@ const LeaderboardBatchTagAssignmentRequestedV1 = "leaderboard.batch.tag.assignme
 //   - v1.0 (December 2024): Initial version
 type RoundTagLookupRequestedPayloadV1 struct {
 	ScopedGuildID
-	UserID     sharedtypes.DiscordID `json:"user_id"`
-	RoundID    sharedtypes.RoundID   `json:"round_id"`
-	Response   roundtypes.Response   `json:"response"`
-	JoinedLate *bool                 `json:"joined_late,omitempty"`
+	UserID           sharedtypes.DiscordID `json:"user_id"`
+	RoundID          sharedtypes.RoundID   `json:"round_id"`
+	Response         roundtypes.Response   `json:"response"`
+	OriginalResponse roundtypes.Response   `json:"original_response"`
+	JoinedLate       *bool                 `json:"joined_late,omitempty"`
 }
 
 // Deprecated: Use RoundTagLookupRequestedPayloadV1.
