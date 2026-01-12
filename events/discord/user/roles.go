@@ -139,6 +139,6 @@ type RoleUpdateTimeoutPayloadV1 struct {
 type RoleUpdateResponsePayloadV1 struct {
 	Response  string                `json:"response"` // The chosen role (or "cancel")
 	UserID    sharedtypes.DiscordID `json:"user_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }

@@ -68,7 +68,7 @@ type TagNumberRequestedPayloadV1 struct {
 type TagNumberResponsePayloadV1 struct {
 	TagNumber string                `json:"tag_number"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 

@@ -182,7 +182,7 @@ type LeaderboardTagAssignRequestPayloadV1 struct {
 	TagNumber    sharedtypes.TagNumber `json:"tag_number"`
 	RequestorID  sharedtypes.DiscordID `json:"requestor_id"`
 	ChannelID    string                `json:"channel_id"`
-	MessageID    string                `json:"discord_message_id"`
+	MessageID    string                `json:"message_id"`
 	GuildID      string                `json:"guild_id"`
 }
 
@@ -194,7 +194,7 @@ type LeaderboardTagAssignedPayloadV1 struct {
 	TargetUserID string                `json:"target_user_id"`
 	TagNumber    sharedtypes.TagNumber `json:"tag_number"`
 	ChannelID    string                `json:"channel_id"`
-	MessageID    string                `json:"discord_message_id"`
+	MessageID    string                `json:"message_id"`
 	GuildID      string                `json:"guild_id"`
 }
 
@@ -207,7 +207,7 @@ type LeaderboardTagAssignFailedPayloadV1 struct {
 	TagNumber    sharedtypes.TagNumber `json:"tag_number"`
 	Reason       string                `json:"reason"`
 	ChannelID    string                `json:"channel_id"`
-	MessageID    string                `json:"discord_message_id"`
+	MessageID    string                `json:"message_id"`
 	GuildID      string                `json:"guild_id"`
 }
 
@@ -244,7 +244,7 @@ type LeaderboardTagAvailabilityRequestPayloadV1 struct {
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -256,7 +256,7 @@ type LeaderboardTagAvailabilityResponsePayloadV1 struct {
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 	Available bool                  `json:"available"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -273,7 +273,7 @@ type LeaderboardTagSwapRequestPayloadV1 struct {
 	User2ID     sharedtypes.DiscordID `json:"user2_id"`
 	RequestorID sharedtypes.DiscordID `json:"requestor_id"`
 	ChannelID   string                `json:"channel_id"`
-	MessageID   string                `json:"discord_message_id"`
+	MessageID   string                `json:"message_id"`
 	GuildID     string                `json:"guild_id"`
 }
 
@@ -285,7 +285,7 @@ type LeaderboardTagSwappedPayloadV1 struct {
 	User1ID   sharedtypes.DiscordID `json:"user1_id"`
 	User2ID   sharedtypes.DiscordID `json:"user2_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -298,6 +298,6 @@ type LeaderboardTagSwapFailedPayloadV1 struct {
 	User2ID   sharedtypes.DiscordID `json:"user2_id"`
 	Reason    string                `json:"reason"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }

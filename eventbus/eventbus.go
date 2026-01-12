@@ -257,7 +257,7 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 		msgContext := msg.Context()
 
 		msgLogger := ctxLogger.With(
-			"discord_message_id", msg.UUID,
+			"message_id", msg.UUID,
 			"nats_msg_id", msg.Metadata.Get("Nats-Msg-Id"),
 			"correlation_id", correlationID,
 		)
@@ -418,7 +418,7 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 			}
 
 			msgAttrs := routineLogger.With(
-				"discord_message_id", wmMsg.UUID,
+				"message_id", wmMsg.UUID,
 				"delivery_count", deliveryCount,
 				"metadata", wmMsg.Metadata,
 			)
@@ -603,7 +603,7 @@ func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstre
 
 	ctxLogger := eb.logger.With(
 		attr.String("operation", "to_watermill_message"),
-		attr.String("discord_message_id", watermillMsg.UUID),
+		attr.String("message_id", watermillMsg.UUID),
 	)
 
 	meta, err := jetStreamMsg.Metadata()

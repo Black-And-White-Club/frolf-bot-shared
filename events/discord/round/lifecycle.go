@@ -112,7 +112,7 @@ type RoundStartedDiscordPayloadV1 struct {
 type RoundFinalizedDiscordPayloadV1 struct {
 	RoundID   sharedtypes.RoundID `json:"round_id"`
 	ChannelID string              `json:"channel_id"`
-	MessageID string              `json:"discord_message_id"`
+	MessageID string              `json:"message_id"`
 	GuildID   string              `json:"guild_id"`
 }
 

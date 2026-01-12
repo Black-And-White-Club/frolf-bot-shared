@@ -22,7 +22,7 @@ func UserID(userID sharedtypes.DiscordID) slog.Attr {
 
 // MessageID creates a slog.Attr for a Watermill message ID.
 func MessageID(msg *message.Message) slog.Attr {
-	return slog.String("discord_message_id", msg.UUID)
+	return slog.String("message_id", msg.UUID)
 }
 
 // Error creates a slog.Attr for an error.

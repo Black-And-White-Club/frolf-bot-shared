@@ -242,7 +242,7 @@ type ParticipantJoinedPayloadV1 struct {
 	AcceptedParticipants  []roundtypes.Participant          `json:"accepted_participants"`
 	DeclinedParticipants  []roundtypes.Participant          `json:"declined_participants"`
 	TentativeParticipants []roundtypes.Participant          `json:"tentative_participants"`
-	EventMessageID        string                            `json:"discord_message_id"`
+	EventMessageID        string                            `json:"message_id"`
 	JoinedLate            *bool                             `json:"joined_late,omitempty"`
 	Config                *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
@@ -255,7 +255,7 @@ type RoundParticipantJoinErrorPayloadV1 struct {
 	GuildID                sharedtypes.GuildID              `json:"guild_id"`
 	ParticipantJoinRequest *ParticipantJoinRequestPayloadV1 `json:"participant_join_request"`
 	Error                  string                           `json:"error"`
-	EventMessageID         string                           `json:"discord_message_id"`
+	EventMessageID         string                           `json:"message_id"`
 }
 
 // -----------------------------------------------------------------------------
@@ -270,7 +270,7 @@ type ParticipantDeclinedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID               `json:"guild_id"`
 	RoundID        sharedtypes.RoundID               `json:"round_id"`
 	UserID         sharedtypes.DiscordID             `json:"user_id"`
-	EventMessageID string                            `json:"discord_message_id"`
+	EventMessageID string                            `json:"message_id"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
@@ -310,7 +310,7 @@ type ParticipantRemovedPayloadV1 struct {
 	AcceptedParticipants  []roundtypes.Participant          `json:"accepted_participants"`
 	DeclinedParticipants  []roundtypes.Participant          `json:"declined_participants"`
 	TentativeParticipants []roundtypes.Participant          `json:"tentative_participants"`
-	EventMessageID        string                            `json:"discord_message_id"`
+	EventMessageID        string                            `json:"message_id"`
 	Config                *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 

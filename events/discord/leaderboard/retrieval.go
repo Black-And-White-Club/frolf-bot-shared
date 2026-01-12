@@ -59,7 +59,7 @@ const LeaderboardRetrievedV1 = "discord.leaderboard.retrieved.v1"
 type LeaderboardRetrieveRequestPayloadV1 struct {
 	UserID    sharedtypes.DiscordID `json:"user_id"`
 	ChannelID string                `json:"channel_id"`
-	MessageID string                `json:"discord_message_id"`
+	MessageID string                `json:"message_id"`
 	GuildID   string                `json:"guild_id"`
 }
 
@@ -70,6 +70,6 @@ type LeaderboardRetrieveRequestPayloadV1 struct {
 type LeaderboardRetrievedPayloadV1 struct {
 	Leaderboard []leaderboardtypes.LeaderboardEntry `json:"leaderboard"`
 	ChannelID   string                              `json:"channel_id"`
-	MessageID   string                              `json:"discord_message_id"`
+	MessageID   string                              `json:"message_id"`
 	GuildID     string                              `json:"guild_id"`
 }
