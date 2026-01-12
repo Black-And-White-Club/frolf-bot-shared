@@ -69,6 +69,10 @@ func WrapTransformingTyped[T any](
 		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
 			ctx = context.WithValue(ctx, "discord_message_id", dID)
 		}
+		// Propagate response token (used by Discord handlers to carry RSVP choice)
+		if resp := msg.Metadata.Get("response"); resp != "" {
+			ctx = context.WithValue(ctx, "response", resp)
+		}
 		if subAt := msg.Metadata.Get("submitted_at"); subAt != "" {
 			if t, err := time.Parse(time.RFC3339, subAt); err == nil {
 				ctx = context.WithValue(ctx, "submitted_at", t)

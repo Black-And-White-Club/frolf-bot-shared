@@ -73,6 +73,18 @@ const RoundStartedDiscordV1 = "round.started.discord.v1"
 // Version: v1 (January 2026)
 const RoundStartFailedV1 = "round.start.failed.v1"
 
+// RoundStartRequestedV1 is published to request the backend to begin processing a
+// round start. This is a minimal, command-style event containing only the
+// identity of the round. The backend handler will read the canonical state from
+// the database and perform domain logic.
+//
+// Pattern: Command/Request
+// Subject: round.start.requested.v1
+// Producer: scheduler / job worker
+// Consumers: backend-service (round start handler)
+// Version: v1 (January 2026)
+const RoundStartRequestedV1 = "round.start.requested.v1"
+
 // -----------------------------------------------------------------------------
 // Round Finalization Events
 // -----------------------------------------------------------------------------
@@ -178,6 +190,15 @@ type RoundStartedPayloadV1 struct {
 	StartTime *sharedtypes.StartTime            `json:"start_time"`
 	ChannelID string                            `json:"channel_id"`
 	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
+}
+
+// RoundStartRequestedPayloadV1 is a minimal command-style payload used by
+// scheduled workers to wake the backend and request a round start. The job
+// contains identity only; the service must consult the DB for authoritative
+// values.
+type RoundStartRequestedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
 }
 
 // DiscordRoundStartPayloadV1 contains Discord-specific round start data.
