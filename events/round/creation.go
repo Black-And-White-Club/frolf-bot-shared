@@ -141,6 +141,25 @@ const RoundStoredV1 = "round.stored.v1"
 // Breaking Changes: None (initial version)
 const RoundScheduledV1 = "round.scheduled.v1"
 
+// RoundScheduleFailedV1 is published when scheduling round reminders/events fails.
+//
+// Pattern: Event Notification
+// Subject: round.schedule.failed.v1
+// Producer: backend-service (scheduling handler)
+// Consumers: discord-service (error handler), monitoring systems
+// Version: v1 (January 2026)
+const RoundScheduleFailedV1 = "round.schedule.failed.v1"
+
+// RoundScheduleFailedPayloadV1 contains scheduling failure details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundScheduleFailedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
+}
+
 // -----------------------------------------------------------------------------
 // Step 7: Creation Complete
 // -----------------------------------------------------------------------------

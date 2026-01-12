@@ -149,3 +149,22 @@ type RoundUserRoleCheckErrorPayloadV1 struct {
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	Error   string                `json:"error"`
 }
+
+// RoundRetrievalFailedV1 is published when round retrieval fails.
+//
+// Pattern: Event Notification
+// Subject: round.retrieval.failed.v1
+// Producer: backend-service (retrieval handler)
+// Consumers: discord-service (error handler), monitoring systems
+// Version: v1 (January 2026)
+const RoundRetrievalFailedV1 = "round.retrieval.failed.v1"
+
+// RoundRetrievalFailedPayloadV1 contains retrieval error details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundRetrievalFailedPayloadV1 struct {
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
+	RoundID sharedtypes.RoundID   `json:"round_id"`
+	Error   string                `json:"error"`
+}

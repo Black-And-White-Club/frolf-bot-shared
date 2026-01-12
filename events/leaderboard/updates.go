@@ -22,6 +22,8 @@
 package leaderboardevents
 
 import (
+	"time"
+
 	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
@@ -103,6 +105,23 @@ type LeaderboardRoundFinalizedPayloadV1 struct {
 
 // TagOrderV1 represents the order of tags.
 type TagOrderV1 []string
+
+// TagUpdateForScheduledRoundsPayloadV1 contains tag changes that may affect scheduled rounds.
+//
+// Notes:
+//   - ChangedTags may be empty
+//   - Payload size is unbounded
+//   - This is an integration event, not a domain entity
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type TagUpdateForScheduledRoundsPayloadV1 struct {
+	GuildID     sharedtypes.GuildID                             `json:"guild_id"`
+	RoundID     sharedtypes.RoundID                             `json:"round_id,omitempty"`
+	Source      string                                          `json:"source,omitempty"`
+	UpdatedAt   time.Time                                       `json:"updated_at"`
+	ChangedTags map[sharedtypes.DiscordID]sharedtypes.TagNumber `json:"changed_tags,omitempty"`
+}
 
 // LeaderboardUpdateRequestedPayloadV1 contains leaderboard update request data.
 //

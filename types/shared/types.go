@@ -141,6 +141,15 @@ func (st StartTime) AsTime() time.Time {
 	return time.Time(st)
 }
 
+// ValidationError for payload/input validation across modules
+type ValidationError struct {
+	Message string
+}
+
+func (e ValidationError) Error() string {
+	return e.Message
+}
+
 // Common error payload for API responses
 type BaseErrorPayload struct {
 	Error string `json:"error"`
