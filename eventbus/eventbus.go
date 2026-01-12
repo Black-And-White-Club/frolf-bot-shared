@@ -180,30 +180,31 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 
 	ctxLogger.Debug("Publishing messages")
 
-	if len(messages) > 0 && eb.metrics != nil {
-		// If router passed empty topic, try to derive the subject from the message metadata.
-		if topic == "" {
-			if len(messages) == 0 {
-				return errors.New("no topic provided and no messages to derive topic from")
-			}
-			// Prefer metadata keys (case-sensitive) set by helpers.CreateResultMessage
-			// Try common keys in order: "topic", "Topic", "event_name", "topic_hint"
-			meta := messages[0].Metadata
-			derived := meta.Get("topic")
-			if derived == "" {
-				derived = meta.Get("Topic")
-			}
-			if derived == "" {
-				derived = meta.Get("event_name")
-			}
-			if derived == "" {
-				derived = meta.Get("topic_hint")
-			}
-			if derived == "" {
-				return fmt.Errorf("no publish topic provided and message metadata missing topic")
-			}
-			topic = derived
+	// If router passed empty topic, try to derive the subject from the message metadata.
+	if topic == "" {
+		if len(messages) == 0 {
+			return errors.New("no topic provided and no messages to derive topic from")
 		}
+		// Prefer metadata keys (case-sensitive) set by helpers.CreateResultMessage
+		// Try common keys in order: "topic", "Topic", "event_name", "topic_hint"
+		meta := messages[0].Metadata
+		derived := meta.Get("topic")
+		if derived == "" {
+			derived = meta.Get("Topic")
+		}
+		if derived == "" {
+			derived = meta.Get("event_name")
+		}
+		if derived == "" {
+			derived = meta.Get("topic_hint")
+		}
+		if derived == "" {
+			return fmt.Errorf("no publish topic provided and message metadata missing topic")
+		}
+		topic = derived
+	}
+
+	if len(messages) > 0 && eb.metrics != nil {
 		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
 	}
 
