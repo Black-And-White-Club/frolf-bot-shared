@@ -29,16 +29,34 @@ func NewHelper(logger *slog.Logger) Helpers {
 	return &DefaultHelper{Logger: logger}
 }
 
-// NewInstance creates a new instance of the type of the provided interface, which is expected to be a pointer to a struct.
-// It returns a pointer to the newly created instance.
+// CreateInstance creates a new zero-value instance of type T.
+// REPLACEMENT: Replaces the old reflection-based NewInstance.
+// Usage: utils.CreateInstance[MyStruct]() instead of utils.NewInstance(&MyStruct{})
+func CreateInstance[T any]() *T {
+	return new(T)
+}
+
+// NewInstance is a compatibility helper that creates a new instance based on
+// the migration approach. It accepts either:
+// - a factory function: func() interface{} and will call it, or
+// - a pointer to a zero value (old behavior): &T{} and will allocate via reflection.
+// This allows gradual migration from reflection to generics.
 func NewInstance(ptr interface{}) interface{} {
 	if ptr == nil {
 		return nil
 	}
-	// Get the type of the element pointed to by ptr
-	elemType := reflect.TypeOf(ptr).Elem()
-	// Create a new instance of that type and return a pointer to it
-	return reflect.New(elemType).Interface()
+
+	// If caller passed a factory function, call it and return the result.
+	if fn, ok := ptr.(func() interface{}); ok {
+		return fn()
+	}
+
+	// Fallback to reflection-based allocation for old-style calls like &T{}
+	t := reflect.TypeOf(ptr)
+	if t.Kind() == reflect.Ptr {
+		return reflect.New(t.Elem()).Interface()
+	}
+	return nil
 }
 
 // CreateResultMessage creates a new Watermill message, carrying over metadata from the original message.
@@ -52,27 +70,23 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	// Copy original metadata first
 	for key, value := range originalMsg.Metadata {
 		switch key {
-		case "message_id", "Nats-Msg-Id", "_watermill_message_uuid":
+		// BLOCK LIST: prevent copying IDs and old routing topics
+		case "message_id", "Nats-Msg-Id", "_watermill_message_uuid", "topic", "Topic":
 			continue
 		}
 		newEvent.Metadata.Set(key, value)
 	}
 
-	// MIGRATION NOTE: Router now owns topic resolution via getPublishTopic()
-	// Keep metadata["topic"] temporarily for backward compatibility during gradual migration
-	// TODO: Remove after all routers implement getPublishTopic()
+	// Set topic metadata used by the router/publisher for routing
+	// Keep topic_hint for debugging/logging as well.
 	newEvent.Metadata.Set("topic", topic)
-	// Remove conflicting alternate casing like "Topic", if present
-	delete(newEvent.Metadata, "Topic")
-
-	// Set topic_hint for debugging/logging (not used for routing)
+	newEvent.Metadata.Set("Topic", topic)
 	newEvent.Metadata.Set("topic_hint", topic)
 
 	// Ensure correlation ID exists
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		newCID := watermill.NewUUID()
 		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
-		// This is a normal path; keep level at Debug to avoid noise
 		h.Logger.Debug("generated correlation id for result message",
 			slog.String("correlation_id", newCID),
 		)
@@ -85,20 +99,27 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	}
 	newEvent.Payload = payloadBytes
 
-	// Set handler
+	// Set handler name and event name for observability
 	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
-
-	// Set event_name to match the topic
 	newEvent.Metadata.Set("event_name", topic)
 
 	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
-	// Only set domain if not already present in metadata
 	if newEvent.Metadata.Get("domain") == "" {
-		// Extract domain from topic (first segment before first dot)
 		domain := extractDomainFromTopic(topic)
 		if domain != "" {
 			newEvent.Metadata.Set("domain", domain)
 		}
+	}
+
+	// Debug: log the outgoing message metadata so router/publisher mapping can be observed
+	if h.Logger != nil {
+		h.Logger.Debug("created result message metadata",
+			slog.String("event_name", newEvent.Metadata.Get("event_name")),
+			slog.String("topic", newEvent.Metadata.Get("topic")),
+			slog.String("Topic", newEvent.Metadata.Get("Topic")),
+			slog.String("topic_hint", newEvent.Metadata.Get("topic_hint")),
+			slog.String("correlation_id", newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey)),
+		)
 	}
 
 	return newEvent, nil
@@ -115,20 +136,19 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 	newEvent.Payload = payloadBytes
 
 	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
-	// MIGRATION NOTE: Keep metadata["topic"] temporarily for backward compatibility
-	// TODO: Remove after all routers implement getPublishTopic()
+	// Ensure publisher can discover the subject to publish to
 	newEvent.Metadata.Set("topic", topic)
+	newEvent.Metadata.Set("Topic", topic)
 	newEvent.Metadata.Set("topic_hint", topic)
 	newEvent.Metadata.Set("event_name", topic)
 
-	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
+	// Set domain from topic
 	domain := extractDomainFromTopic(topic)
 	if domain != "" {
 		newEvent.Metadata.Set("domain", domain)
 	}
 
-	// Ensure a correlation id exists on newly created messages so downstream services
-	// and CreateResultMessage can propagate it back to originators (e.g., Discord interactions).
+	// Ensure a correlation id exists on newly created messages
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		newCID := watermill.NewUUID()
 		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
@@ -137,74 +157,72 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 		}
 	}
 
+	// Debug: log the outgoing new message metadata
+	if h.Logger != nil {
+		h.Logger.Debug("created new message metadata",
+			slog.String("event_name", newEvent.Metadata.Get("event_name")),
+			slog.String("topic", newEvent.Metadata.Get("topic")),
+			slog.String("Topic", newEvent.Metadata.Get("Topic")),
+			slog.String("topic_hint", newEvent.Metadata.Get("topic_hint")),
+			slog.String("correlation_id", newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey)),
+		)
+	}
+
 	return newEvent, nil
 }
 
-// UnmarshalPayload is a generic helper to unmarshal message payloads.
-// This updated version checks for NATS JetStream message and terminates it on unmarshal errors
+// UnmarshalPayload unmarshals the message payload into the provided struct.
+// It detects "poison pill" messages (malformed JSON) and terminates them in NATS to prevent infinite redelivery.
 func (h *DefaultHelper) UnmarshalPayload(msg *message.Message, payload interface{}) error {
 	if err := json.Unmarshal(msg.Payload, payload); err != nil {
-		// Try to get the underlying NATS JetStream message if it exists
+		// POISON PILL HANDLING
+		// If unmarshal fails, we must terminate the message so NATS doesn't retry it forever.
 		if jsMsg := getNATSMessage(msg); jsMsg != nil {
-			terminateReason := fmt.Sprintf("Failed to unmarshal payload: %s", err.Error())
-			termErr := jsMsg.TermWithReason(terminateReason)
-			if termErr != nil {
-				h.Logger.Error("failed to terminate message after unmarshal error",
+			terminateReason := fmt.Sprintf("Unmarshal failed: %s", err.Error())
+
+			// Terminate the message (stops redelivery)
+			if termErr := jsMsg.TermWithReason(terminateReason); termErr != nil {
+				h.Logger.Error("failed to terminate poison message",
 					slog.String("msg_uuid", msg.UUID),
-					slog.String("unmarshal_error", err.Error()),
 					slog.String("term_error", termErr.Error()),
 				)
 			} else {
-				h.Logger.Warn("message terminated due to unmarshal error",
+				h.Logger.Warn("terminated poison message",
 					slog.String("msg_uuid", msg.UUID),
 					slog.String("reason", terminateReason),
 				)
 			}
 		} else {
-			// Avoid extra noise; keep as Debug since we'll return the error
-			h.Logger.Debug("no NATS JetStream message found to terminate",
-				slog.String("msg_uuid", msg.UUID),
-			)
+			h.Logger.Debug("no NATS JetStream message found to terminate", slog.String("msg_uuid", msg.UUID))
 		}
 		return fmt.Errorf("failed to unmarshal payload for message %s: %w", msg.UUID, err)
 	}
 	return nil
 }
 
-// getNATSMessage attempts to extract the underlying NATS JetStream message
-// from a Watermill message based on expected metadata structure
+// getNATSMessage attempts to extract the underlying NATS JetStream message from Watermill metadata.
 func getNATSMessage(msg *message.Message) jetstream.Msg {
-	// Check if the original message is stored in the internal metadata
-	// The exact key depends on how you're implementing the NATS subscriber
-	// Common places to check:
-
-	// 1. Check if there's a direct message reference stored
+	// 1. Direct metadata reference (common in newer Watermill versions)
 	if natsMsg := msg.Metadata.Get("_nats_jetstream_msg"); natsMsg != "" {
 		if jsMsg, ok := msg.Context().Value(natsMsg).(jetstream.Msg); ok {
 			return jsMsg
 		}
 	}
 
-	// 2. Check if the original message is stored with a specific key in context
+	// 2. Context key fallback
 	if jsMsg, ok := msg.Context().Value("nats_jetstream_msg").(jetstream.Msg); ok {
 		return jsMsg
 	}
-
-	// 3. Check if there's a NATS message ID that could be used to look up the message
-	// This would require access to the NATS connection, which we don't have here
 
 	return nil
 }
 
 // extractDomainFromTopic extracts the domain from a topic string.
-// For example: "user.tag.available.v1" → "user", "score.update.requested.v1" → "score"
 func extractDomainFromTopic(topic string) string {
-	// Find the first dot
 	for i := 0; i < len(topic); i++ {
 		if topic[i] == '.' {
 			return topic[:i]
 		}
 	}
-	// If no dot found, return the whole topic
 	return topic
 }

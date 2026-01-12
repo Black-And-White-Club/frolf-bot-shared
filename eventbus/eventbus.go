@@ -44,6 +44,7 @@ type EventBus interface {
 	GetJetStream() jetstream.JetStream
 	GetHealthCheckers() []HealthChecker
 	CreateStream(ctx context.Context, streamName string) error
+	SubscribeForTest(ctx context.Context, topic string) (<-chan *message.Message, error)
 }
 
 // HealthChecker interface for components that can be health-checked
@@ -171,7 +172,30 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 
 	ctxLogger.Debug("Publishing messages")
 
-	if len(messages) > 0 {
+	if len(messages) > 0 && eb.metrics != nil {
+		// If router passed empty topic, try to derive the subject from the message metadata.
+		if topic == "" {
+			if len(messages) == 0 {
+				return errors.New("no topic provided and no messages to derive topic from")
+			}
+			// Prefer metadata keys (case-sensitive) set by helpers.CreateResultMessage
+			// Try common keys in order: "topic", "Topic", "event_name", "topic_hint"
+			meta := messages[0].Metadata
+			derived := meta.Get("topic")
+			if derived == "" {
+				derived = meta.Get("Topic")
+			}
+			if derived == "" {
+				derived = meta.Get("event_name")
+			}
+			if derived == "" {
+				derived = meta.Get("topic_hint")
+			}
+			if derived == "" {
+				return fmt.Errorf("no publish topic provided and message metadata missing topic")
+			}
+			topic = derived
+		}
 		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
 	}
 
@@ -208,9 +232,10 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 			}
 
 			ctxLogger.Error("Failed to publish message after retries", "error", err)
-			if len(messages) > 0 {
+			if len(messages) > 0 && eb.metrics != nil {
 				eb.metrics.RecordMessagePublishError(messages[0].Context(), topic)
 			}
+
 			return fmt.Errorf("failed to publish message to topic %s after %d attempts: %w", topic, maxRetries, err)
 		}
 
@@ -243,7 +268,9 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 
 	ctxLogger.Info("Entering Subscribe")
 
-	eb.metrics.RecordMessageSubscribe(ctx, topic)
+	if eb.metrics != nil {
+		eb.metrics.RecordMessageSubscribe(ctx, topic)
+	}
 
 	var appType string
 	if strings.HasPrefix(topic, "discord") {
@@ -301,7 +328,7 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		BackOff:           []time.Duration{1 * time.Second, 5 * time.Second}, // Increased backoff
 		AckWait:           30 * time.Second,                                  // Explicit ack wait timeout
 		ReplayPolicy:      jetstream.ReplayInstantPolicy,
-		MaxWaiting:        512,            // Limit pull requests
+		MaxWaiting:        512,             // Limit pull requests
 		InactiveThreshold: 5 * time.Minute, // Reduce inactive threshold to 5 minutes (default)
 	}
 
@@ -446,6 +473,106 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 
 	ctxLogger.Info("Subscribed to topic successfully")
 	return messages, nil
+}
+
+func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan *message.Message, error) {
+
+	ctxLogger := eb.logger.With(
+		"operation", "subscribe_for_test",
+		"topic", topic,
+	)
+
+	// Determine stream name exactly like Subscribe()
+	var streamName string
+	switch {
+	case strings.HasPrefix(topic, "user."):
+		streamName = "user"
+	case strings.HasPrefix(topic, "leaderboard."):
+		streamName = "leaderboard"
+	case strings.HasPrefix(topic, "round."):
+		streamName = "round"
+	case strings.HasPrefix(topic, "score."):
+		streamName = "score"
+	case strings.HasPrefix(topic, "guild."):
+		streamName = "guild"
+	case strings.HasPrefix(topic, "discord."):
+		streamName = "discord"
+	default:
+		return nil, fmt.Errorf("unknown topic: %s", topic)
+	}
+
+	// Ensure stream exists (safe + idempotent)
+	if err := eb.CreateStream(ctx, streamName); err != nil {
+		return nil, err
+	}
+
+	// 🔑 EPHEMERAL TEST CONSUMER CONFIG
+	consumerConfig := jetstream.ConsumerConfig{
+		Durable:       "", // 👈 ephemeral (auto-deleted)
+		FilterSubject: topic,
+
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		DeliverPolicy: jetstream.DeliverNewPolicy, // 👈 NO REPLAYS
+		ReplayPolicy:  jetstream.ReplayInstantPolicy,
+
+		MaxDeliver: 1,
+		AckWait:    30 * time.Second,
+	}
+
+	cons, err := eb.js.CreateConsumer(ctx, streamName, consumerConfig)
+	if err != nil {
+		ctxLogger.Error("Failed to create test consumer", "error", err)
+		return nil, err
+	}
+
+	sub, err := cons.Messages()
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(chan *message.Message, 16)
+
+	go func() {
+		defer func() {
+			sub.Stop()
+			close(out)
+		}()
+
+		for {
+			jsMsg, err := sub.Next()
+			if err != nil {
+				if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
+					return
+				}
+				ctxLogger.Error("Test consumer error", "error", err)
+				return
+			}
+
+			wmMsg, err := eb.toWatermillMessage(ctx, jsMsg)
+			if err != nil {
+				_ = jsMsg.Term()
+				continue
+			}
+
+			select {
+			case out <- wmMsg:
+				go func() {
+					select {
+					case <-wmMsg.Acked():
+						_ = jsMsg.Ack()
+					case <-ctx.Done():
+						_ = jsMsg.Term()
+					}
+				}()
+			case <-ctx.Done():
+				_ = jsMsg.Term()
+				return
+			}
+		}
+	}()
+
+	ctxLogger.Info("Subscribed for test successfully")
+	return out, nil
 }
 
 // toWatermillMessage converts a JetStream message to a Watermill message.

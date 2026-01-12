@@ -64,6 +64,15 @@ const RoundStartedV1 = "round.started.v1"
 // Version: v1 (December 2024)
 const RoundStartedDiscordV1 = "round.started.discord.v1"
 
+// RoundStartFailedV1 is published when processing a round start fails.
+//
+// Pattern: Event Notification
+// Subject: round.start.failed.v1
+// Producer: backend-service (start handler)
+// Consumers: discord-service (error handler), monitoring systems
+// Version: v1 (January 2026)
+const RoundStartFailedV1 = "round.start.failed.v1"
+
 // -----------------------------------------------------------------------------
 // Round Finalization Events
 // -----------------------------------------------------------------------------
@@ -116,6 +125,10 @@ const RoundCompletedV1 = "round.completed.v1"
 // Version: v1 (December 2024)
 const RoundFinalizationErrorV1 = "round.finalization.error.v1"
 
+// RoundFinalizationFailedV1 is the operation-specific finalization failure topic.
+// Deprecated: RoundFinalizationErrorV1 exists; new handlers should publish RoundFinalizationFailedV1.
+const RoundFinalizationFailedV1 = "round.finalization.failed.v1"
+
 // -----------------------------------------------------------------------------
 // Reminder Events
 // -----------------------------------------------------------------------------
@@ -141,6 +154,9 @@ const RoundReminderScheduledV1 = "round.reminder.scheduled.v1"
 // Triggers: Discord reminder message sent
 // Version: v1 (December 2024)
 const RoundReminderSentV1 = "round.reminder.sent.v1"
+
+// RoundReminderFailedV1 is published when reminder processing fails.
+const RoundReminderFailedV1 = "round.reminder.failed.v1"
 
 // =============================================================================
 // ROUND LIFECYCLE FLOW - Payload Types
@@ -250,6 +266,20 @@ type RoundFinalizationErrorPayloadV1 struct {
 	Error   string              `json:"error"`
 }
 
+// RoundFinalizationFailedPayloadV1 contains finalization failure details.
+type RoundFinalizationFailedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
+}
+
+// RoundStartFailedPayloadV1 contains start processing failure details.
+type RoundStartFailedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
+}
+
 // -----------------------------------------------------------------------------
 // Reminder Payloads
 // -----------------------------------------------------------------------------
@@ -269,6 +299,13 @@ type DiscordReminderPayloadV1 struct {
 	DiscordChannelID string                  `json:"discord_channel_id,omitempty"`
 	DiscordGuildID   string                  `json:"discord_guild_id,omitempty"`
 	EventMessageID   string                  `json:"event_message_id"`
+}
+
+// RoundReminderFailedPayloadV1 contains reminder processing failure details.
+type RoundReminderFailedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Error   string              `json:"error"`
 }
 
 // RoundReminderProcessedPayloadV1 contains reminder processing confirmation.
