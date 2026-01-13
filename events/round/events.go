@@ -813,7 +813,7 @@ type ScheduledRoundTagUpdatePayload struct {
 type NotAllScoresSubmittedPayload struct {
 	GuildID        sharedtypes.GuildID      `json:"guild_id"`
 	RoundID        sharedtypes.RoundID      `json:"round_id"`
-	Participant    sharedtypes.DiscordID    `json:"participant"`
+	UserID         sharedtypes.DiscordID    `json:"user_id"`
 	Score          sharedtypes.Score        `json:"score"`
 	EventMessageID string                   `json:"event_message_id"`
 	Scores         []ParticipantScore       `json:"scores"`

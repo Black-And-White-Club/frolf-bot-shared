@@ -145,10 +145,12 @@ const RoundScoresNotificationV1 = "round.scores.notification.v1"
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type ScoreUpdateRequestPayloadV1 struct {
-	GuildID     sharedtypes.GuildID   `json:"guild_id"`
-	RoundID     sharedtypes.RoundID   `json:"round_id"`
-	Participant sharedtypes.DiscordID `json:"participant"`
-	Score       *sharedtypes.Score    `json:"score"`
+	GuildID   sharedtypes.GuildID   `json:"guild_id"`
+	RoundID   sharedtypes.RoundID   `json:"round_id"`
+	UserID    sharedtypes.DiscordID `json:"user_id"`
+	Score     *sharedtypes.Score    `json:"score"`
+	ChannelID string                `json:"channel_id"`
+	MessageID string                `json:"message_id"`
 }
 
 // ScoreUpdateValidatedPayloadV1 contains validated score update data.
@@ -167,7 +169,7 @@ type ScoreUpdateValidatedPayloadV1 struct {
 type ParticipantScoreUpdatedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID               `json:"guild_id"`
 	RoundID        sharedtypes.RoundID               `json:"round_id"`
-	Participant    sharedtypes.DiscordID             `json:"participant"`
+	UserID         sharedtypes.DiscordID             `json:"user_id"`
 	Score          sharedtypes.Score                 `json:"score"`
 	ChannelID      string                            `json:"channel_id"`
 	EventMessageID string                            `json:"discord_message_id"`
@@ -210,7 +212,7 @@ type AllScoresSubmittedPayloadV1 struct {
 type ScoresPartiallySubmittedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID      `json:"guild_id"`
 	RoundID        sharedtypes.RoundID      `json:"round_id"`
-	Participant    sharedtypes.DiscordID    `json:"participant"`
+	UserID         sharedtypes.DiscordID    `json:"user_id"`
 	Score          sharedtypes.Score        `json:"score"`
 	EventMessageID string                   `json:"event_message_id"`
 	Scores         []ParticipantScoreV1     `json:"scores"`
