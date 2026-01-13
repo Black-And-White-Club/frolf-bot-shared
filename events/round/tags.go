@@ -185,7 +185,6 @@ type ScheduledRoundTagUpdatePayloadV1 struct {
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
-//   - v1.1 (January 2025): Added State field
 type RoundUpdateInfoV1 struct {
 	GuildID             sharedtypes.GuildID      `json:"guild_id"`
 	RoundID             sharedtypes.RoundID      `json:"round_id"`
@@ -193,7 +192,6 @@ type RoundUpdateInfoV1 struct {
 	Title               roundtypes.Title         `json:"title"`
 	StartTime           *sharedtypes.StartTime   `json:"start_time"`
 	Location            *roundtypes.Location     `json:"location"`
-	State               roundtypes.RoundState    `json:"state"`
 	UpdatedParticipants []roundtypes.Participant `json:"updated_participants"`
 	ParticipantsChanged int                      `json:"participants_changed"`
 }
