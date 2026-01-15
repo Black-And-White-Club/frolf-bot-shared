@@ -69,6 +69,12 @@ func WrapTransformingTyped[T any](
 		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
 			ctx = context.WithValue(ctx, "discord_message_id", dID)
 		}
+		if channelID := msg.Metadata.Get("channel_id"); channelID != "" {
+			ctx = context.WithValue(ctx, "channel_id", channelID)
+		}
+		if messageID := msg.Metadata.Get("message_id"); messageID != "" {
+			ctx = context.WithValue(ctx, "message_id", messageID)
+		}
 		// Propagate response token (used by Discord handlers to carry RSVP choice)
 		if resp := msg.Metadata.Get("response"); resp != "" {
 			ctx = context.WithValue(ctx, "response", resp)
