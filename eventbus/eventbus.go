@@ -2,6 +2,8 @@ package eventbus
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -212,7 +214,11 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 	for _, msg := range messages {
 		// Set Nats-Msg-Id header for deduplication (JetStream uses this)
 		if msg.Metadata.Get("Nats-Msg-Id") == "" {
-			msg.Metadata.Set("Nats-Msg-Id", msg.UUID)
+			if idempotencyKey := msg.Metadata.Get("idempotency_key"); idempotencyKey != "" {
+				msg.Metadata.Set("Nats-Msg-Id", dedupeMsgID(idempotencyKey, topic))
+			} else {
+				msg.Metadata.Set("Nats-Msg-Id", msg.UUID)
+			}
 		}
 
 		ctxLogger.Debug("Attempting to publish message",
@@ -266,6 +272,13 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 	}
 
 	return nil
+}
+
+func dedupeMsgID(idempotencyKey, topic string) string {
+	// Include topic to avoid collisions across subjects within the same stream.
+	seed := topic + "|" + idempotencyKey
+	sum := sha256.Sum256([]byte(seed))
+	return "idem-" + hex.EncodeToString(sum[:])
 }
 
 // Subscribe subscribes to a topic. Handles unmarshaling with retry logic.
