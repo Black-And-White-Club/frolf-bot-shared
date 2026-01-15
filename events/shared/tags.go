@@ -28,10 +28,14 @@
 package sharedevents
 
 import (
-	discordleaderboard "github.com/Black-And-White-Club/frolf-bot-shared/events/discord/leaderboard"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
+
+// ScopedGuildID can be embedded to ensure all events include a GuildID for multi-tenancy.
+type ScopedGuildID struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+}
 
 // =============================================================================
 // ROUND TAG LOOKUP FLOW - Event Constants
@@ -48,7 +52,7 @@ import (
 // uses the `leaderboard.` prefix (consumer-owned). This keeps the producer-side
 // code referencing `sharedevents.RoundTagLookupRequestedV1` while aligning the
 // actual subject with ownership rules.
-// Triggers: RoundTagLookupFoundV1 OR RoundTagLookupNotFoundV1
+// Triggers: RoundTagLookupFoundV1 OR RoundTagLookupNotFoundV1 OR RoundTagLookupFailedV1
 // Version: v1 (January 2026)
 const RoundTagLookupRequestedV1 = "leaderboard.tag.lookup.requested.v1"
 
@@ -69,6 +73,15 @@ const RoundTagLookupFoundV1 = "round.tag.lookup.found.v1"
 // Consumers: round-service
 // Version: v1 (December 2024)
 const RoundTagLookupNotFoundV1 = "round.tag.lookup.not.found.v1"
+
+// RoundTagLookupFailedV1 is published when a tag lookup fails with an error.
+//
+// Pattern: Event Notification
+// Subject: round.tag.lookup.failed.v1
+// Producer: leaderboard-service
+// Consumers: round-service
+// Version: v1 (January 2026)
+const RoundTagLookupFailedV1 = "round.tag.lookup.failed.v1"
 
 // TagUpdateForScheduledRoundsV1 is published to update tags for scheduled rounds.
 //
@@ -100,16 +113,16 @@ const DiscordTagLookupRequestedV1 = "leaderboard.tag.lookup.by.user.id.requested
 // leaderboard-owned canonical topics are adopted. They are now defined in the
 // Discord-specific package so that discord-prefixed subjects live under
 // `events/discord` per ownership rules.
-const (
-	// DiscordTagLookupSucceededV1 is the deprecated alias for the Discord-prefixed success topic.
-	DiscordTagLookupSucceededV1 = discordleaderboard.LeaderboardTagLookupSucceededV1
+// const (
+// 	// DiscordTagLookupSucceededV1 is the deprecated alias for the Discord-prefixed success topic.
+// 	DiscordTagLookupSucceededV1 = discordleaderboard.LeaderboardTagLookupSucceededV1
 
-	// DiscordTagLookupNotFoundV1 is the deprecated alias for the Discord-prefixed not-found topic.
-	DiscordTagLookupNotFoundV1 = discordleaderboard.LeaderboardTagLookupNotFoundV1
+// 	// DiscordTagLookupNotFoundV1 is the deprecated alias for the Discord-prefixed not-found topic.
+// 	DiscordTagLookupNotFoundV1 = discordleaderboard.LeaderboardTagLookupNotFoundV1
 
-	// DiscordTagLookupFailedV1 is the deprecated alias for the Discord-prefixed failed topic.
-	DiscordTagLookupFailedV1 = discordleaderboard.LeaderboardTagLookupFailedV1
-)
+// 	// DiscordTagLookupFailedV1 is the deprecated alias for the Discord-prefixed failed topic.
+// 	DiscordTagLookupFailedV1 = discordleaderboard.LeaderboardTagLookupFailedV1
+// )
 
 // -----------------------------------------------------------------------------
 // Canonical Leaderboard-owned Topics (for backend responses)
@@ -211,6 +224,7 @@ type RoundTagLookupFailedPayloadV1 struct {
 // Deprecated: Use RoundTagLookupFailedPayloadV1.
 // This alias exists to smooth over older code that accidentally double-suffixed versions (e.g., V1PayloadV1).
 type RoundTagLookupFailedV1PayloadV1 = RoundTagLookupFailedPayloadV1
+
 
 // -----------------------------------------------------------------------------
 // Discord Tag Lookup Payloads

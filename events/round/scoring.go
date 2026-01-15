@@ -92,7 +92,6 @@ const RoundScoreUpdateErrorV1 = "round.score.update.error.v1"
 const RoundAllScoresSubmittedV1 = "round.all.scores.submitted.v1"
 
 // RoundScoresPartiallySubmittedV1 is published when some scores remain to be submitted.
-// Note: Renamed from RoundNotAllScoresSubmitted for clarity.
 //
 // Pattern: Event Notification
 // Subject: round.scores.partially.submitted.v1
@@ -105,23 +104,7 @@ const RoundScoresPartiallySubmittedV1 = "round.scores.partially.submitted.v1"
 // Score Processing Events (Cross-Module)
 // -----------------------------------------------------------------------------
 
-// ProcessRoundScoresRequestedV1 is published to request score processing by the score module.
-//
-// Pattern: Event Notification
-// Subject: score.process.round.scores.requested.v1
-// Producer: backend-service (round module)
-// Consumers: backend-service (score module)
-// Version: v1 (December 2024)
-const ProcessRoundScoresRequestedV1 = "score.process.round.scores.requested.v1"
-
-// ScoreModuleNotificationErrorV1 is published when score module notification fails.
-//
-// Pattern: Event Notification
-// Subject: score.module.notification.error.v1
-// Producer: backend-service (round module)
-// Consumers: monitoring systems
-// Version: v1 (December 2024)
-const ScoreModuleNotificationErrorV1 = "score.module.notification.error.v1"
+// NOTE: Score processing topics are defined in events/shared/score_processing.go.
 
 // RoundScoresNotificationV1 is published to notify about round scores.
 //
@@ -244,25 +227,7 @@ type RoundScoresNotificationPayloadV1 struct {
 	Scores  []ParticipantScoreV1 `json:"scores"`
 }
 
-// ProcessRoundScoresRequestPayloadV1 contains the score processing request.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type ProcessRoundScoresRequestPayloadV1 struct {
-	GuildID sharedtypes.GuildID  `json:"guild_id"`
-	RoundID sharedtypes.RoundID  `json:"round_id"`
-	Scores  []ParticipantScoreV1 `json:"scores"`
-}
-
-// ScoreModuleNotificationErrorPayloadV1 contains score module error details.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type ScoreModuleNotificationErrorPayloadV1 struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
-	RoundID sharedtypes.RoundID `json:"round_id"`
-	Error   string              `json:"error"`
-}
+// NOTE: Score processing payloads are defined in events/shared/score_processing.go.
 
 // =============================================================================
 // Helper Methods

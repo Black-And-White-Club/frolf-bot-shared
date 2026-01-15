@@ -111,10 +111,15 @@ type RoundDeleteRequestPayloadV1 struct {
 	RequestingUserUserID sharedtypes.DiscordID `json:"requesting_user_user_id" validate:"required"`
 }
 
-// RoundDeleteRequestedPayloadV1 is a backwards-compatible alias for RoundDeleteRequestPayloadV1.
+// RoundDeleteRequestedPayloadV1 contains delete request data.
 //
-// Deprecated: use RoundDeleteRequestPayloadV1.
-type RoundDeleteRequestedPayloadV1 = RoundDeleteRequestPayloadV1
+// Schema History:
+//   - v1.0 (December 2024): Initial version
+type RoundDeleteRequestedPayloadV1 struct {
+	GuildID              sharedtypes.GuildID   `json:"guild_id"`
+	RoundID              sharedtypes.RoundID   `json:"round_id" validate:"required"`
+	RequestingUserUserID sharedtypes.DiscordID `json:"requesting_user_user_id" validate:"required"`
+}
 
 // RoundDeleteValidatedPayloadV1 contains validated delete request data.
 //
@@ -142,6 +147,17 @@ type RoundToDeleteFetchedPayloadV1 struct {
 type RoundDeleteAuthorizedPayloadV1 struct {
 	GuildID sharedtypes.GuildID `json:"guild_id"`
 	RoundID sharedtypes.RoundID `json:"round_id"`
+}
+
+// RoundDeleteUnauthorizedPayloadV1 contains unauthorized deletion details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundDeleteUnauthorizedPayloadV1 struct {
+	GuildID              sharedtypes.GuildID   `json:"guild_id"`
+	RoundID              sharedtypes.RoundID   `json:"round_id"`
+	RequestingUserUserID sharedtypes.DiscordID `json:"requesting_user_user_id"`
+	Reason               string                `json:"reason"`
 }
 
 // RoundDeletedPayloadV1 contains deletion confirmation.

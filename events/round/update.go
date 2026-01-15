@@ -229,6 +229,18 @@ type RoundScheduleUpdatePayloadV1 struct {
 	Location  *roundtypes.Location   `json:"location"`
 }
 
+// RoundUpdateReschedulePayloadV1 contains rescheduling details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundUpdateReschedulePayloadV1 struct {
+	GuildID   sharedtypes.GuildID    `json:"guild_id"`
+	RoundID   sharedtypes.RoundID    `json:"round_id"`
+	Title     roundtypes.Title       `json:"title"`
+	StartTime *sharedtypes.StartTime `json:"start_time"`
+	Location  *roundtypes.Location   `json:"location"`
+}
+
 // RoundStateUpdatedPayloadV1 contains state change data.
 //
 // Schema History:
@@ -237,4 +249,14 @@ type RoundStateUpdatedPayloadV1 struct {
 	GuildID sharedtypes.GuildID   `json:"guild_id"`
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	State   roundtypes.RoundState `json:"state"`
+}
+
+// RoundsUpdatedPayloadV1 contains bulk round update results.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundsUpdatedPayloadV1 struct {
+	GuildID  sharedtypes.GuildID   `json:"guild_id"`
+	RoundIDs []sharedtypes.RoundID `json:"round_ids"`
+	Reason   string                `json:"reason,omitempty"`
 }

@@ -41,42 +41,7 @@ import (
 // TAG AVAILABILITY CHECK FLOW - Event Constants
 // =============================================================================
 
-// TagAvailabilityCheckRequestedV1 is published to check tag availability.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.availability.check.requested.v1
-// Producer: user-service (during signup)
-// Consumers: leaderboard-service (availability handler)
-// Triggers: LeaderboardTagAvailableV1 OR LeaderboardTagUnavailableV1
-// Version: v1 (December 2024)
-const TagAvailabilityCheckRequestedV1 = "leaderboard.tag.availability.check.requested.v1"
-
-// LeaderboardTagAvailableV1 is published when a tag is available.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.available.v1
-// Producer: leaderboard-service
-// Consumers: user-service
-// Version: v1 (December 2024)
-const LeaderboardTagAvailableV1 = "leaderboard.tag.available.v1"
-
-// LeaderboardTagUnavailableV1 is published when a tag is not available.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.unavailable.v1
-// Producer: leaderboard-service
-// Consumers: user-service
-// Version: v1 (December 2024)
-const LeaderboardTagUnavailableV1 = "leaderboard.tag.unavailable.v1"
-
-// TagAvailabilityCheckFailedV1 is published when availability check fails.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.availability.check.failed.v1
-// Producer: leaderboard-service
-// Consumers: user-service, error handlers
-// Version: v1 (December 2024)
-const TagAvailabilityCheckFailedV1 = "leaderboard.tag.availability.check.failed.v1"
+// NOTE: Tag availability events are defined in events/shared/tag_availability.go.
 
 // =============================================================================
 // TAG ASSIGNMENT FLOW - Event Constants
@@ -188,68 +153,7 @@ const TagSwapFailedV1 = "leaderboard.tag.swap.failed.v1"
 // TAG NUMBER LOOKUP FLOW - Event Constants
 // =============================================================================
 
-// GetTagByUserIDRequestedV1 is published when tag lookup by user ID is requested.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.get.by.user.id.requested.v1
-// Producer: round-service, discord-service
-// Consumers: leaderboard-service (lookup handler)
-// Triggers: GetTagNumberResponseV1 OR GetTagNumberFailedV1
-// Version: v1 (December 2024)
-const GetTagByUserIDRequestedV1 = "leaderboard.tag.get.by.user.id.requested.v1"
-
-// RoundGetTagByUserIDRequestedV1 is published for round-specific tag lookup.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.round.tag.get.by.user.id.requested.v1
-// Producer: round-service
-// Consumers: leaderboard-service (lookup handler)
-// Version: v1 (December 2024)
-const RoundGetTagByUserIDRequestedV1 = "leaderboard.round.tag.get.by.user.id.requested.v1"
-
-// GetTagNumberResponseV1 is published with the tag number result.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.get.response.v1
-// Producer: leaderboard-service
-// Consumers: requesting service
-// Version: v1 (December 2024)
-const GetTagNumberResponseV1 = "leaderboard.tag.get.response.v1"
-
-// GetTagNumberFailedV1 is published when tag lookup fails.
-//
-// Pattern: Event Notification
-// Subject: leaderboard.tag.get.failed.v1
-// Producer: leaderboard-service
-// Consumers: requesting service
-// Version: v1 (December 2024)
-const GetTagNumberFailedV1 = "leaderboard.tag.get.failed.v1"
-
-// RoundTagNumberFoundV1 is published when a round-specific tag is found.
-//
-// DEPRECATED: This event is superseded by sharedevents.RoundTagLookupFoundV1.
-// Use round.tag.lookup.found.v1 (from events/shared/tags.go) instead.
-// This constant will be removed in v2.0.
-//
-// Pattern: Event Notification
-// Subject: round.leaderboard.tag.found.v1
-// Producer: leaderboard-service
-// Consumers: round-service
-// Version: v1 (December 2024)
-const RoundTagNumberFoundV1 = "round.leaderboard.tag.found.v1"
-
-// RoundTagNumberNotFoundV1 is published when a round-specific tag is not found.
-//
-// DEPRECATED: This event is superseded by sharedevents.RoundTagLookupNotFoundV1.
-// Use round.tag.lookup.not.found.v1 (from events/shared/tags.go) instead.
-// This constant will be removed in v2.0.
-//
-// Pattern: Event Notification
-// Subject: round.leaderboard.tag.not.found.v1
-// Producer: leaderboard-service
-// Consumers: round-service
-// Version: v1 (December 2024)
-const RoundTagNumberNotFoundV1 = "round.leaderboard.tag.not.found.v1"
+// NOTE: Tag number lookup events are defined in events/shared/tag_number_lookup.go.
 
 // LeaderboardTraceEventV1 is published for leaderboard tracing/observability.
 //
@@ -260,6 +164,16 @@ const RoundTagNumberNotFoundV1 = "round.leaderboard.tag.not.found.v1"
 // Version: v1 (December 2024)
 const LeaderboardTraceEventV1 = "leaderboard.trace.event.v1"
 
+// LeaderboardTagUpdatedV1 is published whenever a user's tag changes.
+//
+// Pattern: Event Notification
+// Subject: leaderboard.tag.updated.v1
+// Producer: leaderboard-service (after tag mutation)
+// Consumers: round-service (update projections), discord-bot (update embeds)
+// Triggers: Round participant updates, Discord embed updates
+// Version: v1 (January 2026)
+const LeaderboardTagUpdatedV1 = "leaderboard.tag.updated.v1"
+
 // =============================================================================
 // TAG FLOW - Payload Types
 // =============================================================================
@@ -268,60 +182,7 @@ const LeaderboardTraceEventV1 = "leaderboard.trace.event.v1"
 // Tag Availability Payloads
 // -----------------------------------------------------------------------------
 
-// TagAvailabilityCheckRequestedPayloadV1 contains tag availability check request data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type TagAvailabilityCheckRequestedPayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-}
-
-// LeaderboardTagAvailablePayloadV1 contains tag availability success data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type LeaderboardTagAvailablePayloadV1 struct {
-	GuildID      sharedtypes.GuildID    `json:"guild_id"`
-	UserID       sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber    *sharedtypes.TagNumber `json:"tag_number"`
-	AssignmentID string                 `json:"assignment_id"`
-}
-
-// LeaderboardTagUnavailablePayloadV1 contains tag unavailability data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type LeaderboardTagUnavailablePayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	Reason    string                 `json:"reason"`
-}
-
-// TagAvailabilityCheckFailedPayloadV1 contains availability check failure data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type TagAvailabilityCheckFailedPayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	Reason    string                 `json:"reason"`
-}
-
-// TagAvailabilityCheckResultPayloadV1 contains availability check result data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type TagAvailabilityCheckResultPayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	Available bool                   `json:"tag_available"`
-	Reason    string                 `json:"reason,omitempty"`
-}
+// NOTE: Tag availability payloads are defined in events/shared/tag_availability.go.
 
 // -----------------------------------------------------------------------------
 // Tag Assignment Payloads
@@ -465,54 +326,31 @@ type TagSwapFailedPayloadV1 struct {
 // Tag Number Lookup Payloads
 // -----------------------------------------------------------------------------
 
-// TagNumberRequestPayloadV1 contains tag number lookup request data.
+// NOTE: Tag number lookup payloads are defined in events/shared/tag_number_lookup.go.
+
+// =============================================================================
+// TAG UPDATE EVENT - Canonical Event for Tag Synchronization
+// =============================================================================
+
+// LeaderboardTagUpdatedPayloadV1 is published whenever a user's tag changes in the leaderboard.
+//
+// Pattern: Event Notification
+// Subject: leaderboard.tag.updated.v1
+// Producer: leaderboard-service (after successful tag mutation)
+// Consumers: round-service (update denormalized projections), discord-bot (update embeds)
+// Triggers: Round participant tag updates, Discord embed updates
 //
 // Schema History:
-//   - v1.0 (December 2024): Initial version
-type TagNumberRequestPayloadV1 struct {
+//   - v1.0 (January 2026): Initial version
+type LeaderboardTagUpdatedPayloadV1 struct {
 	GuildID sharedtypes.GuildID   `json:"guild_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
-	RoundID sharedtypes.RoundID   `json:"round_id"`
-}
 
-// SoloTagNumberRequestPayloadV1 contains solo tag number lookup request data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type SoloTagNumberRequestPayloadV1 struct {
-	GuildID sharedtypes.GuildID   `json:"guild_id"`
-	UserID  sharedtypes.DiscordID `json:"user_id"`
-}
+	OldTag *sharedtypes.TagNumber `json:"old_tag,omitempty"`
+	NewTag *sharedtypes.TagNumber `json:"new_tag,omitempty"`
 
-// GetTagNumberResponsePayloadV1 contains tag number lookup response data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type GetTagNumberResponsePayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-	RoundID   sharedtypes.RoundID    `json:"round_id"`
-	Found     bool                   `json:"found"`
-}
-
-// SoloTagNumberResponsePayloadV1 contains solo tag number lookup response data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type SoloTagNumberResponsePayloadV1 struct {
-	GuildID   sharedtypes.GuildID    `json:"guild_id"`
-	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
-	UserID    sharedtypes.DiscordID  `json:"user_id"`
-}
-
-// GetTagNumberFailedPayloadV1 contains tag number lookup failure data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type GetTagNumberFailedPayloadV1 struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
-	Reason  string              `json:"reason"`
+	// swap | assign | update | revoke | import | system | admin
+	Reason string `json:"reason"`
 }
 
 // -----------------------------------------------------------------------------

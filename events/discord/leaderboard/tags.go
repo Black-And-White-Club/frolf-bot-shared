@@ -1,4 +1,4 @@
-// Package leaderboard contains Discord-specific leaderboard events.
+// Package discordleaderboardevents contains Discord-specific leaderboard events.
 //
 // This file defines the Discord Leaderboard Tag Operations Flow - events specific to
 // assigning, swapping, and checking tag availability through Discord interactions.
@@ -28,7 +28,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package leaderboard
+package discordleaderboardevents
 
 import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
