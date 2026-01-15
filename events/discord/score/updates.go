@@ -1,4 +1,4 @@
-// Package score contains Discord-specific score events.
+// Package discordscoreevents contains Discord-specific score events.
 //
 // This file defines the Discord Score Update Flow - events specific to
 // handling score updates through Discord interactions.
@@ -18,7 +18,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package score
+package discordscoreevents
 
 import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"

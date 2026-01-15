@@ -28,3 +28,9 @@ bin/
 
 # Reports
 reports/
+events/combined_events.JSON
+
+eventcatalog/
+asyncapi/
+cmd/
+

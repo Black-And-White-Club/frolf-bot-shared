@@ -32,6 +32,7 @@
 package roundevents
 
 import (
+	"github.com/Black-And-White-Club/frolf-bot-shared/events"
 	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
@@ -189,6 +190,16 @@ const RoundParticipantUpdateErrorV1 = "round.participant.update.error.v1"
 // Consumers: backend-service (status update handler)
 // Version: v1 (December 2024)
 const RoundParticipantStatusUpdateRequestedV1 = "round.participant.status.update.requested.v1"
+
+// RoundParticipantsUpdatedV1 is published when round participants are updated due to tag changes.
+//
+// Pattern: Event Notification
+// Subject: round.participants.updated.v1
+// Producer: round-service (tag update handler)
+// Consumers: discord-bot (embed update handler)
+// Triggers: Discord embed updated with new tag numbers
+// Version: v1 (January 2026)
+const RoundParticipantsUpdatedV1 = "round.participants.updated.v1"
 
 // =============================================================================
 // ROUND PARTICIPANT FLOW - Payload Types
@@ -370,6 +381,28 @@ type ParticipantUpdateErrorPayloadV1 struct {
 	RoundID sharedtypes.RoundID   `json:"round_id"`
 	UserID  sharedtypes.DiscordID `json:"user_id"`
 	Error   string                `json:"error"`
+}
+
+// -----------------------------------------------------------------------------
+// PARTICIPANT UPDATE EVENT - For Tag Synchronization
+// -----------------------------------------------------------------------------
+
+// RoundParticipantsUpdatedV1 is published when round participants are updated due to tag changes.
+//
+// Pattern: Event Notification
+// Subject: round.participants.updated.v1
+// Producer: round-service (after updating participant tags from leaderboard changes)
+// Consumers: discord-bot (update embeds with new tag numbers)
+// Triggers: Discord embed updates
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundParticipantsUpdatedPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	RoundID sharedtypes.RoundID `json:"round_id"`
+	Round   roundtypes.Round    `json:"round"`
+
+	Metadata events.CommonMetadata `json:"metadata"`
 }
 
 // -----------------------------------------------------------------------------

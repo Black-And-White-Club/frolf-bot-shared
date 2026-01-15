@@ -257,6 +257,33 @@ type ParsedScorecardPayloadV1 struct {
 // Import Payloads
 // -----------------------------------------------------------------------------
 
+// ImportConflictDetectedPayloadV1 contains conflict detection details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type ImportConflictDetectedPayloadV1 struct {
+	GuildID        sharedtypes.GuildID   `json:"guild_id"`
+	RoundID        sharedtypes.RoundID   `json:"round_id"`
+	ImportID       string                `json:"import_id"`
+	EventMessageID string                `json:"event_message_id"`
+	UserID         sharedtypes.DiscordID `json:"user_id"`
+	ChannelID      string                `json:"channel_id"`
+	ConflictReason string                `json:"conflict_reason"`
+}
+
+// ImportOverwriteConfirmedPayloadV1 contains overwrite confirmation details.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type ImportOverwriteConfirmedPayloadV1 struct {
+	GuildID        sharedtypes.GuildID   `json:"guild_id"`
+	RoundID        sharedtypes.RoundID   `json:"round_id"`
+	ImportID       string                `json:"import_id"`
+	EventMessageID string                `json:"event_message_id"`
+	UserID         sharedtypes.DiscordID `json:"user_id"`
+	ChannelID      string                `json:"channel_id"`
+}
+
 // ImportFailedPayloadV1 contains import failure data.
 //
 // Schema History:
@@ -321,6 +348,20 @@ type RoundScoresImportedPayloadV1 struct {
 	ChannelID string                `json:"channel_id"`
 	Count     int                   `json:"count"`
 	Timestamp time.Time             `json:"timestamp"`
+}
+
+// RoundScoresFinalizedPayloadV1 contains finalized scores data.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundScoresFinalizedPayloadV1 struct {
+	GuildID        sharedtypes.GuildID      `json:"guild_id"`
+	RoundID        sharedtypes.RoundID      `json:"round_id"`
+	ImportID       string                   `json:"import_id"`
+	EventMessageID string                   `json:"event_message_id"`
+	Scores         []sharedtypes.ScoreInfo  `json:"scores,omitempty"`
+	Participants   []roundtypes.Participant `json:"participants,omitempty"`
+	Timestamp      time.Time                `json:"timestamp"`
 }
 
 // ImportScoresAppliedPayloadV1 is emitted after imported scores are applied.

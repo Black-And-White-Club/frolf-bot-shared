@@ -1,4 +1,4 @@
-// Package discord contains Discord-specific integration events.
+// Package discordevents contains Discord-specific integration events.
 //
 // These events are used for Discord bot operations that are specific to the
 // Discord platform, such as sending DMs, handling interactions, and managing
@@ -22,7 +22,7 @@
 //
 // All events include a V1 suffix in the constant name and .v1 suffix in the topic
 // string for future schema evolution while maintaining backward compatibility.
-package discord
+package discordevents
 
 // =============================================================================
 // COMMON DISCORD EVENTS - Event Constants

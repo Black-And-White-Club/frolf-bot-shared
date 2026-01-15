@@ -1,4 +1,4 @@
-// Package leaderboard contains Discord-specific leaderboard events.
+// Package discordleaderboardevents contains Discord-specific leaderboard events.
 //
 // This file defines the Discord Leaderboard Retrieval Flow - events specific to
 // displaying leaderboards through Discord embeds.
@@ -17,7 +17,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package leaderboard
+package discordleaderboardevents
 
 import (
 	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"

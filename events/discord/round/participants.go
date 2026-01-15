@@ -1,4 +1,4 @@
-// Package round contains Discord-specific round events.
+// Package discordroundevents contains Discord-specific round events.
 //
 // This file defines the Discord Round Participant Flow - events specific to
 // participants joining or leaving rounds through Discord button interactions.
@@ -17,7 +17,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package round
+package discordroundevents
 
 import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"

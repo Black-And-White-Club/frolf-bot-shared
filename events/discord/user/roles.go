@@ -1,4 +1,4 @@
-// Package user contains Discord-specific user events.
+// Package discorduserevents contains Discord-specific user events.
 //
 // This file defines the Discord User Role Update Flow - events specific to
 // updating user roles through Discord button interactions and commands.
@@ -21,7 +21,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package user
+package discorduserevents
 
 import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"

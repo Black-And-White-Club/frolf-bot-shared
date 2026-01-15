@@ -24,6 +24,10 @@
 package roundevents
 
 import (
+	"encoding/json"
+	"time"
+
+	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
@@ -111,6 +115,38 @@ type GetRoundRequestPayloadV1 struct {
 	RoundID        sharedtypes.RoundID   `json:"round_id"`
 	EventMessageID string                `json:"event_message_id"`
 	UserID         sharedtypes.DiscordID `json:"user_id"`
+}
+
+// RoundRetrievedPayloadV1 contains the retrieved round data.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundRetrievedPayloadV1 struct {
+	roundtypes.Round
+}
+
+// =============================================================================
+// SPECIAL SUBJECTS - Payload Types
+// =============================================================================
+
+// RoundEventEnvelopePayloadV1 represents a generic round event envelope.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundEventEnvelopePayloadV1 struct {
+	Subject string          `json:"subject"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+// DelayedMessagePayloadV1 represents a message scheduled for future delivery.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type DelayedMessagePayloadV1 struct {
+	RoundID         sharedtypes.RoundID `json:"round_id"`
+	ExecuteAt       time.Time           `json:"execute_at"`
+	OriginalSubject string              `json:"original_subject"`
+	Payload         json.RawMessage     `json:"payload"`
 }
 
 // =============================================================================

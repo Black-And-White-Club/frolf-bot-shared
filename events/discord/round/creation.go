@@ -1,4 +1,4 @@
-// Package round contains Discord-specific round events.
+// Package discordroundevents contains Discord-specific round events.
 //
 // This file defines the Discord Round Creation Flow - events specific to
 // creating rounds through Discord modal submissions and receiving Discord
@@ -19,7 +19,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
-package round
+package discordroundevents
 
 import (
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
