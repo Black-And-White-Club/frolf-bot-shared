@@ -48,6 +48,16 @@ import (
 // Version: v1 (December 2024)
 const RoundScoreUpdateRequestedV1 = "round.score.update.requested.v1"
 
+// RoundScoreBulkUpdateRequestedV1 is published when bulk score overrides are submitted.
+//
+// Pattern: Event Notification
+// Subject: round.score.bulk.update.requested.v1
+// Producer: backend-service (score override handler)
+// Consumers: backend-service (round bulk update handler)
+// Triggers: RoundParticipantScoreUpdatedV1 OR RoundScoreUpdateErrorV1
+// Version: v1 (January 2026)
+const RoundScoreBulkUpdateRequestedV1 = "round.score.bulk.update.requested.v1"
+
 // RoundScoreUpdateValidatedV1 is published when a score update passes validation.
 //
 // Pattern: Event Notification
@@ -67,6 +77,15 @@ const RoundScoreUpdateValidatedV1 = "round.score.update.validated.v1"
 // Triggers: RoundAllScoresSubmittedV1 OR RoundScoresPartiallySubmittedV1
 // Version: v1 (December 2024)
 const RoundParticipantScoreUpdatedV1 = "round.participant.score.updated.v1"
+
+// RoundScoresBulkUpdatedV1 is published when bulk score overrides have been applied.
+//
+// Pattern: Event Notification
+// Subject: round.scores.bulk.updated.v1
+// Producer: backend-service (bulk score handler)
+// Consumers: discord-service (embed update)
+// Version: v1 (January 2026)
+const RoundScoresBulkUpdatedV1 = "round.scores.bulk.updated.v1"
 
 // RoundScoreUpdateErrorV1 is published when a score update fails.
 //
@@ -136,6 +155,18 @@ type ScoreUpdateRequestPayloadV1 struct {
 	MessageID string                `json:"message_id"`
 }
 
+// ScoreBulkUpdateRequestPayloadV1 contains the bulk score override request.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type ScoreBulkUpdateRequestPayloadV1 struct {
+	GuildID   sharedtypes.GuildID           `json:"guild_id"`
+	RoundID   sharedtypes.RoundID           `json:"round_id"`
+	ChannelID string                        `json:"channel_id"`
+	MessageID string                        `json:"message_id"`
+	Updates   []ScoreUpdateRequestPayloadV1 `json:"updates"`
+}
+
 // ScoreUpdateValidatedPayloadV1 contains validated score update data.
 //
 // Schema History:
@@ -158,6 +189,18 @@ type ParticipantScoreUpdatedPayloadV1 struct {
 	EventMessageID string                            `json:"discord_message_id"`
 	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
+}
+
+// RoundScoresBulkUpdatedPayloadV1 contains the updated participant list after a bulk override.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type RoundScoresBulkUpdatedPayloadV1 struct {
+	GuildID        sharedtypes.GuildID      `json:"guild_id"`
+	RoundID        sharedtypes.RoundID      `json:"round_id"`
+	EventMessageID string                   `json:"discord_message_id"`
+	ChannelID      string                   `json:"channel_id"`
+	Participants   []roundtypes.Participant `json:"participants"`
 }
 
 // RoundScoreUpdateErrorPayloadV1 contains score update error details.
