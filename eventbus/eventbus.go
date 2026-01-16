@@ -288,25 +288,21 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		"topic", topic,
 	)
 
-	ctxLogger.Info("Entering Subscribe")
-
 	if eb.metrics != nil {
 		eb.metrics.RecordMessageSubscribe(ctx, topic)
 	}
 
-	// Guard: enforce that only the Discord app may subscribe to discord.* topics.
+	// Boundary guard
 	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
-		ctxLogger.Error("Subscription forbidden: app not allowed to subscribe to discord topics", "app_type", eb.appType, "topic", topic)
-		return nil, fmt.Errorf("subscription to discord topics is forbidden for app type %q", eb.appType)
+		return nil, fmt.Errorf("subscription to discord topics forbidden for app %q", eb.appType)
 	}
 
 	var appType string
-	if strings.HasPrefix(topic, "discord") {
+	if strings.HasPrefix(topic, "discord.") {
 		appType = "discord"
 	} else {
 		appType = "backend"
 	}
-	ctxLogger = ctxLogger.With("app_type", appType)
 
 	consumerName := fmt.Sprintf("%s-consumer-%s", appType, sanitizeForNATS(topic))
 	if v := ctx.Value("eventbus_consumer_name"); v != nil {
@@ -314,9 +310,8 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 			consumerName = s
 		}
 	}
-	ctxLogger = ctxLogger.With("consumer_name", consumerName)
 
-	// Determine stream name based on topic
+	// Stream resolution
 	var streamName string
 	switch {
 	case strings.HasPrefix(topic, "user."):
@@ -332,191 +327,99 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 	case strings.HasPrefix(topic, "discord."):
 		streamName = "discord"
 	default:
-		ctxLogger.Error("Failed to subscribe to topic", "error", "unknown topic prefix")
 		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
-	ctxLogger = ctxLogger.With("stream", streamName)
 
-	// Ensure stream exists before creating consumer
-	// This allows Discord (or other apps) to subscribe to backend streams
-	// The CreateStream is idempotent, so it's safe to call even if already created
 	if err := eb.CreateStream(ctx, streamName); err != nil {
-		ctxLogger.Error("Failed to ensure stream exists", "error", err)
-		return nil, fmt.Errorf("failed to ensure stream exists: %w", err)
+		return nil, err
 	}
 
-	// Create or get consumer with improved reliability settings
+	ackWait := 30 * time.Second
+
 	consumerConfig := jetstream.ConsumerConfig{
-		Durable:           consumerName,
-		FilterSubject:     topic,
-		AckPolicy:         jetstream.AckExplicitPolicy,
-		MaxAckPending:     100, // Reduced from 2048 for better flow control
-		DeliverPolicy:     jetstream.DeliverAllPolicy,
-		MaxDeliver:        3,
-		BackOff:           []time.Duration{1 * time.Second, 5 * time.Second}, // Increased backoff
-		AckWait:           30 * time.Second,                                  // Explicit ack wait timeout
-		ReplayPolicy:      jetstream.ReplayInstantPolicy,
-		MaxWaiting:        512,             // Limit pull requests
-		InactiveThreshold: 5 * time.Minute, // Reduce inactive threshold to 5 minutes (default)
+		Durable:       consumerName,
+		FilterSubject: topic,
+
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		AckWait:       ackWait,
+		MaxDeliver:    3,
+		BackOff:       []time.Duration{1 * time.Second, 5 * time.Second},
+		MaxAckPending: 100,
+
+		DeliverPolicy: jetstream.DeliverNewPolicy,
+		ReplayPolicy:  jetstream.ReplayInstantPolicy,
 	}
 
-	cons, err := eb.js.Consumer(ctx, streamName, consumerName)
+	// Declarative sync
+	cons, err := eb.js.CreateOrUpdateConsumer(ctx, streamName, consumerConfig)
 	if err != nil {
-		if errors.Is(err, jetstream.ErrConsumerNotFound) {
-			ctxLogger.Info("Consumer not found, creating new one")
-			cons, err = eb.js.CreateConsumer(ctx, streamName, consumerConfig)
-			if err != nil {
-				ctxLogger.Error("Failed to create consumer", "error", err)
-				return nil, fmt.Errorf("failed to create consumer: %w", err)
-			}
-		} else {
-			ctxLogger.Error("Unexpected error fetching consumer", "error", err)
-			return nil, err
-		}
+		return nil, fmt.Errorf("failed to sync consumer: %w", err)
 	}
 
-	consInfoAttrs := ctxLogger.With(
-		"consumer_durable_name", cons.CachedInfo().Config.Durable,
-		"consumer_filter_subject", cons.CachedInfo().Config.FilterSubject,
-		"max_deliver", cons.CachedInfo().Config.MaxDeliver,
-		"backoff_delays", cons.CachedInfo().Config.BackOff,
-	)
-	consInfoAttrs.Info("Consumer created with retry configuration")
-
-	// Use a buffered channel so early-arriving messages (published before the router's handler goroutines start
-	// reading) don't block the JetStream consumer send and trigger context cancellation. A modest buffer
-	// prevents backpressure races observed when Discord events are published immediately at startup.
-	messages := make(chan *message.Message, 128)
 	sub, err := cons.Messages()
 	if err != nil {
-		ctxLogger.Error("Failed to start consumer", "error", err)
-		return nil, fmt.Errorf("failed to start consumer for topic %s: %w", topic, err)
+		return nil, err
 	}
 
-	go func() {
-		routineLogger := ctxLogger.With("goroutine", "consumer_handler")
-		routineLogger.Info("Starting consumer goroutine")
+	out := make(chan *message.Message, 128)
 
+	// Bounded ACK goroutines
+	ackSem := make(chan struct{}, 128)
+
+	go func() {
 		defer func() {
-			routineLogger.Info("Closing consumer goroutine")
-			close(messages)
 			sub.Stop()
+			close(out)
 		}()
 
 		for {
-			jetStreamMsg, err := sub.Next()
+			jsMsg, err := sub.Next()
 			if err != nil {
-				if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-					routineLogger.Info("Consumer iterator closed", "error", err)
-				} else {
-					routineLogger.Error("Error receiving message", "error", err)
+				if !errors.Is(err, jetstream.ErrMsgIteratorClosed) {
+					ctxLogger.Error("consumer error", "error", err)
 				}
 				return
 			}
 
-			wmMsg, err := eb.toWatermillMessage(ctx, jetStreamMsg)
+			wmMsg, err := eb.toWatermillMessage(ctx, jsMsg)
 			if err != nil {
-				routineLogger.Error("Failed to convert message", "error", err)
-				if err := jetStreamMsg.Term(); err != nil {
-					routineLogger.Error("Failed to terminate malformed message", "error", err)
-				}
-				continue
-			}
-
-			// Get delivery count
-			meta, err := jetStreamMsg.Metadata()
-			var deliveryCount uint64 = 1
-			if err == nil {
-				deliveryCount = meta.NumDelivered
-			}
-
-			msgAttrs := routineLogger.With(
-				"message_id", wmMsg.UUID,
-				"delivery_count", deliveryCount,
-				"metadata", wmMsg.Metadata,
-			)
-			msgAttrs.Info("Received message")
-
-			// Check if we've exceeded max retries (original + 2 retries = 3 deliveries)
-			if deliveryCount > 3 {
-				msgAttrs.Warn("Message exceeded max retry attempts, terminating",
-					"delivery_count", deliveryCount)
-				if err := jetStreamMsg.Term(); err != nil {
-					msgAttrs.Error("Failed to terminate message after max retries", "error", err)
-				}
+				_ = jsMsg.Term()
 				continue
 			}
 
 			select {
-			case messages <- wmMsg:
-				// Set up timeout for message processing
-				processTimeout := 25 * time.Second // Slightly less than AckWait
-				processCtx, cancel := context.WithTimeout(ctx, processTimeout)
+			case out <- wmMsg:
+				ackSem <- struct{}{}
+
+				processTimeout := time.Duration(float64(ackWait) * 0.8)
+				pCtx, cancel := context.WithTimeout(ctx, processTimeout)
 
 				go func() {
 					defer cancel()
+					defer func() { <-ackSem }()
 
 					select {
 					case <-wmMsg.Acked():
-						if err := jetStreamMsg.Ack(); err != nil {
-							msgAttrs.Error("Failed to ack message", "error", err)
-						} else {
-							msgAttrs.Info("Message acknowledged")
-						}
+						_ = jsMsg.Ack()
 					case <-wmMsg.Nacked():
-						msgAttrs.Info("Message nacked, will be redelivered for retry",
-							"current_delivery", deliveryCount,
-							"max_deliveries", 3)
-						if err := jetStreamMsg.Nak(); err != nil {
-							msgAttrs.Error("Failed to nack message", "error", err)
-						}
-					case <-processCtx.Done():
-						if errors.Is(processCtx.Err(), context.DeadlineExceeded) {
-							msgAttrs.Warn("Message processing timeout, will be redelivered",
-								"timeout", processTimeout,
-								"current_delivery", deliveryCount)
-							// Don't ack or nack - let it timeout and be redelivered
-						} else {
-							msgAttrs.Warn("Process context cancelled")
-							if err := jetStreamMsg.Term(); err != nil {
-								msgAttrs.Error("Failed to term message", "error", err)
-							}
-						}
+						_ = jsMsg.Nak()
+					case <-pCtx.Done():
+						// Let AckWait expire → redelivery
 					case <-ctx.Done():
-						msgAttrs.Warn("Main context cancelled")
-						if err := jetStreamMsg.Term(); err != nil {
-							msgAttrs.Error("Failed to term message", "error", err)
-						}
+						// graceful shutdown → redelivery
 					}
 				}()
+
 			case <-ctx.Done():
-				msgAttrs.Warn("Context cancelled (sending)", "error", ctx.Err())
-				if err := jetStreamMsg.Term(); err != nil {
-					msgAttrs.Error("Failed to term message", "error", err)
-				}
 				return
 			}
 		}
 	}()
 
-	ctxLogger.Info("Subscribed to topic successfully")
-	return messages, nil
+	return out, nil
 }
 
 func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan *message.Message, error) {
-
-	ctxLogger := eb.logger.With(
-		"operation", "subscribe_for_test",
-		"topic", topic,
-	)
-
-	// Guard: only the Discord app may subscribe to discord.* topics in tests as well.
-	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
-		ctxLogger.Error("Subscription forbidden (test): app not allowed to subscribe to discord topics", "app_type", eb.appType, "topic", topic)
-		return nil, fmt.Errorf("subscription to discord topics is forbidden for app type %q", eb.appType)
-	}
-
-	// Determine stream name exactly like Subscribe()
 	var streamName string
 	switch {
 	case strings.HasPrefix(topic, "user."):
@@ -535,27 +438,19 @@ func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan 
 		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
 
-	// Ensure stream exists (safe + idempotent)
 	if err := eb.CreateStream(ctx, streamName); err != nil {
 		return nil, err
 	}
 
-	// 🔑 EPHEMERAL TEST CONSUMER CONFIG
-	consumerConfig := jetstream.ConsumerConfig{
-		Durable:       "", // 👈 ephemeral (auto-deleted)
+	cons, err := eb.js.CreateConsumer(ctx, streamName, jetstream.ConsumerConfig{
+		Durable:       "",
 		FilterSubject: topic,
-
 		AckPolicy:     jetstream.AckExplicitPolicy,
-		DeliverPolicy: jetstream.DeliverNewPolicy, // 👈 NO REPLAYS
-		ReplayPolicy:  jetstream.ReplayInstantPolicy,
-
-		MaxDeliver: 1,
-		AckWait:    30 * time.Second,
-	}
-
-	cons, err := eb.js.CreateConsumer(ctx, streamName, consumerConfig)
+		DeliverPolicy: jetstream.DeliverNewPolicy,
+		MaxDeliver:    1,
+		AckWait:       30 * time.Second,
+	})
 	if err != nil {
-		ctxLogger.Error("Failed to create test consumer", "error", err)
 		return nil, err
 	}
 
@@ -575,10 +470,6 @@ func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan 
 		for {
 			jsMsg, err := sub.Next()
 			if err != nil {
-				if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-					return
-				}
-				ctxLogger.Error("Test consumer error", "error", err)
 				return
 			}
 
@@ -595,59 +486,42 @@ func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan 
 					case <-wmMsg.Acked():
 						_ = jsMsg.Ack()
 					case <-ctx.Done():
-						_ = jsMsg.Term()
 					}
 				}()
 			case <-ctx.Done():
-				_ = jsMsg.Term()
 				return
 			}
 		}
 	}()
 
-	ctxLogger.Info("Subscribed for test successfully")
 	return out, nil
 }
 
 // toWatermillMessage converts a JetStream message to a Watermill message.
-func (eb *eventBus) toWatermillMessage(ctx context.Context, jetStreamMsg jetstream.Msg) (*message.Message, error) {
-	msgID := string(jetStreamMsg.Headers().Get("Nats-Msg-Id"))
-	watermillMsg := message.NewMessage(msgID, jetStreamMsg.Data())
-
-	ctxLogger := eb.logger.With(
-		attr.String("operation", "to_watermill_message"),
-		attr.String("message_id", watermillMsg.UUID),
-	)
-
-	meta, err := jetStreamMsg.Metadata()
-	if err == nil {
-		ctxLogger = ctxLogger.With(
-			attr.String("stream", meta.Stream),
-			attr.String("consumer", meta.Consumer),
-			attr.Uint64("stream_seq", meta.Sequence.Stream),
-			attr.Uint64("consumer_seq", meta.Sequence.Consumer),
-			attr.Uint64("num_delivered", meta.NumDelivered),
-		)
-
-		watermillMsg.Metadata.Set("Stream", meta.Stream)
-		watermillMsg.Metadata.Set("Consumer", meta.Consumer)
-		watermillMsg.Metadata.Set("Delivered", strconv.FormatInt(int64(meta.NumDelivered), 10))
-		watermillMsg.Metadata.Set("StreamSeq", strconv.FormatUint(meta.Sequence.Stream, 10))
-		watermillMsg.Metadata.Set("ConsumerSeq", strconv.FormatUint(meta.Sequence.Consumer, 10))
-		watermillMsg.Metadata.Set("Timestamp", meta.Timestamp.String())
-	} else {
-		ctxLogger.Warn("Failed to get message metadata", "error", err)
+func (eb *eventBus) toWatermillMessage(parentCtx context.Context, jsMsg jetstream.Msg) (*message.Message, error) {
+	msgID := jsMsg.Headers().Get("Nats-Msg-Id")
+	if msgID == "" {
+		msgID = nc.NewInbox()
 	}
 
-	// Copy headers to metadata
-	for k, v := range jetStreamMsg.Headers() {
-		watermillMsg.Metadata.Set(k, v[0])
+	msg := message.NewMessage(msgID, jsMsg.Data())
+
+	// Copy headers
+	for k, v := range jsMsg.Headers() {
+		msg.Metadata.Set(k, v[0])
 	}
 
-	ctxLogger.Debug("Created Watermill message from JetStream message")
+	if meta, err := jsMsg.Metadata(); err == nil {
+		msg.Metadata.Set("stream", meta.Stream)
+		msg.Metadata.Set("consumer", meta.Consumer)
+		msg.Metadata.Set("deliveries", strconv.FormatUint(meta.NumDelivered, 10))
+		msg.Metadata.Set("stream_seq", strconv.FormatUint(meta.Sequence.Stream, 10))
+		msg.Metadata.Set("consumer_seq", strconv.FormatUint(meta.Sequence.Consumer, 10))
+	}
 
-	watermillMsg.SetContext(ctx)
-	return watermillMsg, nil
+	// IMPORTANT: derive context, do not overwrite
+	msg.SetContext(context.WithValue(parentCtx, "message_id", msg.UUID))
+	return msg, nil
 }
 
 // sanitizeForNATS sanitizes a string for use in NATS topics.
