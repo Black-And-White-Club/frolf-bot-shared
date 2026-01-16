@@ -25,20 +25,22 @@ import (
 )
 
 type eventBus struct {
-	appType        string
-	publisher      message.Publisher
-	subscriber     message.Subscriber
-	js             jetstream.JetStream
-	natsConn       *nc.Conn
-	logger         *slog.Logger
-	createdStreams map[string]bool
-	streamMutex    sync.Mutex
-	marshaler      nats.Marshaler
-	metrics        eventbusmetrics.EventBusMetrics
-	tracer         trace.Tracer
+	appType           string
+	publisher         message.Publisher
+	subscriber        message.Subscriber // Watermill subscriber (kept for compatibility)
+	subscriberAdapter *JetStreamSubscriberAdapter
+	consumerManager   *ConsumerManager
+	js                jetstream.JetStream
+	natsConn          *nc.Conn
+	logger            *slog.Logger
+	createdStreams    map[string]bool
+	streamMutex       sync.Mutex
+	marshaler         nats.Marshaler
+	metrics           eventbusmetrics.EventBusMetrics
+	tracer            trace.Tracer
 }
 
-// EventBus interface - REMOVED all delayed message methods
+// EventBus interface
 type EventBus interface {
 	Publish(topic string, messages ...*message.Message) error
 	Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error)
@@ -115,40 +117,35 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 		return nil, fmt.Errorf("failed to create Watermill publisher: %w", err)
 	}
 
-	subscriber, err := nats.NewSubscriber(
-		nats.SubscriberConfig{
-			URL:            natsURL,
-			AckWaitTimeout: 30 * time.Second,
-			Unmarshaler:    marshaller,
-			NatsOptions: []nc.Option{
-				nc.RetryOnFailedConnect(true),
-				nc.Timeout(30 * time.Second),
-				nc.ReconnectWait(1 * time.Second),
-				nc.MaxReconnects(-1),
-			},
-			CloseTimeout:     5 * time.Second,
-			SubscribeTimeout: 5 * time.Second,
-		},
-		watermillLogger,
+	// Create consumer config registry with production defaults
+	registry := NewConsumerConfigRegistry()
+
+	// Create consumer manager for managing JetStream consumers
+	consumerManager := NewConsumerManager(js, logger, registry)
+
+	// Create the native JetStream subscriber adapter
+	subscriberAdapter := NewJetStreamSubscriberAdapter(
+		js,
+		consumerManager,
+		appType,
+		logger,
+		WithMaxConcurrentAcks(50),
 	)
-	if err != nil {
-		natsConn.Close()
-		ctxLogger.ErrorContext(ctx, "Failed to create Watermill subscriber", "error", err)
-		return nil, fmt.Errorf("failed to create Watermill subscriber: %w", err)
-	}
 
 	eventBus := &eventBus{
-		appType:        appType,
-		publisher:      publisher,
-		subscriber:     subscriber,
-		js:             js,
-		natsConn:       natsConn,
-		logger:         logger,
-		createdStreams: make(map[string]bool),
-		streamMutex:    sync.Mutex{},
-		marshaler:      marshaller,
-		metrics:        metrics,
-		tracer:         tracer,
+		appType:           appType,
+		publisher:         publisher,
+		subscriber:        nil, // No longer using Watermill subscriber
+		subscriberAdapter: subscriberAdapter,
+		consumerManager:   consumerManager,
+		js:                js,
+		natsConn:          natsConn,
+		logger:            logger,
+		createdStreams:    make(map[string]bool),
+		streamMutex:       sync.Mutex{},
+		marshaler:         marshaller,
+		metrics:           metrics,
+		tracer:            tracer,
 	}
 
 	if err := eventBus.createStreamsForApp(ctx, appType); err != nil {
@@ -281,7 +278,8 @@ func dedupeMsgID(idempotencyKey, topic string) string {
 	return "idem-" + hex.EncodeToString(sum[:])
 }
 
-// Subscribe subscribes to a topic. Handles unmarshaling with retry logic.
+// Subscribe subscribes to a topic using the native JetStream subscriber adapter.
+// It provides bounded ACK concurrency and graceful shutdown support.
 func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
 	ctxLogger := eb.logger.With(
 		"operation", "subscribe",
@@ -292,150 +290,43 @@ func (eb *eventBus) Subscribe(ctx context.Context, topic string) (<-chan *messag
 		eb.metrics.RecordMessageSubscribe(ctx, topic)
 	}
 
-	// Boundary guard
+	// Boundary guard: prevent non-discord apps from subscribing to discord.* topics
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		ctxLogger.Error("Subscribe forbidden: app not allowed to subscribe to discord topics",
+			"app_type", eb.appType,
+			"topic", topic,
+		)
+		return nil, fmt.Errorf("subscription to discord topics forbidden for app %q", eb.appType)
+	}
+
+	// Resolve stream from topic and ensure it exists
+	streamName, err := ResolveStreamFromTopic(topic)
+	if err != nil {
+		ctxLogger.ErrorContext(ctx, "Failed to resolve stream from topic", "error", err)
+		return nil, err
+	}
+
+	if err := eb.CreateStream(ctx, streamName); err != nil {
+		ctxLogger.ErrorContext(ctx, "Failed to create stream", "error", err, "stream", streamName)
+		return nil, err
+	}
+
+	// Delegate to the subscriber adapter
+	return eb.subscriberAdapter.Subscribe(ctx, topic)
+}
+
+// SubscribeForTest creates an ephemeral (non-durable) subscription for testing.
+// Unlike Subscribe, this creates a non-durable consumer that is automatically
+// cleaned up when the subscription is closed.
+func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan *message.Message, error) {
+	// Boundary guard: prevent non-discord apps from subscribing to discord.* topics
 	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
 		return nil, fmt.Errorf("subscription to discord topics forbidden for app %q", eb.appType)
 	}
 
-	var appType string
-	if strings.HasPrefix(topic, "discord.") {
-		appType = "discord"
-	} else {
-		appType = "backend"
-	}
-
-	consumerName := fmt.Sprintf("%s-consumer-%s", appType, sanitizeForNATS(topic))
-	if v := ctx.Value("eventbus_consumer_name"); v != nil {
-		if s, ok := v.(string); ok && s != "" {
-			consumerName = s
-		}
-	}
-
-	// Stream resolution
-	var streamName string
-	switch {
-	case strings.HasPrefix(topic, "user."):
-		streamName = "user"
-	case strings.HasPrefix(topic, "leaderboard."):
-		streamName = "leaderboard"
-	case strings.HasPrefix(topic, "round."):
-		streamName = "round"
-	case strings.HasPrefix(topic, "score."):
-		streamName = "score"
-	case strings.HasPrefix(topic, "guild."):
-		streamName = "guild"
-	case strings.HasPrefix(topic, "discord."):
-		streamName = "discord"
-	default:
-		return nil, fmt.Errorf("unknown topic: %s", topic)
-	}
-
-	if err := eb.CreateStream(ctx, streamName); err != nil {
-		return nil, err
-	}
-
-	ackWait := 30 * time.Second
-
-	consumerConfig := jetstream.ConsumerConfig{
-		Durable:       consumerName,
-		FilterSubject: topic,
-
-		AckPolicy:     jetstream.AckExplicitPolicy,
-		AckWait:       ackWait,
-		MaxDeliver:    3,
-		BackOff:       []time.Duration{1 * time.Second, 5 * time.Second},
-		MaxAckPending: 100,
-
-		DeliverPolicy: jetstream.DeliverNewPolicy,
-		ReplayPolicy:  jetstream.ReplayInstantPolicy,
-	}
-
-	// Declarative sync
-	cons, err := eb.js.CreateOrUpdateConsumer(ctx, streamName, consumerConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to sync consumer: %w", err)
-	}
-
-	sub, err := cons.Messages()
+	streamName, err := ResolveStreamFromTopic(topic)
 	if err != nil {
 		return nil, err
-	}
-
-	out := make(chan *message.Message, 128)
-
-	// Bounded ACK goroutines
-	ackSem := make(chan struct{}, 128)
-
-	go func() {
-		defer func() {
-			sub.Stop()
-			close(out)
-		}()
-
-		for {
-			jsMsg, err := sub.Next()
-			if err != nil {
-				if !errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-					ctxLogger.Error("consumer error", "error", err)
-				}
-				return
-			}
-
-			wmMsg, err := eb.toWatermillMessage(ctx, jsMsg)
-			if err != nil {
-				_ = jsMsg.Term()
-				continue
-			}
-
-			select {
-			case out <- wmMsg:
-				ackSem <- struct{}{}
-
-				processTimeout := time.Duration(float64(ackWait) * 0.8)
-				pCtx, cancel := context.WithTimeout(ctx, processTimeout)
-
-				go func() {
-					defer cancel()
-					defer func() { <-ackSem }()
-
-					select {
-					case <-wmMsg.Acked():
-						_ = jsMsg.Ack()
-					case <-wmMsg.Nacked():
-						_ = jsMsg.Nak()
-					case <-pCtx.Done():
-						// Let AckWait expire → redelivery
-					case <-ctx.Done():
-						// graceful shutdown → redelivery
-					}
-				}()
-
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return out, nil
-}
-
-func (eb *eventBus) SubscribeForTest(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	var streamName string
-	switch {
-	case strings.HasPrefix(topic, "user."):
-		streamName = "user"
-	case strings.HasPrefix(topic, "leaderboard."):
-		streamName = "leaderboard"
-	case strings.HasPrefix(topic, "round."):
-		streamName = "round"
-	case strings.HasPrefix(topic, "score."):
-		streamName = "score"
-	case strings.HasPrefix(topic, "guild."):
-		streamName = "guild"
-	case strings.HasPrefix(topic, "discord."):
-		streamName = "discord"
-	default:
-		return nil, fmt.Errorf("unknown topic: %s", topic)
 	}
 
 	if err := eb.CreateStream(ctx, streamName); err != nil {
@@ -531,19 +422,23 @@ func sanitizeForNATS(s string) string {
 }
 
 // Close closes the EventBus and its components.
+// It closes the subscriber adapter first to allow graceful drain of in-flight messages,
+// then the publisher, and finally drains the NATS connection.
 func (eb *eventBus) Close() error {
 	ctxLogger := eb.logger.With(attr.String("operation", "close"))
 
 	ctxLogger.Info("Closing EventBus")
 
-	if eb.publisher != nil {
-		if err := eb.publisher.Close(); err != nil {
-			ctxLogger.Error("Error closing publisher", "component", "publisher", "error", err)
+	// Close subscriber adapter first to gracefully drain in-flight messages
+	if eb.subscriberAdapter != nil {
+		if err := eb.subscriberAdapter.Close(); err != nil {
+			ctxLogger.Error("Error closing subscriber adapter", "component", "subscriber_adapter", "error", err)
 		} else {
-			ctxLogger.Info("Publisher closed successfully", "component", "publisher")
+			ctxLogger.Info("Subscriber adapter closed successfully", "component", "subscriber_adapter")
 		}
 	}
 
+	// Close legacy subscriber if present (for backward compatibility)
 	if eb.subscriber != nil {
 		if err := eb.subscriber.Close(); err != nil {
 			ctxLogger.Error("Error closing subscriber", "component", "subscriber", "error", err)
@@ -552,8 +447,22 @@ func (eb *eventBus) Close() error {
 		}
 	}
 
+	// Close publisher
+	if eb.publisher != nil {
+		if err := eb.publisher.Close(); err != nil {
+			ctxLogger.Error("Error closing publisher", "component", "publisher", "error", err)
+		} else {
+			ctxLogger.Info("Publisher closed successfully", "component", "publisher")
+		}
+	}
+
+	// Drain and close NATS connection
 	if eb.natsConn != nil {
-		eb.natsConn.Close()
+		// Drain allows in-flight messages to complete
+		if err := eb.natsConn.Drain(); err != nil {
+			ctxLogger.Warn("Error draining NATS connection, forcing close", "error", err)
+			eb.natsConn.Close()
+		}
 		ctxLogger.Info("NATS connection closed", "component", "nats_connection")
 	}
 
