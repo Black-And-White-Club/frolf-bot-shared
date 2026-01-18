@@ -3,6 +3,7 @@
 package guildtypes
 
 import (
+	"errors"
 	"time"
 
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
@@ -56,4 +57,27 @@ func (rs *ResourceState) IsEmpty() bool {
 		return false
 	}
 	return len(rs.Results) == 0
+}
+
+// Validate checks if the core fields required for a functional guild are present.
+func (c *GuildConfig) Validate() error {
+	if c.GuildID == "" {
+		return errors.New("guild ID is required")
+	}
+	if c.SignupChannelID == "" {
+		return errors.New("signup channel ID required")
+	}
+	if c.EventChannelID == "" {
+		return errors.New("event channel ID required")
+	}
+	if c.LeaderboardChannelID == "" {
+		return errors.New("leaderboard channel ID required")
+	}
+	if c.UserRoleID == "" {
+		return errors.New("user role ID required")
+	}
+	if c.SignupEmoji == "" {
+		return errors.New("signup emoji required")
+	}
+	return nil
 }
