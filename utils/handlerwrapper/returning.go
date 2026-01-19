@@ -129,7 +129,6 @@ func WrapTransformingTyped[T any](
 				return nil, err
 			}
 
-			// CRITICAL FIX: Explicit Topic Metadata
 			// This ensures the Watermill Router knows where to route this message
 			// even if the handler output topic is configured as "" (dynamic).
 			if res.Topic != "" {
