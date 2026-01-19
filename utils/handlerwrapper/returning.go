@@ -43,10 +43,12 @@ func WrapTransformingTyped[T any](
 	handler func(ctx context.Context, payload *T) ([]Result, error),
 ) message.HandlerFunc {
 	return func(msg *message.Message) ([]*message.Message, error) {
+		// 1. Correlation ID Propagation
 		corrID := middleware.MessageCorrelationID(msg)
 		middleware.SetCorrelationID(corrID, msg)
 		ctx := context.WithValue(msg.Context(), middleware.CorrelationIDMetadataKey, corrID)
 
+		// 2. Tracing Setup
 		ctx, span := tracer.Start(
 			ctx,
 			handlerName,
@@ -57,7 +59,7 @@ func WrapTransformingTyped[T any](
 		)
 		defer span.End()
 
-		// Metadata Extraction
+		// 3. Metadata Extraction (The "Discord" Bridge)
 		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
 			ctx = context.WithValue(ctx, "discord_message_id", dID)
 		}
@@ -76,6 +78,7 @@ func WrapTransformingTyped[T any](
 			}
 		}
 
+		// 4. Metrics & Logs
 		start := time.Now()
 		if metrics != nil {
 			metrics.RecordAttempt(ctx, handlerName)
@@ -84,8 +87,11 @@ func WrapTransformingTyped[T any](
 			}()
 		}
 
-		logger.InfoContext(ctx, "handler started", attr.String("handler", handlerName))
+		logger.InfoContext(ctx, "handler started",
+			attr.String("handler", handlerName),
+		)
 
+		// 5. Unmarshal Payload
 		payload := new(T)
 		if err := helpers.UnmarshalPayload(msg, payload); err != nil {
 			if metrics != nil {
@@ -96,6 +102,7 @@ func WrapTransformingTyped[T any](
 			return nil, err
 		}
 
+		// 6. Execute Pure Domain Logic
 		results, err := handler(ctx, payload)
 		if err != nil {
 			if metrics != nil {
@@ -122,24 +129,28 @@ func WrapTransformingTyped[T any](
 				return nil, err
 			}
 
-			// Ensure metadata routing key is set for dynamic publishing
+			// CRITICAL FIX: Explicit Topic Metadata
+			// This ensures the Watermill Router knows where to route this message
+			// even if the handler output topic is configured as "" (dynamic).
 			if res.Topic != "" {
 				outMsg.Metadata.Set("topic", res.Topic)
 			}
 
+			// Apply Explicit Result Metadata from the handler logic
 			if res.Metadata != nil {
 				for k, v := range res.Metadata {
 					outMsg.Metadata.Set(k, v)
 				}
 			}
 
-			// Propagate Discord metadata
+			// Downstream Propagation (Context -> Outbound Metadata)
 			if dID, ok := ctx.Value("discord_message_id").(string); ok && dID != "" {
 				if outMsg.Metadata.Get("discord_message_id") == "" {
 					outMsg.Metadata.Set("discord_message_id", dID)
 				}
 			}
 
+			// Type-safe fallback for Discord ID
 			if carrier, ok := res.Payload.(DiscordMetadataCarrier); ok {
 				if id := carrier.GetEventMessageID(); id != "" {
 					if outMsg.Metadata.Get("discord_message_id") == "" {
@@ -151,10 +162,10 @@ func WrapTransformingTyped[T any](
 			outMessages = append(outMessages, outMsg)
 		}
 
+		// 8. Success Finalization
 		if metrics != nil {
 			metrics.RecordSuccess(ctx, handlerName)
 		}
-		
 		logger.InfoContext(ctx, "handler completed successfully",
 			attr.String("handler", handlerName),
 			attr.Int("results_count", len(results)),

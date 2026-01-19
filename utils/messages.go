@@ -67,7 +67,7 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 
 	newEvent := message.NewMessage(watermill.NewUUID(), nil)
 
-	// Copy original metadata first, avoiding internal Watermill/NATS keys
+	// Copy original metadata first
 	for key, value := range originalMsg.Metadata {
 		switch key {
 		case "message_id", "Nats-Msg-Id", "_watermill_message_uuid", "topic", "Topic":
@@ -76,7 +76,7 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 		newEvent.Metadata.Set(key, value)
 	}
 
-	// Marshalling first to catch errors before setting more metadata
+	// Marshal payload
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload for topic %s: %w", topic, err)
@@ -84,15 +84,18 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	newEvent.Payload = payloadBytes
 
 	// Set dynamic routing and observability metadata
+	// 'topic' (lowercase) is strictly used by Watermill for dynamic subject routing
 	newEvent.Metadata.Set("topic", topic)
 	newEvent.Metadata.Set("event_name", topic)
 	newEvent.Metadata.Set("topic_hint", topic)
 	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
 
-	// Set domain
+	// Set domain from topic (e.g., "leaderboard.tag..." -> "leaderboard")
 	if newEvent.Metadata.Get("domain") == "" {
 		domain := extractDomainFromTopic(topic)
-		newEvent.Metadata.Set("domain", domain)
+		if domain != "" {
+			newEvent.Metadata.Set("domain", domain)
+		}
 	}
 
 	// Ensure correlation ID is propagated
@@ -111,6 +114,7 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	return newEvent, nil
 }
 
+// CreateNewMessage creates a new Watermill message without a parent message.
 func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*message.Message, error) {
 	newEvent := message.NewMessage(watermill.NewUUID(), nil)
 
@@ -120,13 +124,16 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 	}
 	newEvent.Payload = payloadBytes
 
+	// Metadata strictly for the Router and NATS Publisher
 	newEvent.Metadata.Set("topic", topic)
 	newEvent.Metadata.Set("event_name", topic)
 	newEvent.Metadata.Set("topic_hint", topic)
 	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
 
 	domain := extractDomainFromTopic(topic)
-	newEvent.Metadata.Set("domain", domain)
+	if domain != "" {
+		newEvent.Metadata.Set("domain", domain)
+	}
 
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		newCID := watermill.NewUUID()
