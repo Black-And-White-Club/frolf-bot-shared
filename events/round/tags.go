@@ -11,10 +11,10 @@
 //  4. Tag found -> RoundTagNumberFoundV1
 //  5. OR Tag not found -> RoundTagNumberNotFoundV1
 //
-// # Scheduled Round Tag Updates
+// # Scheduled Round Tag Sync Flow (Cross-Module)
 //
-//  1. Tag change detected -> TagUpdateForScheduledRoundsV1
-//  2. Rounds updated -> TagsUpdatedForScheduledRoundsV1
+//  1. Sync Requested -> sharedevents.SyncRoundsTagRequestV1 (Trigger from Leaderboard)
+//  2. Sync Completed -> ScheduledRoundsSyncedV1 (Result from Round to Discord)
 //
 // # Pattern Reference
 //
@@ -44,27 +44,22 @@ import (
 // Version: v1 (December 2024)
 const RoundTagNumberRequestedV1 = "round.tag.number.requested.v1"
 
-// NOTE: Cross-module tag lookup and scheduled tag update events are defined in:
-// - events/shared/tag_number_lookup.go
-// - events/shared/tags.go
+// NOTE: Cross-module tag lookup events are defined in events/shared.
 
-// TagsUpdatedForScheduledRoundsV1 is published when scheduled round tags are updated.
+// ScheduledRoundsSyncedV1 is published when scheduled round tags have been successfully synchronized.
 //
 // Pattern: Event Notification
-// Subject: round.tags.updated.for.scheduled.rounds.v1
+// Subject: round.scheduled.rounds.synced.v1
 // Producer: backend-service (round module)
 // Consumers: discord-service (embed update handler)
-// Version: v1 (December 2024)
-const TagsUpdatedForScheduledRoundsV1 = "round.tags.updated.for.scheduled.rounds.v1"
+// Version: v1 (January 2026)
+const ScheduledRoundsSyncedV1 = "round.scheduled.rounds.synced.v1"
 
 // =============================================================================
 // TAG LOOKUP FLOW - Payload Types
 // =============================================================================
 
 // TagLookupRequestPayloadV1 contains tag lookup request data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
 type TagLookupRequestPayloadV1 struct {
 	GuildID          sharedtypes.GuildID   `json:"guild_id"`
 	UserID           sharedtypes.DiscordID `json:"user_id"`
@@ -74,12 +69,7 @@ type TagLookupRequestPayloadV1 struct {
 	JoinedLate       *bool                 `json:"joined_late,omitempty"`
 }
 
-// NOTE: Cross-module tag lookup payloads are defined in events/shared/tag_number_lookup.go.
-
-// RoundUpdateInfoV1 contains round update information.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
+// RoundUpdateInfoV1 contains specific round update details for Discord embeds.
 type RoundUpdateInfoV1 struct {
 	GuildID             sharedtypes.GuildID      `json:"guild_id"`
 	RoundID             sharedtypes.RoundID      `json:"round_id"`
@@ -91,10 +81,7 @@ type RoundUpdateInfoV1 struct {
 	ParticipantsChanged int                      `json:"participants_changed"`
 }
 
-// UpdateSummaryV1 contains update summary information.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
+// UpdateSummaryV1 contains statistics for the synchronization operation.
 type UpdateSummaryV1 struct {
 	GuildID              sharedtypes.GuildID `json:"guild_id"`
 	TotalRoundsProcessed int                 `json:"total_rounds_processed"`
@@ -102,11 +89,11 @@ type UpdateSummaryV1 struct {
 	ParticipantsUpdated  int                 `json:"participants_updated"`
 }
 
-// TagsUpdatedForScheduledRoundsPayloadV1 contains scheduled rounds update result.
+// ScheduledRoundsSyncedPayloadV1 contains the results of a round tag synchronization.
 //
 // Schema History:
-//   - v1.0 (December 2024): Initial version
-type TagsUpdatedForScheduledRoundsPayloadV1 struct {
+//   - v1.0 (January 2026): Renamed from TagsUpdatedForScheduledRoundsPayloadV1
+type ScheduledRoundsSyncedPayloadV1 struct {
 	GuildID       sharedtypes.GuildID `json:"guild_id"`
 	UpdatedRounds []RoundUpdateInfoV1 `json:"updated_rounds"`
 	Summary       UpdateSummaryV1     `json:"summary"`

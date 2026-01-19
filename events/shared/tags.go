@@ -28,6 +28,8 @@
 package sharedevents
 
 import (
+	"time"
+
 	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
@@ -83,14 +85,19 @@ const RoundTagLookupNotFoundV1 = "round.tag.lookup.not.found.v1"
 // Version: v1 (January 2026)
 const RoundTagLookupFailedV1 = "round.tag.lookup.failed.v1"
 
-// TagUpdateForScheduledRoundsV1 is published to update tags for scheduled rounds.
+// =============================================================================
+// ROUND TAG SYNC FLOW - Event Constants
+// =============================================================================
+
+// SyncRoundsTagRequestV1 is published to update tags for scheduled rounds.
 //
 // Pattern: Event Notification
 // Subject: round.tag.update.for.scheduled.rounds.v1
-// Producer: leaderboard-service
-// Consumers: round-service
-// Version: v1 (December 2024)
-const TagUpdateForScheduledRoundsV1 = "round.tag.update.for.scheduled.rounds.v1"
+// Producer: leaderboard-service (after tag changes)
+// Consumers: round-service (sync handler)
+// Triggers: ScheduledRoundsSyncedV1 (in round module)
+// Version: v1 (January 2026)
+const SyncRoundsTagRequestV1 = "round.tag.update.for.scheduled.rounds.v1"
 
 // =============================================================================
 // DISCORD TAG LOOKUP FLOW - Event Constants
@@ -225,7 +232,6 @@ type RoundTagLookupFailedPayloadV1 struct {
 // This alias exists to smooth over older code that accidentally double-suffixed versions (e.g., V1PayloadV1).
 type RoundTagLookupFailedV1PayloadV1 = RoundTagLookupFailedPayloadV1
 
-
 // -----------------------------------------------------------------------------
 // Discord Tag Lookup Payloads
 // -----------------------------------------------------------------------------
@@ -285,4 +291,19 @@ type BatchTagAssignmentRequestedPayloadV1 struct {
 	RequestingUserID sharedtypes.DiscordID `json:"requester_user_id"`
 	BatchID          string                `json:"batch_id"`
 	Assignments      []TagAssignmentInfoV1 `json:"assignments"`
+}
+
+// =============================================================================
+// ROUND TAG SYNC FLOW - Payload Types
+// =============================================================================
+
+// SyncRoundsTagRequestPayloadV1 contains tag changes that require round synchronization.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type SyncRoundsTagRequestPayloadV1 struct {
+	GuildID     sharedtypes.GuildID                             `json:"guild_id"`
+	ChangedTags map[sharedtypes.DiscordID]sharedtypes.TagNumber `json:"changed_tags"`
+	UpdatedAt   time.Time                                       `json:"updated_at"`
+	Source      sharedtypes.ServiceUpdateSource                 `json:"source,omitempty"`
 }
