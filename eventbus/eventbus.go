@@ -159,26 +159,9 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 }
 
 // Publish publishes a message using Watermill's automatic marshaling with idempotency.
+// Publish publishes a message using Watermill's automatic marshaling with idempotency.
 func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
-	ctxLogger := eb.logger.With(
-		"operation", "publish",
-		"topic", topic,
-		"message_count", len(messages),
-	)
-
-	if eb.marshaler == nil {
-		ctxLogger.Error("Failed to publish message", "error", "marshaler not set")
-		return fmt.Errorf("eventBus marshaler is not set")
-	}
-
-	// Guard: prevent non-discord apps from publishing discord.* topics per boundary rules
-	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
-		ctxLogger.Error("Publish forbidden: app not allowed to publish discord topics", "app_type", eb.appType, "topic", topic)
-		return fmt.Errorf("publishing to discord topics is forbidden for app type %q", eb.appType)
-	}
-
-	ctxLogger.Debug("Publishing messages")
-
+	// 1. Topic Resolution
 	// If router passed empty topic, try to derive the subject from the message metadata.
 	if topic == "" {
 		if len(messages) == 0 {
@@ -202,6 +185,27 @@ func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
 		}
 		topic = derived
 	}
+
+	// 2. Logger Initialization (MOVED DOWN)
+	// Now that 'topic' is guaranteed to be correct, we initialize the logger.
+	ctxLogger := eb.logger.With(
+		"operation", "publish",
+		"topic", topic, // <--- Now this will log the REAL topic (e.g., "round.tag.update...")
+		"message_count", len(messages),
+	)
+
+	if eb.marshaler == nil {
+		ctxLogger.Error("Failed to publish message", "error", "marshaler not set")
+		return fmt.Errorf("eventBus marshaler is not set")
+	}
+
+	// Guard: prevent non-discord apps from publishing discord.* topics per boundary rules
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		ctxLogger.Error("Publish forbidden: app not allowed to publish discord topics", "app_type", eb.appType, "topic", topic)
+		return fmt.Errorf("publishing to discord topics is forbidden for app type %q", eb.appType)
+	}
+
+	ctxLogger.Debug("Publishing messages")
 
 	if len(messages) > 0 && eb.metrics != nil {
 		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
