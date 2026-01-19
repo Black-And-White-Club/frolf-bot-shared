@@ -137,6 +137,12 @@ func WrapTransformingTyped[T any](
 				return nil, err
 			}
 
+			// Ensure the topic is set in metadata so the Watermill router/NATS publisher
+			// knows where to send this message when the handler output topic is dynamic.
+			if res.Topic != "" {
+				outMsg.Metadata.Set("topic", res.Topic)
+			}
+
 			// Apply Explicit Result Metadata
 			if res.Metadata != nil {
 				for k, v := range res.Metadata {
