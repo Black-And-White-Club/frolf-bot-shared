@@ -67,57 +67,43 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 
 	newEvent := message.NewMessage(watermill.NewUUID(), nil)
 
-	// Copy original metadata first
+	// Copy original metadata first, avoiding internal Watermill/NATS keys
 	for key, value := range originalMsg.Metadata {
 		switch key {
-		// BLOCK LIST: prevent copying IDs and old routing topics
 		case "message_id", "Nats-Msg-Id", "_watermill_message_uuid", "topic", "Topic":
 			continue
 		}
 		newEvent.Metadata.Set(key, value)
 	}
 
-	// Set topic metadata used by the router/publisher for routing
-	// Keep topic_hint for debugging/logging as well.
-	newEvent.Metadata.Set("topic", topic)
-	newEvent.Metadata.Set("Topic", topic)
-	newEvent.Metadata.Set("topic_hint", topic)
-
-	// Ensure correlation ID exists
-	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
-		newCID := watermill.NewUUID()
-		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
-		h.Logger.Debug("generated correlation id for result message",
-			slog.String("correlation_id", newCID),
-		)
-	}
-
-	// Marshal payload
+	// Marshalling first to catch errors before setting more metadata
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload for topic %s: %w", topic, err)
 	}
 	newEvent.Payload = payloadBytes
 
-	// Set handler name and event name for observability
-	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
+	// Set dynamic routing and observability metadata
+	newEvent.Metadata.Set("topic", topic)
 	newEvent.Metadata.Set("event_name", topic)
+	newEvent.Metadata.Set("topic_hint", topic)
+	newEvent.Metadata.Set("handler_name", "CreateResultMessage")
 
-	// Set domain from topic (e.g., "user.tag.available.v1" → "user")
+	// Set domain
 	if newEvent.Metadata.Get("domain") == "" {
 		domain := extractDomainFromTopic(topic)
-		if domain != "" {
-			newEvent.Metadata.Set("domain", domain)
-		}
+		newEvent.Metadata.Set("domain", domain)
 	}
 
-	// Debug: log the outgoing message metadata so router/publisher mapping can be observed
+	// Ensure correlation ID is propagated
+	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
+		newCID := watermill.NewUUID()
+		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
+	}
+
 	if h.Logger != nil {
 		h.Logger.Debug("created result message metadata",
-			slog.String("event_name", newEvent.Metadata.Get("event_name")),
-			slog.String("topic", newEvent.Metadata.Get("topic")),
-			slog.String("Topic", newEvent.Metadata.Get("Topic")),
-			slog.String("topic_hint", newEvent.Metadata.Get("topic_hint")),
+			slog.String("topic", topic),
 			slog.String("correlation_id", newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey)),
 		)
 	}
@@ -125,7 +111,6 @@ func (h *DefaultHelper) CreateResultMessage(originalMsg *message.Message, payloa
 	return newEvent, nil
 }
 
-// CreateNewMessage creates a new Watermill message **without** an original message.
 func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*message.Message, error) {
 	newEvent := message.NewMessage(watermill.NewUUID(), nil)
 
@@ -135,35 +120,22 @@ func (h *DefaultHelper) CreateNewMessage(payload interface{}, topic string) (*me
 	}
 	newEvent.Payload = payloadBytes
 
-	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
-	// Ensure publisher can discover the subject to publish to
 	newEvent.Metadata.Set("topic", topic)
-	newEvent.Metadata.Set("Topic", topic)
-	newEvent.Metadata.Set("topic_hint", topic)
 	newEvent.Metadata.Set("event_name", topic)
+	newEvent.Metadata.Set("topic_hint", topic)
+	newEvent.Metadata.Set("handler_name", "CreateNewMessage")
 
-	// Set domain from topic
 	domain := extractDomainFromTopic(topic)
-	if domain != "" {
-		newEvent.Metadata.Set("domain", domain)
-	}
+	newEvent.Metadata.Set("domain", domain)
 
-	// Ensure a correlation id exists on newly created messages
 	if newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey) == "" {
 		newCID := watermill.NewUUID()
 		newEvent.Metadata.Set(middleware.CorrelationIDMetadataKey, newCID)
-		if h.Logger != nil {
-			h.Logger.Debug("generated correlation id for new message", slog.String("correlation_id", newCID))
-		}
 	}
 
-	// Debug: log the outgoing new message metadata
 	if h.Logger != nil {
 		h.Logger.Debug("created new message metadata",
-			slog.String("event_name", newEvent.Metadata.Get("event_name")),
-			slog.String("topic", newEvent.Metadata.Get("topic")),
-			slog.String("Topic", newEvent.Metadata.Get("Topic")),
-			slog.String("topic_hint", newEvent.Metadata.Get("topic_hint")),
+			slog.String("topic", topic),
 			slog.String("correlation_id", newEvent.Metadata.Get(middleware.CorrelationIDMetadataKey)),
 		)
 	}

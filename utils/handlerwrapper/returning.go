@@ -43,18 +43,10 @@ func WrapTransformingTyped[T any](
 	handler func(ctx context.Context, payload *T) ([]Result, error),
 ) message.HandlerFunc {
 	return func(msg *message.Message) ([]*message.Message, error) {
-		// 1. Correlation ID Propagation
-		// We extract it from the message and manually inject it into the context.
-		// This is the fix for "correlation_id=unknown" in logs.
 		corrID := middleware.MessageCorrelationID(msg)
-
-		// Ensure the message metadata itself is updated
 		middleware.SetCorrelationID(corrID, msg)
-
-		// Inject into Context using the key Watermill/Slog look for
 		ctx := context.WithValue(msg.Context(), middleware.CorrelationIDMetadataKey, corrID)
 
-		// 2. Tracing Setup
 		ctx, span := tracer.Start(
 			ctx,
 			handlerName,
@@ -65,7 +57,7 @@ func WrapTransformingTyped[T any](
 		)
 		defer span.End()
 
-		// 3. Metadata Extraction (The "Discord" Bridge)
+		// Metadata Extraction
 		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
 			ctx = context.WithValue(ctx, "discord_message_id", dID)
 		}
@@ -75,7 +67,6 @@ func WrapTransformingTyped[T any](
 		if messageID := msg.Metadata.Get("message_id"); messageID != "" {
 			ctx = context.WithValue(ctx, "message_id", messageID)
 		}
-		// Propagate response token (used by Discord handlers to carry RSVP choice)
 		if resp := msg.Metadata.Get("response"); resp != "" {
 			ctx = context.WithValue(ctx, "response", resp)
 		}
@@ -85,7 +76,6 @@ func WrapTransformingTyped[T any](
 			}
 		}
 
-		// 4. Metrics & Logs
 		start := time.Now()
 		if metrics != nil {
 			metrics.RecordAttempt(ctx, handlerName)
@@ -94,12 +84,8 @@ func WrapTransformingTyped[T any](
 			}()
 		}
 
-		// Logger now pulls correlationID from ctx automatically
-		logger.InfoContext(ctx, "handler started",
-			attr.String("handler", handlerName),
-		)
+		logger.InfoContext(ctx, "handler started", attr.String("handler", handlerName))
 
-		// 5. Unmarshal Payload
 		payload := new(T)
 		if err := helpers.UnmarshalPayload(msg, payload); err != nil {
 			if metrics != nil {
@@ -110,7 +96,6 @@ func WrapTransformingTyped[T any](
 			return nil, err
 		}
 
-		// 6. Execute Pure Domain Logic
 		results, err := handler(ctx, payload)
 		if err != nil {
 			if metrics != nil {
@@ -137,27 +122,24 @@ func WrapTransformingTyped[T any](
 				return nil, err
 			}
 
-			// Ensure the topic is set in metadata so the Watermill router/NATS publisher
-			// knows where to send this message when the handler output topic is dynamic.
+			// Ensure metadata routing key is set for dynamic publishing
 			if res.Topic != "" {
 				outMsg.Metadata.Set("topic", res.Topic)
 			}
 
-			// Apply Explicit Result Metadata
 			if res.Metadata != nil {
 				for k, v := range res.Metadata {
 					outMsg.Metadata.Set(k, v)
 				}
 			}
 
-			// Downstream Propagation (Context -> Outbound Metadata)
+			// Propagate Discord metadata
 			if dID, ok := ctx.Value("discord_message_id").(string); ok && dID != "" {
 				if outMsg.Metadata.Get("discord_message_id") == "" {
 					outMsg.Metadata.Set("discord_message_id", dID)
 				}
 			}
 
-			// Type-safe fallback
 			if carrier, ok := res.Payload.(DiscordMetadataCarrier); ok {
 				if id := carrier.GetEventMessageID(); id != "" {
 					if outMsg.Metadata.Get("discord_message_id") == "" {
@@ -169,10 +151,10 @@ func WrapTransformingTyped[T any](
 			outMessages = append(outMessages, outMsg)
 		}
 
-		// 8. Success Finalization
 		if metrics != nil {
 			metrics.RecordSuccess(ctx, handlerName)
 		}
+		
 		logger.InfoContext(ctx, "handler completed successfully",
 			attr.String("handler", handlerName),
 			attr.Int("results_count", len(results)),
