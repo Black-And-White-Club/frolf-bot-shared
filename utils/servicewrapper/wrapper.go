@@ -140,8 +140,8 @@ func (w *Wrapper) Execute(
 // NoOpMetrics provides a no-operation metrics implementation for testing.
 type NoOpMetrics struct{}
 
-func (NoOpMetrics) RecordOperationAttempt(ctx context.Context, operation string, resourceID string)  {}
-func (NoOpMetrics) RecordOperationSuccess(ctx context.Context, operation string, resourceID string)  {}
-func (NoOpMetrics) RecordOperationFailure(ctx context.Context, operation string, resourceID string)  {}
+func (NoOpMetrics) RecordOperationAttempt(ctx context.Context, operation string, resourceID string) {}
+func (NoOpMetrics) RecordOperationSuccess(ctx context.Context, operation string, resourceID string) {}
+func (NoOpMetrics) RecordOperationFailure(ctx context.Context, operation string, resourceID string) {}
 func (NoOpMetrics) RecordOperationDuration(ctx context.Context, operation string, duration time.Duration, resourceID string) {
 }
