@@ -3,7 +3,6 @@ package eventbus
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strconv"
 	"sync"
@@ -47,13 +46,13 @@ type JetStreamSubscriberAdapter struct {
 
 // subscription tracks an active subscription for cleanup during Close.
 type subscription struct {
-	topic       string
-	cancel      context.CancelFunc
-	msgContext  jetstream.MessagesContext
-	wg          *sync.WaitGroup
-	outputCh    chan *message.Message
-	closedOnce  sync.Once
-	closedDone  chan struct{}
+	topic      string
+	consumer   jetstream.Consumer
+	cancel     context.CancelFunc
+	wg         *sync.WaitGroup
+	outputCh   chan *message.Message
+	closedOnce sync.Once
+	closedDone chan struct{}
 }
 
 // JetStreamSubscriberOption configures the JetStreamSubscriberAdapter.
@@ -96,7 +95,10 @@ func NewJetStreamSubscriberAdapter(
 // Subscribe creates a subscription to the given topic.
 // It returns a channel of Watermill messages that integrates with Watermill routers.
 // The subscription uses a native JetStream pull consumer with bounded ACK concurrency.
-func (s *JetStreamSubscriberAdapter) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
+func (s *JetStreamSubscriberAdapter) Subscribe(
+	ctx context.Context,
+	topic string,
+) (<-chan *message.Message, error) {
 	if s.closed.Load() {
 		return nil, errors.New("subscriber is closed")
 	}
@@ -114,23 +116,14 @@ func (s *JetStreamSubscriberAdapter) Subscribe(ctx context.Context, topic string
 		return nil, err
 	}
 
-	// Ensure the consumer exists (idempotent)
+	// Ensure the durable pull consumer exists (idempotent)
 	cons, err := s.consumerManager.EnsureConsumer(ctx, streamName, topic, s.appType)
 	if err != nil {
+		ctxLogger.ErrorContext(ctx, "Failed to ensure consumer", "error", err)
 		return nil, err
 	}
 
-	// Create the message iterator
-	msgCtx, err := cons.Messages(
-		jetstream.PullMaxMessages(pullBatchSize),
-		jetstream.PullExpiry(pullExpiry),
-	)
-	if err != nil {
-		ctxLogger.ErrorContext(ctx, "Failed to create message iterator", "error", err)
-		return nil, fmt.Errorf("failed to create message iterator: %w", err)
-	}
-
-	// Create subscription context that we control
+	// Create subscription context we control
 	subCtx, cancel := context.WithCancel(ctx)
 
 	outputCh := make(chan *message.Message)
@@ -138,23 +131,24 @@ func (s *JetStreamSubscriberAdapter) Subscribe(ctx context.Context, topic string
 
 	sub := &subscription{
 		topic:      topic,
+		consumer:   cons,
 		cancel:     cancel,
-		msgContext: msgCtx,
 		wg:         wg,
 		outputCh:   outputCh,
 		closedDone: make(chan struct{}),
 	}
 
-	// Track subscription for cleanup
+	// Track subscription for cleanup on Close()
 	s.mu.Lock()
 	s.subscriptions = append(s.subscriptions, sub)
 	s.mu.Unlock()
 
-	// Start the message pump
+	// Start the pull loop
 	go s.messagePump(subCtx, sub, ctxLogger)
 
 	ctxLogger.InfoContext(ctx, "Subscription created",
 		"stream", streamName,
+		"consumer", cons.CachedInfo().Name,
 		"max_concurrent_acks", s.maxConcurrentAcks,
 	)
 
@@ -163,11 +157,12 @@ func (s *JetStreamSubscriberAdapter) Subscribe(ctx context.Context, topic string
 
 // messagePump reads messages from JetStream and sends them to the output channel.
 // It uses a semaphore to bound the number of concurrent ACK handling goroutines.
-func (s *JetStreamSubscriberAdapter) messagePump(ctx context.Context, sub *subscription, logger *slog.Logger) {
+func (s *JetStreamSubscriberAdapter) messagePump(
+	ctx context.Context,
+	sub *subscription,
+	logger *slog.Logger,
+) {
 	defer func() {
-		// Stop the message iterator
-		sub.msgContext.Stop()
-
 		// Wait for all in-flight ACK goroutines to complete
 		sub.wg.Wait()
 
@@ -183,8 +178,21 @@ func (s *JetStreamSubscriberAdapter) messagePump(ctx context.Context, sub *subsc
 	// Semaphore for bounded ACK concurrency
 	ackSem := make(chan struct{}, s.maxConcurrentAcks)
 
+	// Resolve stream & consumer once (cheap, avoids repeated lookups)
+	streamName, err := ResolveStreamFromTopic(sub.topic)
+	if err != nil {
+		logger.ErrorContext(ctx, "Failed to resolve stream", "error", err)
+		return
+	}
+
+	cons, err := s.consumerManager.EnsureConsumer(ctx, streamName, sub.topic, s.appType)
+	if err != nil {
+		logger.ErrorContext(ctx, "Failed to ensure consumer", "error", err)
+		return
+	}
+
 	for {
-		// Check for shutdown
+		// Respect shutdown
 		select {
 		case <-ctx.Done():
 			logger.DebugContext(ctx, "Context cancelled, stopping message pump")
@@ -192,62 +200,60 @@ func (s *JetStreamSubscriberAdapter) messagePump(ctx context.Context, sub *subsc
 		default:
 		}
 
-		// Fetch next message (this blocks with PullExpiry timeout)
-		jsMsg, err := sub.msgContext.Next()
+		// Issue an explicit pull request
+		msgs, err := cons.Fetch(
+			pullBatchSize,
+			jetstream.FetchMaxWait(pullExpiry),
+		)
 		if err != nil {
-			if errors.Is(err, jetstream.ErrMsgIteratorClosed) {
-				logger.DebugContext(ctx, "Message iterator closed")
+			if ctx.Err() != nil {
 				return
 			}
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-				return
-			}
-			// Log unexpected errors but continue
-			logger.WarnContext(ctx, "Error fetching message", "error", err)
+
+			logger.WarnContext(ctx, "Fetch failed", "error", err)
 			continue
 		}
 
-		// Convert to Watermill message
-		wmMsg, err := s.toWatermillMessage(ctx, jsMsg)
-		if err != nil {
-			logger.ErrorContext(ctx, "Failed to convert message", "error", err)
-			// On conversion error, delay redelivery
-			if nakErr := jsMsg.NakWithDelay(5 * time.Second); nakErr != nil {
-				logger.ErrorContext(ctx, "Failed to nak message", "error", nakErr)
+		// Iterate over fetched messages
+		for jsMsg := range msgs.Messages() {
+			// Convert to Watermill message
+			wmMsg, err := s.toWatermillMessage(ctx, jsMsg)
+			if err != nil {
+				logger.ErrorContext(ctx, "Failed to convert message", "error", err)
+
+				// Delay redelivery on conversion failure
+				if nakErr := jsMsg.NakWithDelay(5 * time.Second); nakErr != nil {
+					logger.ErrorContext(ctx, "Failed to nak message", "error", nakErr)
+				}
+				continue
 			}
-			continue
-		}
 
-		// Acquire semaphore slot before sending to output
-		// This bounds memory usage from ACK goroutines
-		select {
-		case ackSem <- struct{}{}:
-			// Got slot
-		case <-ctx.Done():
-			// Shutdown - nak for redelivery
-			if nakErr := jsMsg.Nak(); nakErr != nil {
-				logger.ErrorContext(ctx, "Failed to nak message during shutdown", "error", nakErr)
+			// Acquire semaphore slot before emitting
+			select {
+			case ackSem <- struct{}{}:
+				// proceed
+			case <-ctx.Done():
+				if err := jsMsg.Nak(); err != nil {
+					logger.ErrorContext(ctx, "Failed to nak during shutdown", "error", err)
+				}
+				return
 			}
-			return
-		}
 
-		// Track this ACK goroutine
-		sub.wg.Add(1)
+			sub.wg.Add(1)
 
-		// Send to output channel
-		select {
-		case sub.outputCh <- wmMsg:
-			// Message sent, spawn ACK handler
-			go s.waitForAck(ctx, jsMsg, wmMsg, sub, ackSem, logger)
+			// Emit to Watermill
+			select {
+			case sub.outputCh <- wmMsg:
+				go s.waitForAck(ctx, jsMsg, wmMsg, sub, ackSem, logger)
 
-		case <-ctx.Done():
-			// Shutdown - release semaphore and nak
-			<-ackSem
-			sub.wg.Done()
-			if nakErr := jsMsg.Nak(); nakErr != nil {
-				logger.ErrorContext(ctx, "Failed to nak message during shutdown", "error", nakErr)
+			case <-ctx.Done():
+				<-ackSem
+				sub.wg.Done()
+				if err := jsMsg.Nak(); err != nil {
+					logger.ErrorContext(ctx, "Failed to nak during shutdown", "error", err)
+				}
+				return
 			}
-			return
 		}
 	}
 }
