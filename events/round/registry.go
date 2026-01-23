@@ -406,6 +406,15 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}, {Service: sharedevents.ServiceDiscord, Module: "round"}},
 		},
+		RoundTeamScoreUpdatedV1: {
+			Payload:     &TeamScoreUpdatedPayloadV1{},
+			Summary:     "Round Team Score Updated",
+			Description: "A team-based score update was applied to a round (doubles, triples, etc).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
+			Consumers: []sharedevents.Actor{
+				{Service: sharedevents.ServiceDiscord, Module: "round"},
+			},
+		},
 		RoundScoresBulkUpdatedV1: {
 			Payload:     &RoundScoresBulkUpdatedPayloadV1{},
 			Summary:     "Round Scores Bulk Updated",
@@ -426,6 +435,16 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Description: "All scores submitted for a round.",
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
+		},
+		RoundAllTeamScoresSubmittedV1: {
+			Payload:     &AllScoresSubmittedPayloadV1{},
+			Summary:     "All Team Scores Submitted",
+			Description: "All team-based scores for a round have been submitted and validated.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
+			Consumers: []sharedevents.Actor{
+				{Service: sharedevents.ServiceBackend, Module: "score"},
+				{Service: sharedevents.ServiceDiscord, Module: "round"},
+			},
 		},
 		RoundScoresPartiallySubmittedV1: {
 			Payload:     &ScoresPartiallySubmittedPayloadV1{},
@@ -470,6 +489,21 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Description: "Scorecard parsed successfully.",
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
 			Consumers:   []sharedevents.Actor{},
+		},
+		// Normalization Flow
+		ScorecardParsedForNormalizationV1: {
+			Payload:     &ParsedScorecardPayloadV1{},
+			Summary:     "Scorecard Parsed for Normalization",
+			Description: "Raw parsing complete; ready for domain normalization and mode detection.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
+		},
+		ScorecardNormalizedV1: {
+			Payload:     &ScorecardNormalizedPayloadV1{},
+			Summary:     "Scorecard Normalized",
+			Description: "Scorecard transformed into deterministic structure; ready for user ingestion.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
 		},
 		ScorecardParsedForUserV1: {
 			Payload:     &ParsedScorecardPayloadV1{},

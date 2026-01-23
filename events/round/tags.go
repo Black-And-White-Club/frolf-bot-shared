@@ -76,7 +76,7 @@ type RoundUpdateInfoV1 struct {
 	EventMessageID      string                   `json:"event_message_id"`
 	Title               roundtypes.Title         `json:"title"`
 	StartTime           *sharedtypes.StartTime   `json:"start_time"`
-	Location            *roundtypes.Location     `json:"location"`
+	Location            roundtypes.Location      `json:"location"`
 	UpdatedParticipants []roundtypes.Participant `json:"updated_participants"`
 	ParticipantsChanged int                      `json:"participants_changed"`
 }

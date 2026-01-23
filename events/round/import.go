@@ -176,6 +176,16 @@ const RoundScoresImportedV1 = "round.scores.imported.v1"
 // Version: v1 (December 2024)
 const RoundScoresFinalizedV1 = "round.scores.finalized.v1"
 
+// DoublesScoresReadyV1 is published when doubles round scores are applied and ready for Score module.
+//
+// Pattern: Event Notification
+// Subject: round.doubles.scores.ready.v1
+// Producer: backend-service (import handler)
+// Consumers: score-service (processing handler)
+// Triggers: ProcessRoundScoresRequestedV1 (with RoundMode=DOUBLES)
+// Version: v1 (January 2026)
+const DoublesScoresReadyV1 = "round.doubles.scores.ready.v1"
+
 // =============================================================================
 // SCORECARD IMPORT FLOW - Payload Types
 // =============================================================================
@@ -319,6 +329,7 @@ type ImportCompletedPayloadV1 struct {
 	SkippedPlayers     []string                   `json:"skipped_players,omitempty"`
 	AutoAddedUserIDs   []sharedtypes.DiscordID    `json:"auto_added_user_ids,omitempty"`
 	Scores             []sharedtypes.ScoreInfo    `json:"scores,omitempty"`
+	RoundMode          sharedtypes.RoundMode      `json:"round_mode,omitempty"` // "SINGLES" or "DOUBLES"
 	Timestamp          time.Time                  `json:"timestamp"`
 }
 
@@ -364,7 +375,7 @@ type RoundScoresFinalizedPayloadV1 struct {
 	Timestamp      time.Time                `json:"timestamp"`
 }
 
-// ImportScoresAppliedPayloadV1 is emitted after imported scores are applied.
+// ImportScoresAppliedPayloadV1 is emitted after imported scores are applied (singles rounds).
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
@@ -375,4 +386,18 @@ type ImportScoresAppliedPayloadV1 struct {
 	Participants   []roundtypes.Participant `json:"participants"`
 	EventMessageID string                   `json:"event_message_id"`
 	Timestamp      time.Time                `json:"timestamp"`
+}
+
+// DoublesScoresReadyPayloadV1 is emitted after doubles scores are applied.
+// Signals that scores are ready for Score module processing (bypasses leaderboard).
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version for doubles support
+type DoublesScoresReadyPayloadV1 struct {
+	GuildID        sharedtypes.GuildID     `json:"guild_id"`
+	RoundID        sharedtypes.RoundID     `json:"round_id"`
+	ImportID       string                  `json:"import_id"`
+	EventMessageID string                  `json:"event_message_id"`
+	Scores         []sharedtypes.ScoreInfo `json:"scores"`
+	Timestamp      time.Time               `json:"timestamp"`
 }
