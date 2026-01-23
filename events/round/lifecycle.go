@@ -186,7 +186,7 @@ type RoundStartedPayloadV1 struct {
 	GuildID   sharedtypes.GuildID               `json:"guild_id"`
 	RoundID   sharedtypes.RoundID               `json:"round_id"`
 	Title     roundtypes.Title                  `json:"title"`
-	Location  *roundtypes.Location              `json:"location"`
+	Location  roundtypes.Location               `json:"location"`
 	StartTime *sharedtypes.StartTime            `json:"start_time"`
 	ChannelID string                            `json:"channel_id"`
 	Config    *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
@@ -209,7 +209,7 @@ type DiscordRoundStartPayloadV1 struct {
 	GuildID          sharedtypes.GuildID               `json:"guild_id"`
 	RoundID          sharedtypes.RoundID               `json:"round_id"`
 	Title            roundtypes.Title                  `json:"title"`
-	Location         *roundtypes.Location              `json:"location"`
+	Location         roundtypes.Location               `json:"location"`
 	StartTime        *sharedtypes.StartTime            `json:"start_time"`
 	Participants     []RoundParticipantV1              `json:"participants"`
 	DiscordChannelID string                            `json:"discord_channel_id,omitempty"`
@@ -240,14 +240,15 @@ type RoundFinalizedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type RoundFinalizedDiscordPayloadV1 struct {
-	GuildID          sharedtypes.GuildID      `json:"guild_id"`
-	RoundID          sharedtypes.RoundID      `json:"round_id"`
-	Title            roundtypes.Title         `json:"title"`
-	StartTime        *sharedtypes.StartTime   `json:"start_time"`
-	Location         *roundtypes.Location     `json:"location"`
-	Participants     []roundtypes.Participant `json:"participants"`
-	EventMessageID   string                   `json:"event_message_id"`
-	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
+	GuildID          sharedtypes.GuildID         `json:"guild_id"`
+	RoundID          sharedtypes.RoundID         `json:"round_id"`
+	Title            roundtypes.Title            `json:"title"`
+	StartTime        *sharedtypes.StartTime      `json:"start_time,omitempty"`
+	Location         roundtypes.Location         `json:"location,omitempty"`
+	Participants     []roundtypes.Participant    `json:"participants,omitempty"`       // For singles or team member mentions
+	Teams            []roundtypes.NormalizedTeam `json:"teams,omitempty"`              // Populated for doubles/teams
+	EventMessageID   string                      `json:"discord_message_id"`           // Message ID to edit
+	DiscordChannelID string                      `json:"discord_channel_id,omitempty"` // Optional
 }
 
 // RoundFinalizedEmbedUpdatePayloadV1 contains embed update data for finalization.
@@ -255,14 +256,15 @@ type RoundFinalizedDiscordPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type RoundFinalizedEmbedUpdatePayloadV1 struct {
-	GuildID          sharedtypes.GuildID      `json:"guild_id"`
-	RoundID          sharedtypes.RoundID      `json:"round_id"`
-	Title            roundtypes.Title         `json:"title"`
-	StartTime        *sharedtypes.StartTime   `json:"start_time"`
-	Location         *roundtypes.Location     `json:"location"`
-	Participants     []roundtypes.Participant `json:"participants"`
-	EventMessageID   string                   `json:"discord_message_id"`
-	DiscordChannelID string                   `json:"discord_channel_id,omitempty"`
+	GuildID          sharedtypes.GuildID
+	RoundID          sharedtypes.RoundID
+	Title            roundtypes.Title
+	StartTime        *sharedtypes.StartTime
+	Location         roundtypes.Location
+	Participants     []roundtypes.Participant
+	EventMessageID   string
+	Teams            []roundtypes.NormalizedTeam `json:"teams,omitempty"`
+	DiscordChannelID string
 }
 
 // RoundCompletedPayloadV1 is published after backend completes all score processing.
@@ -315,7 +317,7 @@ type DiscordReminderPayloadV1 struct {
 	ReminderType     string                  `json:"reminder_type"`
 	RoundTitle       roundtypes.Title        `json:"round_title"`
 	StartTime        *sharedtypes.StartTime  `json:"start_time"`
-	Location         *roundtypes.Location    `json:"location"`
+	Location         roundtypes.Location     `json:"location"`
 	UserIDs          []sharedtypes.DiscordID `json:"user_ids"`
 	DiscordChannelID string                  `json:"discord_channel_id,omitempty"`
 	DiscordGuildID   string                  `json:"discord_guild_id,omitempty"`

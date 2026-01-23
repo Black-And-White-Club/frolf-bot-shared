@@ -122,15 +122,15 @@ type RoundUpdateModalSubmittedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type RoundUpdateRequestDiscordPayloadV1 struct {
-	RoundID     sharedtypes.RoundID     `json:"round_id"`
-	UserID      sharedtypes.DiscordID   `json:"user_id"`
-	MessageID   string                  `json:"message_id"`
-	Title       *roundtypes.Title       `json:"title,omitempty"`
-	Description *roundtypes.Description `json:"description,omitempty"`
-	StartTime   *sharedtypes.StartTime  `json:"start_time,omitempty"`
-	Location    *roundtypes.Location    `json:"location,omitempty"`
-	ChannelID   string                  `json:"channel_id"`
-	GuildID     sharedtypes.GuildID     `json:"guild_id"`
+	RoundID     sharedtypes.RoundID    `json:"round_id"`
+	UserID      sharedtypes.DiscordID  `json:"user_id"`
+	MessageID   string                 `json:"message_id"`
+	Title       *roundtypes.Title      `json:"title,omitempty"`
+	Description roundtypes.Description `json:"description,omitempty"`
+	StartTime   *sharedtypes.StartTime `json:"start_time,omitempty"`
+	Location    roundtypes.Location    `json:"location,omitempty"`
+	ChannelID   string                 `json:"channel_id"`
+	GuildID     sharedtypes.GuildID    `json:"guild_id"`
 }
 
 // RoundUpdatedDiscordPayloadV1 contains update confirmation data for Discord.
@@ -138,14 +138,14 @@ type RoundUpdateRequestDiscordPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type RoundUpdatedDiscordPayloadV1 struct {
-	RoundID     sharedtypes.RoundID     `json:"round_id"`
-	MessageID   string                  `json:"message_id"`
-	ChannelID   string                  `json:"channel_id"`
-	Title       *roundtypes.Title       `json:"title,omitempty"`
-	Description *roundtypes.Description `json:"description,omitempty"`
-	StartTime   *sharedtypes.StartTime  `json:"start_time,omitempty"`
-	Location    *roundtypes.Location    `json:"location,omitempty"`
-	GuildID     sharedtypes.GuildID     `json:"guild_id"`
+	RoundID     sharedtypes.RoundID    `json:"round_id"`
+	MessageID   string                 `json:"message_id"`
+	ChannelID   string                 `json:"channel_id"`
+	Title       *roundtypes.Title      `json:"title,omitempty"`
+	Description roundtypes.Description `json:"description,omitempty"`
+	StartTime   *sharedtypes.StartTime `json:"start_time,omitempty"`
+	Location    roundtypes.Location    `json:"location,omitempty"`
+	GuildID     sharedtypes.GuildID    `json:"guild_id"`
 }
 
 // -----------------------------------------------------------------------------

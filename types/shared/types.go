@@ -159,7 +159,8 @@ type BaseErrorPayload struct {
 type ScoreInfo struct {
 	UserID    DiscordID  `json:"user_id"`
 	Score     Score      `json:"score"`
-	TagNumber *TagNumber `json:"tag_number"`
+	TagNumber *TagNumber `json:"tag_number,omitempty"`
+	TeamID    uuid.UUID  `json:"team_id,omitempty"`
 }
 
 // ScoreProcessingResult represents the result of processing scores for a round
@@ -196,3 +197,13 @@ type TagAssignmentRequest struct {
 	UserID    DiscordID `json:"user_id"`
 	TagNumber TagNumber `json:"tag_number"`
 }
+
+type RoundMode string
+
+const (
+	RoundModeSingles RoundMode = "SINGLES"
+	RoundModeDoubles RoundMode = "DOUBLES"
+	RoundModeTriples RoundMode = "TRIPLES"
+	RoundModeTeams   RoundMode = "TEAMS"
+	RoundModeQuads   RoundMode = "QUADS"
+)

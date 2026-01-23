@@ -162,7 +162,7 @@ type UpdateRoundRequestedPayloadV1 struct {
 type RoundUpdateRequestPayloadV1 struct {
 	GuildID     sharedtypes.GuildID     `json:"guild_id"`
 	RoundID     sharedtypes.RoundID     `json:"round_id"`
-	Title       roundtypes.Title        `json:"title,omitempty"`
+	Title       *roundtypes.Title       `json:"title,omitempty"`
 	Description *roundtypes.Description `json:"description,omitempty"`
 	Location    *roundtypes.Location    `json:"location,omitempty"`
 	StartTime   *sharedtypes.StartTime  `json:"start_time,omitempty"`
@@ -226,7 +226,7 @@ type RoundScheduleUpdatePayloadV1 struct {
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
 	Title     roundtypes.Title       `json:"title"`
 	StartTime *sharedtypes.StartTime `json:"start_time"`
-	Location  *roundtypes.Location   `json:"location"`
+	Location  roundtypes.Location    `json:"location"`
 }
 
 // RoundUpdateReschedulePayloadV1 contains rescheduling details.
@@ -238,7 +238,7 @@ type RoundUpdateReschedulePayloadV1 struct {
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
 	Title     roundtypes.Title       `json:"title"`
 	StartTime *sharedtypes.StartTime `json:"start_time"`
-	Location  *roundtypes.Location   `json:"location"`
+	Location  roundtypes.Location    `json:"location"`
 }
 
 // RoundStateUpdatedPayloadV1 contains state change data.

@@ -4,6 +4,7 @@
 package sharedevents
 
 import (
+	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
@@ -57,14 +58,16 @@ const ScoreModuleNotificationErrorV1 = "score.module.notification.error.v1"
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
-//
-// NOTE: This payload is shared across round and score modules. If you need
-// additional fields, add optional fields with `omitempty` and evolve as needed.
+//   - v1.1 (January 2026): Added RoundMode and Participants for doubles support
 type ProcessRoundScoresRequestedPayloadV1 struct {
 	GuildID   sharedtypes.GuildID     `json:"guild_id"`
 	RoundID   sharedtypes.RoundID     `json:"round_id"`
 	Scores    []sharedtypes.ScoreInfo `json:"scores"`
 	Overwrite bool                    `json:"overwrite"`
+	RoundMode sharedtypes.RoundMode   `json:"round_mode,omitempty"` // "SINGLES" or "DOUBLES"
+
+	// Participants includes TeamID and other metadata needed to group scores for Doubles
+	Participants []roundtypes.Participant `json:"participants,omitempty"`
 }
 
 // ProcessRoundScoresSucceededPayloadV1 contains processed score results.

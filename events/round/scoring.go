@@ -97,6 +97,35 @@ const RoundScoresBulkUpdatedV1 = "round.scores.bulk.updated.v1"
 const RoundScoreUpdateErrorV1 = "round.score.update.error.v1"
 
 // -----------------------------------------------------------------------------
+// Team / Group-Specific Score Update Flow
+// -----------------------------------------------------------------------------
+
+// RoundTeamScoreUpdatedV1 is published when a team-based score update is saved.
+//
+// This event is emitted for doubles, triples, or other grouped play modes
+// and allows downstream consumers (e.g. Discord) to render team-aware views
+// without inferring grouping logic themselves.
+//
+// Pattern: Event Notification
+// Subject: round.team.score.updated.v1
+// Producer: backend-service (team score storage handler)
+// Consumers: discord-service (team embed update)
+// Version: v1 (January 2026)
+const RoundTeamScoreUpdatedV1 = "round.team.score.updated.v1"
+
+// RoundAllTeamScoresSubmittedV1 is published when all team scores have been submitted.
+//
+// This event mirrors RoundAllScoresSubmittedV1 but is explicitly scoped to
+// team-based rounds so consumers can branch behavior without inspecting payloads.
+//
+// Pattern: Event Notification
+// Subject: round.all.team.scores.submitted.v1
+// Producer: backend-service (team score completion checker)
+// Consumers: backend-service (finalization handler), discord-service
+// Version: v1 (January 2026)
+const RoundAllTeamScoresSubmittedV1 = "round.all.team.scores.submitted.v1"
+
+// -----------------------------------------------------------------------------
 // Score Completion Events
 // -----------------------------------------------------------------------------
 
@@ -191,6 +220,21 @@ type ParticipantScoreUpdatedPayloadV1 struct {
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
+// TeamScoreUpdatedPayloadV1 contains the updated score result for a team.
+//
+// This payload is used exclusively for team-based rounds and allows
+// consumers to render grouped scores deterministically.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+type TeamScoreUpdatedPayloadV1 struct {
+	GuildID        sharedtypes.GuildID       `json:"guild_id"`
+	RoundID        sharedtypes.RoundID       `json:"round_id"`
+	Team           roundtypes.NormalizedTeam `json:"team"`
+	EventMessageID string                    `json:"discord_message_id"`
+	Participants   []roundtypes.Participant  `json:"participants"`
+}
+
 // RoundScoresBulkUpdatedPayloadV1 contains the updated participant list after a bulk override.
 //
 // Schema History:
@@ -226,7 +270,9 @@ type AllScoresSubmittedPayloadV1 struct {
 	RoundID        sharedtypes.RoundID               `json:"round_id"`
 	EventMessageID string                            `json:"discord_message_id"`
 	RoundData      roundtypes.Round                  `json:"round_data"`
+	RoundMode      sharedtypes.RoundMode              `json:"round_mode"`
 	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
+	Teams          []roundtypes.NormalizedTeam       `json:"teams,omitempty"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
@@ -236,13 +282,14 @@ type AllScoresSubmittedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type ScoresPartiallySubmittedPayloadV1 struct {
-	GuildID        sharedtypes.GuildID      `json:"guild_id"`
-	RoundID        sharedtypes.RoundID      `json:"round_id"`
-	UserID         sharedtypes.DiscordID    `json:"user_id"`
-	Score          sharedtypes.Score        `json:"score"`
-	EventMessageID string                   `json:"event_message_id"`
-	Scores         []ParticipantScoreV1     `json:"scores"`
-	Participants   []roundtypes.Participant `json:"participants"`
+	GuildID        sharedtypes.GuildID         `json:"guild_id"`
+	RoundID        sharedtypes.RoundID         `json:"round_id"`
+	UserID         sharedtypes.DiscordID       `json:"user_id"`
+	Score          sharedtypes.Score           `json:"score"`
+	EventMessageID string                      `json:"event_message_id"`
+	Scores         []ParticipantScoreV1        `json:"scores"`
+	Participants   []roundtypes.Participant    `json:"participants"`
+	Teams          []roundtypes.NormalizedTeam `json:"teams,omitempty"`
 }
 
 // -----------------------------------------------------------------------------
@@ -258,6 +305,7 @@ type ParticipantScoreV1 struct {
 	UserID    sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber *sharedtypes.TagNumber `json:"tag_number"`
 	Score     sharedtypes.Score      `json:"score"`
+	TeamID    string                 `json:"team_id,omitempty"`
 }
 
 // RoundScoresNotificationPayloadV1 contains scores notification data.
@@ -278,6 +326,8 @@ type RoundScoresNotificationPayloadV1 struct {
 
 // ToRoundFinalizedPayload converts AllScoresSubmittedPayloadV1 to RoundFinalizedPayloadV1.
 func (p *AllScoresSubmittedPayloadV1) ToRoundFinalizedPayloadV1(round roundtypes.Round) RoundFinalizedPayloadV1 {
+	// Make sure Teams are copied into the RoundData
+	round.Teams = p.Teams
 	return RoundFinalizedPayloadV1{
 		GuildID:   p.GuildID,
 		RoundID:   p.RoundID,
