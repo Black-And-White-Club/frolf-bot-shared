@@ -95,7 +95,7 @@ const RoundReminderDiscordV1 = "discord.round.reminder.v1"
 type RoundStartedDiscordPayloadV1 struct {
 	RoundID   sharedtypes.RoundID    `json:"round_id"`
 	Title     roundtypes.Title       `json:"title"`
-	Location  roundtypes.Location   `json:"location"`
+	Location  roundtypes.Location    `json:"location"`
 	StartTime *sharedtypes.StartTime `json:"start_time"`
 	ChannelID string                 `json:"channel_id"`
 	GuildID   string                 `json:"guild_id"`

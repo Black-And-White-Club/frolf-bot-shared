@@ -193,8 +193,8 @@ type RoundTagLookupRequestedPayloadV1 struct {
 	ScopedGuildID
 	UserID           sharedtypes.DiscordID `json:"user_id"`
 	RoundID          sharedtypes.RoundID   `json:"round_id"`
-	Response         roundtypes.Response  `json:"response"`
-	OriginalResponse roundtypes.Response  `json:"original_response"`
+	Response         roundtypes.Response   `json:"response"`
+	OriginalResponse roundtypes.Response   `json:"original_response"`
 	JoinedLate       *bool                 `json:"joined_late,omitempty"`
 }
 
@@ -212,7 +212,7 @@ type RoundTagLookupResultPayloadV1 struct {
 	RoundID            sharedtypes.RoundID    `json:"round_id"`
 	TagNumber          *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 	Found              bool                   `json:"found"`
-	OriginalResponse   roundtypes.Response   `json:"original_response"`
+	OriginalResponse   roundtypes.Response    `json:"original_response"`
 	OriginalJoinedLate *bool                  `json:"original_joined_late,omitempty"`
 	Error              string                 `json:"error,omitempty"`
 }

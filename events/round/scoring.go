@@ -270,7 +270,7 @@ type AllScoresSubmittedPayloadV1 struct {
 	RoundID        sharedtypes.RoundID               `json:"round_id"`
 	EventMessageID string                            `json:"discord_message_id"`
 	RoundData      roundtypes.Round                  `json:"round_data"`
-	RoundMode      sharedtypes.RoundMode              `json:"round_mode"`
+	RoundMode      sharedtypes.RoundMode             `json:"round_mode"`
 	Participants   []roundtypes.Participant          `json:"participants,omitempty"`
 	Teams          []roundtypes.NormalizedTeam       `json:"teams,omitempty"`
 	Config         *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`

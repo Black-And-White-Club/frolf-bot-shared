@@ -329,7 +329,7 @@ type ImportCompletedPayloadV1 struct {
 	SkippedPlayers     []string                   `json:"skipped_players,omitempty"`
 	AutoAddedUserIDs   []sharedtypes.DiscordID    `json:"auto_added_user_ids,omitempty"`
 	Scores             []sharedtypes.ScoreInfo    `json:"scores,omitempty"`
-	RoundMode          string                     `json:"round_mode,omitempty"` // "SINGLES" or "DOUBLES"
+	RoundMode          sharedtypes.RoundMode      `json:"round_mode,omitempty"` // "SINGLES" or "DOUBLES"
 	Timestamp          time.Time                  `json:"timestamp"`
 }
 
