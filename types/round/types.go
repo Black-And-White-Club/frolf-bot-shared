@@ -55,6 +55,7 @@ type Participant struct {
 	Response  Response               `json:"response"`
 	Score     *sharedtypes.Score     `json:"score"`
 	TeamID    uuid.UUID              `json:"team_id,omitempty"`
+	RawName   string                 `json:"raw_name,omitempty"` // For guest/unmatched users
 }
 
 type Round struct {
@@ -196,8 +197,13 @@ func DisplayName(userID *sharedtypes.DiscordID, rawName string) string {
 }
 
 // Participant implements Displayable
-func (p Participant) UserIDPointer() *sharedtypes.DiscordID { return &p.UserID }
-func (p Participant) RawNameString() string                 { return "" }
+func (p Participant) UserIDPointer() *sharedtypes.DiscordID {
+	if p.UserID == "" {
+		return nil
+	}
+	return &p.UserID
+}
+func (p Participant) RawNameString() string { return p.RawName }
 
 // TeamMember implements Displayable
 func (m TeamMember) UserIDPointer() *sharedtypes.DiscordID { return m.UserID }

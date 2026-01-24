@@ -161,6 +161,7 @@ type ScoreInfo struct {
 	Score     Score      `json:"score"`
 	TagNumber *TagNumber `json:"tag_number,omitempty"`
 	TeamID    uuid.UUID  `json:"team_id,omitempty"`
+	RawName   string     `json:"raw_name,omitempty"` // For guest/unmatched users
 }
 
 // ScoreProcessingResult represents the result of processing scores for a round
