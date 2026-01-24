@@ -2,6 +2,8 @@ package handlerwrapper
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -13,12 +15,23 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// DiscordMetadataCarrier identifies payloads that carry a Discord message ID
+// Context keys for type-safe context value access.
+type contextKey string
+
+const (
+	CtxKeyDiscordMessageID contextKey = "discord_message_id"
+	CtxKeyChannelID        contextKey = "channel_id"
+	CtxKeyMessageID        contextKey = "message_id"
+	CtxKeyResponse         contextKey = "response"
+	CtxKeySubmittedAt      contextKey = "submitted_at"
+)
+
+// DiscordMetadataCarrier identifies payloads that carry a Discord message ID.
 type DiscordMetadataCarrier interface {
 	GetEventMessageID() string
 }
 
-// ReturningMetrics is minimal for module implementation
+// ReturningMetrics defines metrics for handler instrumentation.
 type ReturningMetrics interface {
 	RecordAttempt(ctx context.Context, handler string)
 	RecordSuccess(ctx context.Context, handler string)
@@ -26,14 +39,26 @@ type ReturningMetrics interface {
 	RecordDuration(ctx context.Context, handler string, d time.Duration)
 }
 
-// Result represents a domain event outcome
+// Result represents a domain event outcome with explicit routing.
 type Result struct {
-	Topic    string
-	Payload  interface{}
-	Metadata map[string]string
+	Topic    string            // Required: target topic for this message
+	Payload  any               // Required: event payload
+	Metadata map[string]string // Optional: additional message metadata
 }
 
-// WrapTransformingTyped wraps pure domain handlers that return []Result.
+// Validate ensures the result has required fields.
+func (r Result) Validate() error {
+	if r.Topic == "" {
+		return errors.New("result topic is required")
+	}
+	if r.Payload == nil {
+		return errors.New("result payload is required")
+	}
+	return nil
+}
+
+// WrapTransformingTyped wraps domain handlers that return []Result.
+// Each Result is validated and transformed into a Watermill message with explicit topic routing.
 func WrapTransformingTyped[T any](
 	handlerName string,
 	logger *slog.Logger,
@@ -43,15 +68,13 @@ func WrapTransformingTyped[T any](
 	handler func(ctx context.Context, payload *T) ([]Result, error),
 ) message.HandlerFunc {
 	return func(msg *message.Message) ([]*message.Message, error) {
-		// 1. Correlation ID Propagation
+		// Correlation ID propagation
 		corrID := middleware.MessageCorrelationID(msg)
 		middleware.SetCorrelationID(corrID, msg)
 		ctx := context.WithValue(msg.Context(), middleware.CorrelationIDMetadataKey, corrID)
 
-		// 2. Tracing Setup
-		ctx, span := tracer.Start(
-			ctx,
-			handlerName,
+		// Tracing
+		ctx, span := tracer.Start(ctx, handlerName,
 			trace.WithAttributes(
 				attribute.String("message.id", msg.UUID),
 				attribute.String("correlation_id", corrID),
@@ -59,26 +82,10 @@ func WrapTransformingTyped[T any](
 		)
 		defer span.End()
 
-		// 3. Metadata Extraction (The "Discord" Bridge)
-		if dID := msg.Metadata.Get("discord_message_id"); dID != "" {
-			ctx = context.WithValue(ctx, "discord_message_id", dID)
-		}
-		if channelID := msg.Metadata.Get("channel_id"); channelID != "" {
-			ctx = context.WithValue(ctx, "channel_id", channelID)
-		}
-		if messageID := msg.Metadata.Get("message_id"); messageID != "" {
-			ctx = context.WithValue(ctx, "message_id", messageID)
-		}
-		if resp := msg.Metadata.Get("response"); resp != "" {
-			ctx = context.WithValue(ctx, "response", resp)
-		}
-		if subAt := msg.Metadata.Get("submitted_at"); subAt != "" {
-			if t, err := time.Parse(time.RFC3339, subAt); err == nil {
-				ctx = context.WithValue(ctx, "submitted_at", t)
-			}
-		}
+		// Extract and propagate metadata from incoming message
+		ctx = extractMetadataToContext(ctx, msg)
 
-		// 4. Metrics & Logs
+		// Metrics setup
 		start := time.Now()
 		if metrics != nil {
 			metrics.RecordAttempt(ctx, handlerName)
@@ -87,81 +94,30 @@ func WrapTransformingTyped[T any](
 			}()
 		}
 
-		logger.InfoContext(ctx, "handler started",
-			attr.String("handler", handlerName),
-		)
+		logger.InfoContext(ctx, "handler started", attr.String("handler", handlerName))
 
-		// 5. Unmarshal Payload
+		// Unmarshal payload
 		payload := new(T)
 		if err := helpers.UnmarshalPayload(msg, payload); err != nil {
-			if metrics != nil {
-				metrics.RecordFailure(ctx, handlerName)
-			}
-			logger.ErrorContext(ctx, "payload unmarshal failed", attr.Error(err))
-			span.RecordError(err)
+			recordFailure(ctx, metrics, handlerName, logger, span, "unmarshal failed", err)
 			return nil, err
 		}
 
-		// 6. Execute Pure Domain Logic
+		// Execute handler
 		results, err := handler(ctx, payload)
 		if err != nil {
-			if metrics != nil {
-				metrics.RecordFailure(ctx, handlerName)
-			}
-			logger.ErrorContext(ctx, "handler failed", attr.Error(err))
-			span.RecordError(err)
+			recordFailure(ctx, metrics, handlerName, logger, span, "handler failed", err)
 			return nil, err
 		}
 
-		// 7. Transform Results -> Outgoing Messages
-		var outMessages []*message.Message
-		for _, res := range results {
-			outMsg, err := helpers.CreateResultMessage(msg, res.Payload, res.Topic)
-			if err != nil {
-				if metrics != nil {
-					metrics.RecordFailure(ctx, handlerName)
-				}
-				logger.ErrorContext(ctx, "failed to create result message",
-					attr.String("topic", res.Topic),
-					attr.Error(err),
-				)
-				span.RecordError(err)
-				return nil, err
-			}
-
-			// This ensures the Watermill Router knows where to route this message
-			// even if the handler output topic is configured as "" (dynamic).
-			if res.Topic != "" {
-				outMsg.Metadata.Set("topic", res.Topic)
-			}
-
-			// Apply Explicit Result Metadata from the handler logic
-			if res.Metadata != nil {
-				for k, v := range res.Metadata {
-					outMsg.Metadata.Set(k, v)
-				}
-			}
-
-			// Downstream Propagation (Context -> Outbound Metadata)
-			if dID, ok := ctx.Value("discord_message_id").(string); ok && dID != "" {
-				if outMsg.Metadata.Get("discord_message_id") == "" {
-					outMsg.Metadata.Set("discord_message_id", dID)
-				}
-			}
-
-			// Type-safe fallback for Discord ID
-			if carrier, ok := res.Payload.(DiscordMetadataCarrier); ok {
-				if id := carrier.GetEventMessageID(); id != "" {
-					if outMsg.Metadata.Get("discord_message_id") == "" {
-						outMsg.Metadata.Set("discord_message_id", id)
-					}
-				}
-			}
-
-			outMessages = append(outMessages, outMsg)
+		// Transform results to messages
+		outMessages, err := transformResults(ctx, msg, results, helpers, logger)
+		if err != nil {
+			recordFailure(ctx, metrics, handlerName, logger, span, "transform failed", err)
+			return nil, err
 		}
 
-		// 8. Success Finalization
+		// Success
 		if metrics != nil {
 			metrics.RecordSuccess(ctx, handlerName)
 		}
@@ -172,4 +128,98 @@ func WrapTransformingTyped[T any](
 
 		return outMessages, nil
 	}
+}
+
+// extractMetadataToContext extracts known metadata keys from message to context.
+// Values are stored under both typed keys (for type-safe access) and string keys (for backward compatibility).
+func extractMetadataToContext(ctx context.Context, msg *message.Message) context.Context {
+	if v := msg.Metadata.Get("discord_message_id"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyDiscordMessageID, v)
+		ctx = context.WithValue(ctx, "discord_message_id", v) // backward compat
+	}
+	if v := msg.Metadata.Get("channel_id"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyChannelID, v)
+		ctx = context.WithValue(ctx, "channel_id", v) // backward compat
+	}
+	if v := msg.Metadata.Get("message_id"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyMessageID, v)
+		ctx = context.WithValue(ctx, "message_id", v) // backward compat
+	}
+	if v := msg.Metadata.Get("response"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyResponse, v)
+		ctx = context.WithValue(ctx, "response", v) // backward compat
+	}
+	if v := msg.Metadata.Get("submitted_at"); v != "" {
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			ctx = context.WithValue(ctx, CtxKeySubmittedAt, t)
+			ctx = context.WithValue(ctx, "submitted_at", t) // backward compat
+		}
+	}
+	return ctx
+}
+
+// transformResults converts handler results to Watermill messages.
+func transformResults(ctx context.Context, origMsg *message.Message, results []Result, helpers utils.Helpers, logger *slog.Logger) ([]*message.Message, error) {
+	out := make([]*message.Message, 0, len(results))
+
+	for i, res := range results {
+		if err := res.Validate(); err != nil {
+			return nil, fmt.Errorf("result[%d]: %w", i, err)
+		}
+
+		outMsg, err := helpers.CreateResultMessage(origMsg, res.Payload, res.Topic)
+		if err != nil {
+			return nil, fmt.Errorf("result[%d] create message: %w", i, err)
+		}
+
+		// Ensure topic is set for dynamic routing
+		outMsg.Metadata.Set("topic", res.Topic)
+
+		// Apply explicit metadata from result
+		for k, v := range res.Metadata {
+			outMsg.Metadata.Set(k, v)
+		}
+
+		// Propagate discord_message_id if not already set
+		applyDiscordMetadata(ctx, outMsg, res.Payload)
+
+		logger.DebugContext(ctx, "created result message metadata",
+			attr.String("correlation_id", middleware.MessageCorrelationID(outMsg)),
+			attr.String("topic", res.Topic),
+		)
+
+		out = append(out, outMsg)
+	}
+
+	return out, nil
+}
+
+// applyDiscordMetadata sets discord_message_id from context or payload carrier.
+func applyDiscordMetadata(ctx context.Context, msg *message.Message, payload any) {
+	// Skip if already set
+	if msg.Metadata.Get("discord_message_id") != "" {
+		return
+	}
+
+	// Try context first
+	if v, ok := ctx.Value(CtxKeyDiscordMessageID).(string); ok && v != "" {
+		msg.Metadata.Set("discord_message_id", v)
+		return
+	}
+
+	// Try payload carrier interface
+	if carrier, ok := payload.(DiscordMetadataCarrier); ok {
+		if id := carrier.GetEventMessageID(); id != "" {
+			msg.Metadata.Set("discord_message_id", id)
+		}
+	}
+}
+
+// recordFailure handles failure logging and metrics.
+func recordFailure(ctx context.Context, metrics ReturningMetrics, handler string, logger *slog.Logger, span trace.Span, msg string, err error) {
+	if metrics != nil {
+		metrics.RecordFailure(ctx, handler)
+	}
+	logger.ErrorContext(ctx, msg, attr.Error(err))
+	span.RecordError(err)
 }

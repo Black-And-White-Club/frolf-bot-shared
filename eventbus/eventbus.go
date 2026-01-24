@@ -158,118 +158,116 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 	return eventBus, nil
 }
 
-// Publish publishes a message using Watermill's automatic marshaling with idempotency.
-// Publish publishes a message using Watermill's automatic marshaling with idempotency.
+// Publish publishes messages using Watermill with idempotency support.
+// When topic is empty, messages are grouped by their metadata topic and published separately.
 func (eb *eventBus) Publish(topic string, messages ...*message.Message) error {
-	// 1. Topic Resolution
-	// If router passed empty topic, try to derive the subject from the message metadata.
-	if topic == "" {
-		if len(messages) == 0 {
-			return errors.New("no topic provided and no messages to derive topic from")
-		}
-		// Prefer metadata keys (case-sensitive) set by helpers.CreateResultMessage
-		// Try common keys in order: "topic", "Topic", "event_name", "topic_hint"
-		meta := messages[0].Metadata
-		derived := meta.Get("topic")
-		if derived == "" {
-			derived = meta.Get("Topic")
-		}
-		if derived == "" {
-			derived = meta.Get("event_name")
-		}
-		if derived == "" {
-			derived = meta.Get("topic_hint")
-		}
-		if derived == "" {
-			return fmt.Errorf("no publish topic provided and message metadata missing topic")
-		}
-		topic = derived
+	if len(messages) == 0 {
+		return nil
 	}
 
-	// 2. Logger Initialization (MOVED DOWN)
-	// Now that 'topic' is guaranteed to be correct, we initialize the logger.
+	if eb.marshaler == nil {
+		return errors.New("eventBus marshaler is not set")
+	}
+
+	// When topic is provided, publish all messages to that topic
+	if topic != "" {
+		return eb.publishToTopic(topic, messages)
+	}
+
+	// Group messages by their metadata topic for correct routing
+	topicGroups := make(map[string][]*message.Message)
+	for _, msg := range messages {
+		msgTopic := resolveMessageTopic(msg)
+		if msgTopic == "" {
+			return fmt.Errorf("message %s has no topic in metadata", msg.UUID)
+		}
+		topicGroups[msgTopic] = append(topicGroups[msgTopic], msg)
+	}
+
+	// Publish each group to its correct topic
+	var errs []error
+	for t, msgs := range topicGroups {
+		if err := eb.publishToTopic(t, msgs); err != nil {
+			errs = append(errs, fmt.Errorf("topic %s: %w", t, err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// resolveMessageTopic extracts the topic from message metadata.
+func resolveMessageTopic(msg *message.Message) string {
+	for _, key := range []string{"topic", "Topic", "event_name", "topic_hint"} {
+		if t := msg.Metadata.Get(key); t != "" {
+			return t
+		}
+	}
+	return ""
+}
+
+// publishToTopic publishes messages to a specific topic with retries.
+func (eb *eventBus) publishToTopic(topic string, messages []*message.Message) error {
+	if len(messages) == 0 {
+		return nil
+	}
+
+	// Boundary guard for discord topics
+	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
+		return fmt.Errorf("publishing to discord topics forbidden for app %q", eb.appType)
+	}
+
 	ctxLogger := eb.logger.With(
 		"operation", "publish",
-		"topic", topic, // <--- Now this will log the REAL topic (e.g., "round.tag.update...")
+		"topic", topic,
 		"message_count", len(messages),
 	)
 
-	if eb.marshaler == nil {
-		ctxLogger.Error("Failed to publish message", "error", "marshaler not set")
-		return fmt.Errorf("eventBus marshaler is not set")
-	}
-
-	// Guard: prevent non-discord apps from publishing discord.* topics per boundary rules
-	if strings.HasPrefix(topic, "discord.") && eb.appType != "discord" {
-		ctxLogger.Error("Publish forbidden: app not allowed to publish discord topics", "app_type", eb.appType, "topic", topic)
-		return fmt.Errorf("publishing to discord topics is forbidden for app type %q", eb.appType)
-	}
-
-	ctxLogger.Debug("Publishing messages")
-
-	if len(messages) > 0 && eb.metrics != nil {
-		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
-	}
-
-	// Ensure each message has a unique ID for deduplication
+	// Set deduplication IDs
 	for _, msg := range messages {
-		// Set Nats-Msg-Id header for deduplication (JetStream uses this)
 		if msg.Metadata.Get("Nats-Msg-Id") == "" {
-			if idempotencyKey := msg.Metadata.Get("idempotency_key"); idempotencyKey != "" {
-				msg.Metadata.Set("Nats-Msg-Id", dedupeMsgID(idempotencyKey, topic))
+			if key := msg.Metadata.Get("idempotency_key"); key != "" {
+				msg.Metadata.Set("Nats-Msg-Id", dedupeMsgID(key, topic))
 			} else {
 				msg.Metadata.Set("Nats-Msg-Id", msg.UUID)
 			}
 		}
-
-		ctxLogger.Debug("Attempting to publish message",
+		ctxLogger.Debug("Publishing message",
 			attr.String("message_uuid", msg.UUID),
 			attr.String("nats_msg_id", msg.Metadata.Get("Nats-Msg-Id")),
-			attr.String("topic_name", topic),
 		)
 	}
 
-	// Publish with retry logic for network issues
-	maxRetries := 3
+	if eb.metrics != nil {
+		eb.metrics.RecordMessagePublish(messages[0].Context(), topic)
+	}
+
+	// Publish with retry
+	const maxRetries = 3
+	var lastErr error
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		if err := eb.publisher.Publish(topic, messages...); err != nil {
-			ctxLogger.Warn("Publish attempt failed",
-				"attempt", attempt,
-				"max_retries", maxRetries,
-				"error", err,
-			)
-
-			// Check if it's a network/timeout error that should be retried
+			lastErr = err
 			if attempt < maxRetries && eb.isRetryableError(err) {
-				backoffDuration := time.Duration(attempt) * 100 * time.Millisecond
-				ctxLogger.Info("Retrying publish after backoff", "backoff", backoffDuration)
-				time.Sleep(backoffDuration)
+				time.Sleep(time.Duration(attempt) * 100 * time.Millisecond)
 				continue
 			}
-
-			ctxLogger.Error("Failed to publish message after retries", "error", err)
-			if len(messages) > 0 && eb.metrics != nil {
+			if eb.metrics != nil {
 				eb.metrics.RecordMessagePublishError(messages[0].Context(), topic)
 			}
-
-			return fmt.Errorf("failed to publish message to topic %s after %d attempts: %w", topic, maxRetries, err)
+			ctxLogger.Error("Publish failed", "error", err, "attempts", attempt)
+			return fmt.Errorf("publish to %s failed after %d attempts: %w", topic, attempt, lastErr)
 		}
-
-		// Success
 		break
 	}
 
 	for _, msg := range messages {
-		correlationID := middleware.MessageCorrelationID(msg)
-		msgContext := msg.Context()
-
-		msgLogger := ctxLogger.With(
+		ctxLogger.InfoContext(msg.Context(), "Message published",
 			"message_id", msg.UUID,
-			"nats_msg_id", msg.Metadata.Get("Nats-Msg-Id"),
-			"correlation_id", correlationID,
+			"correlation_id", middleware.MessageCorrelationID(msg),
 		)
-
-		msgLogger.InfoContext(msgContext, "Message published successfully")
 	}
 
 	return nil
