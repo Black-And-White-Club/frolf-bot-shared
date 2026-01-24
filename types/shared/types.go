@@ -58,7 +58,47 @@ func (r RoundID) Value() (driver.Value, error) {
 	return uuid.UUID(r).String(), nil
 }
 
+// MarshalJSON marshals the RoundID to JSON as a hyphenated UUID string.
+// This ensures River queue jobs serialize round_id correctly for JSONB queries.
+func (r RoundID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(uuid.UUID(r).String())
+}
+
+// UnmarshalJSON unmarshals the RoundID from a JSON string.
+func (r *RoundID) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("invalid RoundID JSON: expected string, got %s", string(data))
+	}
+	id, err := uuid.Parse(str)
+	if err != nil {
+		return fmt.Errorf("invalid UUID string: %w", err)
+	}
+	*r = RoundID(id)
+	return nil
+}
+
 type EventMessageID RoundID
+
+// String returns the string representation of EventMessageID.
+func (e EventMessageID) String() string {
+	return uuid.UUID(e).String()
+}
+
+// MarshalJSON marshals the EventMessageID to JSON as a hyphenated UUID string.
+func (e EventMessageID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(uuid.UUID(e).String())
+}
+
+// UnmarshalJSON unmarshals the EventMessageID from JSON.
+func (e *EventMessageID) UnmarshalJSON(data []byte) error {
+	var r RoundID
+	if err := r.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	*e = EventMessageID(r)
+	return nil
+}
 
 // Score defines a custom type for scores (can be negative or positive).
 type Score int
