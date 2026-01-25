@@ -68,6 +68,21 @@ func (mr *MockTracerMockRecorder) SpanContextFromContext(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpanContextFromContext", reflect.TypeOf((*MockTracer)(nil).SpanContextFromContext), ctx)
 }
 
+// StartPublishSpan mocks base method.
+func (m *MockTracer) StartPublishSpan(ctx context.Context, topic string, msg *message.Message) (context.Context, trace.Span) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartPublishSpan", ctx, topic, msg)
+	ret0, _ := ret[0].(context.Context)
+	ret1, _ := ret[1].(trace.Span)
+	return ret0, ret1
+}
+
+// StartPublishSpan indicates an expected call of StartPublishSpan.
+func (mr *MockTracerMockRecorder) StartPublishSpan(ctx, topic, msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPublishSpan", reflect.TypeOf((*MockTracer)(nil).StartPublishSpan), ctx, topic, msg)
+}
+
 // StartSpan mocks base method.
 func (m *MockTracer) StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span) {
 	m.ctrl.T.Helper()

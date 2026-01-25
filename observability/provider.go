@@ -182,6 +182,18 @@ func (h *otelHandler) Handle(ctx context.Context, record slog.Record) error {
 	logRecord.SetBody(log.StringValue(record.Message))
 	logRecord.SetSeverity(convertLevel(record.Level))
 
+	// Extract trace context for Grafana Trace ↔ Logs correlation
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		logRecord.AddAttributes(
+			log.String("trace_id", spanCtx.TraceID().String()),
+			log.String("span_id", spanCtx.SpanID().String()),
+		)
+		if spanCtx.IsSampled() {
+			logRecord.AddAttributes(log.String("trace_flags", "01"))
+		}
+	}
+
 	// Add attributes
 	record.Attrs(func(attr slog.Attr) bool {
 		logRecord.AddAttributes(log.String(attr.Key, attr.Value.String()))

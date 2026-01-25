@@ -41,5 +41,10 @@ func (n *NoOpTracer) SpanContextFromContext(ctx context.Context) trace.SpanConte
 
 // StartSpan correctly returns a no-op span
 func (n *NoOpTracer) StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span) {
-	return n.tracer.Start(ctx, name) // ✅ No longer panics
+	return n.tracer.Start(ctx, name)
+}
+
+// StartPublishSpan returns a no-op span for publishing
+func (n *NoOpTracer) StartPublishSpan(ctx context.Context, topic string, msg *message.Message) (context.Context, trace.Span) {
+	return n.tracer.Start(ctx, topic+" publish")
 }

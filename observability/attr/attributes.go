@@ -8,6 +8,7 @@ import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // CorrelationIDFromMsg creates a slog.Attr for the correlation ID from message metadata.
@@ -125,6 +126,48 @@ func ExtractCorrelationID(ctx context.Context) slog.Attr {
 	}
 
 	return slog.String("correlation_id", "unknown") // Default if missing
+}
+
+// TraceID extracts trace_id from context for Grafana Trace ↔ Logs correlation.
+// Returns empty attribute if no valid span context exists.
+func TraceID(ctx context.Context) slog.Attr {
+	if ctx == nil {
+		return slog.String("trace_id", "")
+	}
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.IsValid() {
+		return slog.String("trace_id", "")
+	}
+	return slog.String("trace_id", spanCtx.TraceID().String())
+}
+
+// SpanID extracts span_id from context for Grafana Trace ↔ Logs correlation.
+// Returns empty attribute if no valid span context exists.
+func SpanID(ctx context.Context) slog.Attr {
+	if ctx == nil {
+		return slog.String("span_id", "")
+	}
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.IsValid() {
+		return slog.String("span_id", "")
+	}
+	return slog.String("span_id", spanCtx.SpanID().String())
+}
+
+// TraceContext extracts both trace_id and span_id as a group for structured logging.
+// Use this when you need both values together for Grafana correlation.
+func TraceContext(ctx context.Context) []slog.Attr {
+	if ctx == nil {
+		return nil
+	}
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.IsValid() {
+		return nil
+	}
+	return []slog.Attr{
+		slog.String("trace_id", spanCtx.TraceID().String()),
+		slog.String("span_id", spanCtx.SpanID().String()),
+	}
 }
 
 // ConvertAttrsToAny converts a slice of slog.Attr to a slice of any.

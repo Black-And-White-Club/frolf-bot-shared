@@ -9,7 +9,26 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
+)
+
+// OTEL Semantic Convention attribute keys for messaging (v1.26.0+)
+// https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/
+const (
+	// MessagingSystemJetStream identifies NATS JetStream as the messaging system.
+	MessagingSystemJetStream = "nats_jetstream"
+
+	// Custom attributes for Watermill/Grafana queryability
+	AttrCorrelationID = "messaging.correlation_id"
+	AttrDeadLetter    = "messaging.dead_letter"
+	AttrRetryCount    = "messaging.delivery_attempt"
+	AttrHandlerName   = "messaging.handler.name"
+)
+
+// MessagingOperationType values per OTEL semconv
+var (
+	MessagingOperationProcess = semconv.MessagingOperationTypeKey.String("process")
 )
 
 // Tracer defines the interface for tracing.
@@ -18,6 +37,7 @@ type Tracer interface {
 	InjectTraceContext(ctx context.Context, msg *message.Message)
 	SpanContextFromContext(ctx context.Context) trace.SpanContext
 	StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span)
+	StartPublishSpan(ctx context.Context, topic string, msg *message.Message) (context.Context, trace.Span)
 }
 
 // TracingOptions defines configuration for OpenTelemetry tracing.
@@ -35,23 +55,40 @@ type TempoTracer struct {
 	tracer trace.Tracer // Store the tracer for use in middleware
 }
 
+// NewTempoTracer creates a new TempoTracer with the given tracer.
+func NewTempoTracer(tracer trace.Tracer) *TempoTracer {
+	return &TempoTracer{tracer: tracer}
+}
+
 func TraceHandler(tracer trace.Tracer) message.HandlerMiddleware {
 	return func(h message.HandlerFunc) message.HandlerFunc {
 		return func(msg *message.Message) ([]*message.Message, error) {
 			ctx := otel.GetTextMapPropagator().Extract(msg.Context(), messageMetadataCarrier{msg})
-			spanName := msg.Metadata.Get("topic")
-			if spanName == "" {
-				spanName = "watermill.handler"
+
+			topic := msg.Metadata.Get("topic")
+			handlerName := msg.Metadata.Get("handler_name")
+
+			// Span name follows OTEL convention: "<destination> <operation>"
+			spanName := topic + " process"
+			if topic == "" {
+				spanName = "message process"
 			}
 
 			ctx, span := tracer.Start(ctx, spanName,
+				trace.WithSpanKind(trace.SpanKindConsumer),
 				trace.WithAttributes(
-					attribute.String("watermill.message_id", msg.UUID),
-					attribute.String("watermill.correlation_id", msg.Metadata.Get("correlation_id")),
-					attribute.String("watermill.topic", msg.Metadata.Get("topic")),
-					attribute.String("watermill.middleware", "watermill.handler"),
-					attribute.Bool("watermill.dead_letter", msg.Metadata.Get("dead_letter") == "true"),
-					attribute.Int64("watermill.retry_count", parseInt64(msg.Metadata.Get("jetstream.delivery_attempt"))),
+					// OTEL Semantic Conventions for Messaging
+					semconv.MessagingSystemKey.String(MessagingSystemJetStream),
+					MessagingOperationProcess,
+					semconv.MessagingDestinationName(topic),
+					semconv.MessagingMessageID(msg.UUID),
+					semconv.MessagingMessageBodySize(len(msg.Payload)),
+
+					// Custom attributes for queryability
+					attribute.String(AttrCorrelationID, msg.Metadata.Get("correlation_id")),
+					attribute.String(AttrHandlerName, handlerName),
+					attribute.Bool(AttrDeadLetter, msg.Metadata.Get("dead_letter") == "true"),
+					attribute.Int64(AttrRetryCount, parseInt64(msg.Metadata.Get("jetstream.delivery_attempt"))),
 				),
 			)
 			defer span.End()
@@ -61,6 +98,8 @@ func TraceHandler(tracer trace.Tracer) message.HandlerMiddleware {
 			if err != nil {
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
+			} else {
+				span.SetStatus(codes.Ok, "")
 			}
 			return msgs, err
 		}
@@ -81,14 +120,37 @@ func parseInt64(value string) int64 {
 
 // StartSpan creates a new span with the given name and includes common attributes.
 func (t *TempoTracer) StartSpan(ctx context.Context, name string, msg *message.Message) (context.Context, trace.Span) {
+	topic := msg.Metadata.Get("topic")
 	return t.tracer.Start(ctx, name,
-		trace.WithAttributes(attribute.String("correlation_id", msg.Metadata.Get(middleware.CorrelationIDMetadataKey))),
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			semconv.MessagingDestinationName(topic),
+			semconv.MessagingMessageID(msg.UUID),
+			attribute.String(AttrCorrelationID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey)),
+		),
 	)
 }
 
 // InjectTraceContext injects the trace context into the message metadata before publishing.
 func (t *TempoTracer) InjectTraceContext(ctx context.Context, msg *message.Message) {
 	otel.GetTextMapPropagator().Inject(ctx, messageMetadataCarrier{msg})
+}
+
+// StartPublishSpan creates a producer span for publishing a message.
+// Call this before publishing to create a linked span, then call InjectTraceContext.
+func (t *TempoTracer) StartPublishSpan(ctx context.Context, topic string, msg *message.Message) (context.Context, trace.Span) {
+	spanName := topic + " publish"
+	return t.tracer.Start(ctx, spanName,
+		trace.WithSpanKind(trace.SpanKindProducer),
+		trace.WithAttributes(
+			semconv.MessagingSystemKey.String(MessagingSystemJetStream),
+			semconv.MessagingOperationTypePublish,
+			semconv.MessagingDestinationName(topic),
+			semconv.MessagingMessageID(msg.UUID),
+			semconv.MessagingMessageBodySize(len(msg.Payload)),
+			attribute.String(AttrCorrelationID, msg.Metadata.Get("correlation_id")),
+		),
+	)
 }
 
 // SpanContextFromContext extracts the span context from the provided context.
