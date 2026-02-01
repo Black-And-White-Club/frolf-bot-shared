@@ -45,3 +45,10 @@ func ParseUserRoleEnum(role string) (sharedtypes.UserRoleEnum, error) {
 		return sharedtypes.UserRoleUnknown, fmt.Errorf("invalid user role: %s", role)
 	}
 }
+
+// UserProfile contains display-friendly user information for API responses
+type UserProfile struct {
+	UserID      sharedtypes.DiscordID `json:"user_id"`
+	DisplayName string                `json:"display_name"`
+	AvatarURL   string                `json:"avatar_url"`
+}

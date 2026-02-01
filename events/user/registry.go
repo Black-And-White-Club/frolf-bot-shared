@@ -176,5 +176,14 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "user"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
 		},
+
+		// Profile data sync
+		UserProfileUpdatedV1: {
+			Payload:     &UserProfileUpdatedPayloadV1{},
+			Summary:     "User Profile Updated",
+			Description: "Discord profile data observed/updated.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "user"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "user"}},
+		},
 	}
 }

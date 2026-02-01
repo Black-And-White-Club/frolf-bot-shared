@@ -11,16 +11,16 @@ import (
 
 type GuildConfig struct {
 	GuildID              sharedtypes.GuildID `json:"guild_id"`
-	SignupChannelID      string
-	SignupMessageID      string
-	EventChannelID       string
-	LeaderboardChannelID string
-	UserRoleID           string
-	EditorRoleID         string
-	AdminRoleID          string
-	SignupEmoji          string
-	AutoSetupCompleted   bool
-	SetupCompletedAt     *time.Time
+	SignupChannelID      string              `json:"signup_channel_id"`
+	SignupMessageID      string              `json:"signup_message_id"`
+	EventChannelID       string              `json:"event_channel_id"`
+	LeaderboardChannelID string              `json:"leaderboard_channel_id"`
+	UserRoleID           string              `json:"user_role_id"`
+	EditorRoleID         string              `json:"editor_role_id"`
+	AdminRoleID          string              `json:"admin_role_id"`
+	SignupEmoji          string              `json:"signup_emoji"`
+	AutoSetupCompleted   bool                `json:"auto_setup_completed"`
+	SetupCompletedAt     *time.Time          `json:"setup_completed_at"`
 	// Optional snapshot of resources (used for deletion flow)
 	ResourceState ResourceState `json:"resource_state,omitempty"`
 	// ...add any other fields you want to expose...

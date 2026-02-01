@@ -27,6 +27,7 @@ import (
 	sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/shared"
 	leaderboardtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/leaderboard"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
+	usertypes "github.com/Black-And-White-Club/frolf-bot-shared/types/user"
 )
 
 // =============================================================================
@@ -215,8 +216,9 @@ type GetLeaderboardRequestedPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type GetLeaderboardResponsePayloadV1 struct {
-	GuildID     sharedtypes.GuildID              `json:"guild_id"`
-	Leaderboard leaderboardtypes.LeaderboardData `json:"leaderboard"`
+	GuildID     sharedtypes.GuildID                              `json:"guild_id"`
+	Leaderboard leaderboardtypes.LeaderboardData                 `json:"leaderboard"`
+	Profiles    map[sharedtypes.DiscordID]*usertypes.UserProfile `json:"profiles,omitempty"`
 }
 
 // GetLeaderboardFailedPayloadV1 contains leaderboard retrieval failure data.

@@ -24,6 +24,7 @@ const (
 	CtxKeyMessageID        contextKey = "message_id"
 	CtxKeyResponse         contextKey = "response"
 	CtxKeySubmittedAt      contextKey = "submitted_at"
+	CtxKeyReplyTo          contextKey = "reply_to"
 )
 
 // DiscordMetadataCarrier identifies payloads that carry a Discord message ID.
@@ -154,6 +155,12 @@ func extractMetadataToContext(ctx context.Context, msg *message.Message) context
 			ctx = context.WithValue(ctx, CtxKeySubmittedAt, t)
 			ctx = context.WithValue(ctx, "submitted_at", t) // backward compat
 		}
+	}
+	// Try standard Watermill/NATS reply keys
+	if v := msg.Metadata.Get("reply_to"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyReplyTo, v)
+	} else if v := msg.Metadata.Get("reply"); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyReplyTo, v)
 	}
 	return ctx
 }
