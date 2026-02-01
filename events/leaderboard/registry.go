@@ -110,6 +110,14 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}, {Service: sharedevents.ServiceDiscord, Module: "leaderboard"}}},
 
+		TagUpdateForScheduledRoundsV1: {
+			Payload:     &TagUpdateForScheduledRoundsPayloadV1{},
+			Summary:     "Tag Update For Scheduled Rounds",
+			Description: "Update tags for scheduled rounds after leaderboard changes.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
+		},
+
 		TagSwapRequestedV1: {
 			Payload:     &TagSwapRequestedPayloadV1{},
 			Summary:     "Tag Swap Requested",

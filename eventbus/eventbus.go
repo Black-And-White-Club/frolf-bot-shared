@@ -225,6 +225,12 @@ func (eb *eventBus) publishToTopic(topic string, messages []*message.Message) er
 		"message_count", len(messages),
 	)
 
+	// Check if this is an inbox subject (core NATS request-reply pattern)
+	// Inbox subjects start with "_INBOX." and are ephemeral - they don't belong to JetStream
+	if strings.HasPrefix(topic, "_INBOX.") {
+		return eb.publishToInbox(topic, messages, ctxLogger)
+	}
+
 	// Set deduplication IDs
 	for _, msg := range messages {
 		if msg.Metadata.Get("Nats-Msg-Id") == "" {
@@ -267,6 +273,30 @@ func (eb *eventBus) publishToTopic(topic string, messages []*message.Message) er
 		ctxLogger.InfoContext(msg.Context(), "Message published",
 			"message_id", msg.UUID,
 			"correlation_id", middleware.MessageCorrelationID(msg),
+		)
+	}
+
+	return nil
+}
+
+// publishToInbox publishes messages to a core NATS inbox subject.
+// Inbox subjects are used for request-reply patterns and don't belong to JetStream.
+func (eb *eventBus) publishToInbox(topic string, messages []*message.Message, ctxLogger *slog.Logger) error {
+	for _, msg := range messages {
+		ctxLogger.Debug("Publishing to inbox via core NATS",
+			attr.String("message_uuid", msg.UUID),
+			attr.String("inbox", topic),
+		)
+
+		// Publish directly via core NATS connection
+		if err := eb.natsConn.Publish(topic, msg.Payload); err != nil {
+			ctxLogger.Error("Failed to publish to inbox", "error", err)
+			return fmt.Errorf("failed to publish to inbox %s: %w", topic, err)
+		}
+
+		ctxLogger.Info("Message published to inbox",
+			"message_id", msg.UUID,
+			"inbox", topic,
 		)
 	}
 
@@ -502,6 +532,8 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		subjects = []string{"discord.>"}
 	case "guild":
 		subjects = []string{"guild.>"}
+	case "auth":
+		subjects = []string{"auth.>"}
 	default:
 		ctxLogger.Error("Failed to create stream", "error", "unknown stream name")
 		return fmt.Errorf("unknown stream name: %s", streamName)
@@ -552,11 +584,12 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score", "guild"}
+		streams = []string{"user", "leaderboard", "round", "score", "guild", "auth"}
 	case "discord":
-		// Discord creates its own internal stream and the shared guild stream
-		// It will subscribe to backend streams (which backend creates)
-		streams = []string{"discord", "guild"}
+		// Discord creates its own internal stream.
+		// It will subscribe to backend streams (user, guild, auth, etc) which backend creates.
+		// We avoid creating shared streams here to prevent ambiguity and ensure Backend owns the domain streams.
+		streams = []string{"discord"}
 	default:
 		ctxLogger.Error("Failed to create streams for app", "error", "unknown app type")
 		return fmt.Errorf("unknown app type: %s", appType)
