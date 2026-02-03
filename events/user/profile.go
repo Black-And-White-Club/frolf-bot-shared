@@ -2,6 +2,7 @@ package userevents
 
 import (
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
+	"github.com/google/uuid"
 )
 
 const (
@@ -16,7 +17,9 @@ const (
 //   - v1.0 (January 2026): Initial version
 type UserProfileUpdatedPayloadV1 struct {
 	UserID      sharedtypes.DiscordID `json:"user_id"`
+	UserUUID    *uuid.UUID            `json:"user_uuid,omitempty"`
 	GuildID     sharedtypes.GuildID   `json:"guild_id"`
+	ClubUUID    *uuid.UUID            `json:"club_uuid,omitempty"`
 	Username    string                `json:"username"`     // Discord username
 	DisplayName string                `json:"display_name"` // Nickname in guild, or username if no nickname
 	AvatarHash  string                `json:"avatar_hash"`  // Discord avatar hash (empty if default)
