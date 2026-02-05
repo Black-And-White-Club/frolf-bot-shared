@@ -6,7 +6,7 @@ import sharedevents "github.com/Black-And-White-Club/frolf-bot-shared/events/sha
 func GetV1Registry() map[string]sharedevents.EventInfo {
 	return map[string]sharedevents.EventInfo{
 		GuildSetupRequestedV1: {
-			Payload:     &GuildConfigCreationRequestedPayloadV1{},
+			Payload:     &GuildSetupPayloadV1{},
 			Summary:     "Guild Setup Requested",
 			Description: "Initial guild setup requested.",
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "guild"},

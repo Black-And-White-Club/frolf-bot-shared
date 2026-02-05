@@ -48,7 +48,9 @@ func ParseUserRoleEnum(role string) (sharedtypes.UserRoleEnum, error) {
 
 // UserProfile contains display-friendly user information for API responses
 type UserProfile struct {
-	UserID      sharedtypes.DiscordID `json:"user_id"`
-	DisplayName string                `json:"display_name"`
-	AvatarURL   string                `json:"avatar_url"`
+	UserID        sharedtypes.DiscordID `json:"user_id"`
+	DisplayName   string                `json:"display_name"`
+	AvatarURL     string                `json:"avatar_url"`
+	UDiscUsername *string               `json:"udisc_username,omitempty"`
+	UDiscName     *string               `json:"udisc_name,omitempty"`
 }

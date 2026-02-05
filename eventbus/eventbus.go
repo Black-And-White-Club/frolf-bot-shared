@@ -534,6 +534,8 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		subjects = []string{"guild.>"}
 	case "auth":
 		subjects = []string{"auth.>"}
+	case "club":
+		subjects = []string{"club.>"}
 	default:
 		ctxLogger.Error("Failed to create stream", "error", "unknown stream name")
 		return fmt.Errorf("unknown stream name: %s", streamName)
@@ -584,7 +586,7 @@ func (eb *eventBus) createStreamsForApp(ctx context.Context, appType string) err
 	var streams []string
 	switch appType {
 	case "backend":
-		streams = []string{"user", "leaderboard", "round", "score", "guild", "auth"}
+		streams = []string{"user", "leaderboard", "round", "score", "guild", "auth", "club"}
 	case "discord":
 		// Discord creates its own internal stream.
 		// It will subscribe to backend streams (user, guild, auth, etc) which backend creates.
