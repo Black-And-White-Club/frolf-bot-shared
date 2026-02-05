@@ -24,3 +24,14 @@ type UserProfileUpdatedPayloadV1 struct {
 	DisplayName string                `json:"display_name"` // Nickname in guild, or username if no nickname
 	AvatarHash  string                `json:"avatar_hash"`  // Discord avatar hash (empty if default)
 }
+
+const (
+	// UserProfileSyncRequestTopicV1 is used to request a profile sync from discord-bot.
+	UserProfileSyncRequestTopicV1 = "user.profile.sync.request.v1"
+)
+
+// UserProfileSyncRequestPayloadV1 contains data for syncing a user profile.
+type UserProfileSyncRequestPayloadV1 struct {
+	UserID  sharedtypes.DiscordID `json:"user_id"`
+	GuildID sharedtypes.GuildID   `json:"guild_id"`
+}

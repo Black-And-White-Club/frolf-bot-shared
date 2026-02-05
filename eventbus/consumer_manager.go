@@ -155,6 +155,8 @@ func ResolveStreamFromTopic(topic string) (string, error) {
 		return "discord", nil
 	case strings.HasPrefix(topic, "auth."):
 		return "auth", nil
+	case strings.HasPrefix(topic, "club."):
+		return "club", nil
 	default:
 		return "", fmt.Errorf("unknown topic prefix: %s", topic)
 	}

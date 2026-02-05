@@ -51,6 +51,28 @@ import (
 // Version: v1 (January 2026)
 const GuildSetupRequestedV1 = "guild.setup.v1"
 
+// GuildSetupPayloadV1 contains the guild setup request data.
+// Includes guild name and icon for Club entity creation.
+//
+// Schema History:
+//   - v1.0 (January 2026): Initial version
+//   - v1.1 (February 2026): Added GuildName and IconURL for Club support
+type GuildSetupPayloadV1 struct {
+	GuildID              sharedtypes.GuildID `json:"guild_id"`
+	GuildName            string              `json:"guild_name"`
+	IconURL              *string             `json:"icon_url,omitempty"`
+	SignupChannelID      string              `json:"signup_channel_id"`
+	SignupMessageID      string              `json:"signup_message_id"`
+	EventChannelID       string              `json:"event_channel_id"`
+	LeaderboardChannelID string              `json:"leaderboard_channel_id"`
+	UserRoleID           string              `json:"user_role_id"`
+	EditorRoleID         string              `json:"editor_role_id"`
+	AdminRoleID          string              `json:"admin_role_id"`
+	SignupEmoji          string              `json:"signup_emoji"`
+	AutoSetupCompleted   bool                `json:"auto_setup_completed"`
+	SetupCompletedAt     *time.Time          `json:"setup_completed_at,omitempty"`
+}
+
 // =============================================================================
 // GUILD CONFIG CREATION FLOW - Event Constants
 // =============================================================================

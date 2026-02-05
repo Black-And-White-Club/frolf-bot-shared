@@ -127,8 +127,11 @@ type UserCreationFailedPayloadV1 struct {
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
+//   - v1.1 (February 2026): Added GuildName and IconURL
 type UserSignupRequestedPayloadV1 struct {
 	GuildID       sharedtypes.GuildID    `json:"guild_id"`
+	GuildName     string                 `json:"guild_name,omitempty"`
+	IconURL       *string                `json:"icon_url,omitempty"`
 	UserID        sharedtypes.DiscordID  `json:"user_id"`
 	TagNumber     *sharedtypes.TagNumber `json:"tag_number,omitempty"`
 	UDiscUsername *string                `json:"udisc_username,omitempty"`
