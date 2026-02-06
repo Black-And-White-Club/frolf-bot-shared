@@ -261,5 +261,14 @@ func GetV1Registry() map[string]EventInfo {
 			Producer:    Actor{Service: ServiceBackend, Module: "round"},
 			Consumers:   []Actor{},
 		},
+
+		// Club sync flow (user → club cross-module)
+		ClubSyncFromDiscordRequestedV1: {
+			Payload:     &ClubSyncFromDiscordRequestedPayloadV1{},
+			Summary:     "Club Sync From Discord Requested",
+			Description: "User signup included guild metadata; sync club record.",
+			Producer:    Actor{Service: ServiceBackend, Module: "user"},
+			Consumers:   []Actor{{Service: ServiceBackend, Module: "club"}},
+		},
 	}
 }
