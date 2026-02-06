@@ -72,6 +72,7 @@ type Round struct {
 	State          RoundState             `json:"state"`
 	Participants   []Participant          `json:"participants"`
 	EventMessageID string                 `json:"event_message_id"`
+	DiscordEventID string                 `json:"discord_event_id,omitempty"`
 	GuildID        sharedtypes.GuildID    `json:"guild_id"`
 	// Import/scorecard fields
 	ImportID        string     `json:"import_id,omitempty"`
