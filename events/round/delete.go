@@ -168,6 +168,7 @@ type RoundDeletedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID `json:"guild_id"`
 	RoundID        sharedtypes.RoundID `json:"round_id"`
 	EventMessageID string              `json:"discord_message_id"`
+	DiscordEventID string              `json:"discord_event_id,omitempty"`
 }
 
 // RoundDeleteErrorPayloadV1 contains deletion error details.

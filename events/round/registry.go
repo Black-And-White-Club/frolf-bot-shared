@@ -693,5 +693,49 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
 		},
+
+		// Native Event flow (Discord Guild Scheduled Events)
+		NativeEventCreatedV1: {
+			Payload:     &NativeEventCreatedPayloadV1{},
+			Summary:     "Native Event Created",
+			Description: "Discord Guild Scheduled Event created for a round.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "round"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
+		},
+		NativeEventCreateFailedV1: {
+			Payload:     &NativeEventCreateFailedPayloadV1{},
+			Summary:     "Native Event Create Failed",
+			Description: "Failed to create Discord Guild Scheduled Event.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "round"},
+			Consumers:   []sharedevents.Actor{},
+		},
+		NativeEventUpdatedV1: {
+			Payload:     &NativeEventUpdatedPayloadV1{},
+			Summary:     "Native Event Updated",
+			Description: "Discord Guild Scheduled Event updated for a round.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "round"},
+			Consumers:   []sharedevents.Actor{},
+		},
+		NativeEventUpdateFailedV1: {
+			Payload:     &NativeEventUpdateFailedPayloadV1{},
+			Summary:     "Native Event Update Failed",
+			Description: "Failed to update Discord Guild Scheduled Event.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "round"},
+			Consumers:   []sharedevents.Actor{},
+		},
+		NativeEventLookupRequestV1: {
+			Payload:     &NativeEventLookupRequestPayloadV1{},
+			Summary:     "Native Event Lookup Request",
+			Description: "Request to resolve a DiscordEventID to a RoundID.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "round"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "round"}},
+		},
+		NativeEventLookupResultV1: {
+			Payload:     &NativeEventLookupResultPayloadV1{},
+			Summary:     "Native Event Lookup Result",
+			Description: "Result of DiscordEventID to RoundID resolution.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "round"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "round"}},
+		},
 	}
 }

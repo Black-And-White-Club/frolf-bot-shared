@@ -72,6 +72,7 @@ type Round struct {
 	State          RoundState             `json:"state"`
 	Participants   []Participant          `json:"participants"`
 	EventMessageID string                 `json:"event_message_id"`
+	DiscordEventID string                 `json:"discord_event_id,omitempty"`
 	GuildID        sharedtypes.GuildID    `json:"guild_id"`
 	// Import/scorecard fields
 	ImportID        string     `json:"import_id,omitempty"`
@@ -117,7 +118,7 @@ type BaseErrorPayload struct {
 
 type CreateRoundInput struct {
 	Title       Title                 `json:"title"`
-	Description Description           `json:"description,omitempty"`
+	Description *Description          `json:"description,omitempty"`
 	Location    Location              `json:"location,omitempty"`
 	StartTime   string                `json:"start_time"` // StartTime comes in as a string before it's processed
 	UserID      sharedtypes.DiscordID `json:"user_id"`
@@ -390,9 +391,10 @@ type BulkScoreUpdateRequest struct {
 }
 
 type BulkScoreUpdateResult struct {
-	GuildID sharedtypes.GuildID  `json:"guild_id"`
-	RoundID sharedtypes.RoundID  `json:"round_id"`
-	Updates []ScoreUpdateRequest `json:"updates"`
+	GuildID      sharedtypes.GuildID  `json:"guild_id"`
+	RoundID      sharedtypes.RoundID  `json:"round_id"`
+	Updates      []ScoreUpdateRequest `json:"updates"`
+	Participants []Participant        `json:"participants"`
 }
 
 type CheckAllScoresSubmittedRequest struct {

@@ -215,6 +215,7 @@ type DiscordRoundStartPayloadV1 struct {
 	DiscordChannelID string                            `json:"discord_channel_id,omitempty"`
 	DiscordGuildID   string                            `json:"discord_guild_id,omitempty"`
 	EventMessageID   string                            `json:"event_message_id"`
+	DiscordEventID   string                            `json:"discord_event_id,omitempty"`
 	Config           *sharedevents.GuildConfigFragment `json:"config_fragment,omitempty"`
 }
 
@@ -248,6 +249,7 @@ type RoundFinalizedDiscordPayloadV1 struct {
 	Participants   []roundtypes.Participant    `json:"participants,omitempty"` // For singles or team member mentions
 	Teams          []roundtypes.NormalizedTeam `json:"teams,omitempty"`        // Populated for doubles/teams
 	EventMessageID string                      `json:"discord_message_id"`     // Message ID to edit
+	DiscordEventID string                      `json:"discord_event_id,omitempty"`
 	// LegacyEventMessageID retains the old JSON field name for backward compatibility.
 	LegacyEventMessageID string `json:"event_message_id,omitempty"`
 	DiscordChannelID     string `json:"discord_channel_id,omitempty"` // Optional

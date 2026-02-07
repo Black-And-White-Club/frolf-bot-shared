@@ -37,13 +37,13 @@ type ConsumerConfig struct {
 // These defaults balance reliability with reasonable resource usage.
 func DefaultConsumerConfig() ConsumerConfig {
 	return ConsumerConfig{
-		AckWait:    30 * time.Second,
+		AckWait:    60 * time.Second,
 		MaxDeliver: 5,
 		BackOff: []time.Duration{
-			1 * time.Second,
 			5 * time.Second,
 			15 * time.Second,
 			30 * time.Second,
+			60 * time.Second,
 		},
 		MaxAckPending:     100,
 		DeliverPolicy:     jetstream.DeliverNewPolicy,
