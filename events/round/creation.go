@@ -251,14 +251,14 @@ const RoundTraceEventV1 = "round.trace.event.v1"
 //   - v1.0 (December 2024): Initial version
 type CreateRoundRequestedPayloadV1 struct {
 	// v1.0 fields (required, never change these)
-	GuildID     sharedtypes.GuildID    `json:"guild_id"`
-	Title       roundtypes.Title       `json:"title"`
-	Description roundtypes.Description `json:"description"`
-	StartTime   string                 `json:"start_time"` // Unparsed natural language, e.g., "tomorrow 3pm"
-	Location    roundtypes.Location    `json:"location"`
-	UserID      sharedtypes.DiscordID  `json:"user_id"`
-	ChannelID   string                 `json:"channel_id"`
-	Timezone    roundtypes.Timezone    `json:"timezone"`
+	GuildID     sharedtypes.GuildID     `json:"guild_id"`
+	Title       roundtypes.Title        `json:"title"`
+	Description *roundtypes.Description `json:"description,omitempty"` // Optional
+	StartTime   string                  `json:"start_time"`            // Unparsed natural language, e.g., "tomorrow 3pm"
+	Location    roundtypes.Location     `json:"location"`
+	UserID      sharedtypes.DiscordID   `json:"user_id"`
+	ChannelID   string                  `json:"channel_id"`
+	Timezone    roundtypes.Timezone     `json:"timezone"`
 
 	// Future additions go here, always optional with omitempty
 	// Example: MaxParticipants *int `json:"max_participants,omitempty"`
