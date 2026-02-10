@@ -6,8 +6,10 @@ import (
 
 // Core leaderboard domain types
 type LeaderboardEntry struct {
-	TagNumber sharedtypes.TagNumber `json:"tag_number"`
-	UserID    sharedtypes.DiscordID `json:"user_id"`
+	TagNumber    sharedtypes.TagNumber `json:"tag_number"`
+	UserID       sharedtypes.DiscordID `json:"user_id"`
+	TotalPoints  int                   `json:"total_points"`
+	RoundsPlayed int                   `json:"rounds_played"`
 }
 
 type LeaderboardData []LeaderboardEntry
