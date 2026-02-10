@@ -1,6 +1,7 @@
 package sharedevents
 
 import (
+	roundtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/round"
 	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
 )
 
@@ -20,7 +21,18 @@ const PointsAwardedV1 = "round.points.awarded.v1"
 // Schema History:
 //   - v1.0 (February 2026): Initial version
 type PointsAwardedPayloadV1 struct {
-	GuildID sharedtypes.GuildID           `json:"guild_id"`
-	RoundID sharedtypes.RoundID           `json:"round_id"`
-	Points  map[sharedtypes.DiscordID]int `json:"points"`
+	GuildID          sharedtypes.GuildID           `json:"guild_id"`
+	RoundID          sharedtypes.RoundID           `json:"round_id"`
+	Points           map[sharedtypes.DiscordID]int `json:"points"`
+	EventMessageID   string                        `json:"event_message_id,omitempty"`
+	DiscordChannelID string                        `json:"discord_channel_id,omitempty"`
+	Title            roundtypes.Title              `json:"title,omitempty"`
+	Location         roundtypes.Location           `json:"location,omitempty"`
+	StartTime        *sharedtypes.StartTime        `json:"start_time,omitempty"`
+	Participants     []roundtypes.Participant      `json:"participants,omitempty"`
+	Teams            []roundtypes.NormalizedTeam   `json:"teams,omitempty"`
+}
+
+func (p PointsAwardedPayloadV1) GetEventMessageID() string {
+	return p.EventMessageID
 }
