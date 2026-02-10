@@ -286,11 +286,14 @@ type TagAssignmentInfoV1 struct {
 //
 // Schema History:
 //   - v1.0 (December 2024): Initial version
+
 type BatchTagAssignmentRequestedPayloadV1 struct {
 	ScopedGuildID
-	RequestingUserID sharedtypes.DiscordID `json:"requester_user_id"`
-	BatchID          string                `json:"batch_id"`
-	Assignments      []TagAssignmentInfoV1 `json:"assignments"`
+	RequestingUserID sharedtypes.DiscordID           `json:"requester_user_id"`
+	BatchID          string                          `json:"batch_id"`
+	Assignments      []TagAssignmentInfoV1           `json:"assignments"`
+	RoundID          *sharedtypes.RoundID            `json:"round_id,omitempty"`
+	Source           sharedtypes.ServiceUpdateSource `json:"source,omitempty"`
 }
 
 // =============================================================================

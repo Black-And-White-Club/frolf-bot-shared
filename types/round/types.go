@@ -58,6 +58,7 @@ type Participant struct {
 	Score     *sharedtypes.Score     `json:"score"`
 	TeamID    uuid.UUID              `json:"team_id,omitempty"`
 	RawName   string                 `json:"raw_name,omitempty"` // For guest/unmatched users
+	Points    *int                   `json:"points,omitempty"`   // Points awarded/deducted for this round
 }
 
 type Round struct {
