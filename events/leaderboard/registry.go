@@ -39,6 +39,13 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
 		},
+		sharedevents.PointsAwardedV1: {
+			Payload:     &sharedevents.PointsAwardedPayloadV1{},
+			Summary:     "Leaderboard Points Awarded",
+			Description: "Points awarded for a round.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "round"}},
+		},
 
 		GetLeaderboardRequestedV1: {
 			Payload:     &GetLeaderboardRequestedPayloadV1{},

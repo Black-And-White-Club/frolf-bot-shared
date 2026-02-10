@@ -1,9 +1,5 @@
 package sharedevents
 
-import (
-	sharedtypes "github.com/Black-And-White-Club/frolf-bot-shared/types/shared"
-)
-
 // Actor represents a specific functional unit in your system
 type Actor struct {
 	Service string // e.g., "frolf-bot"
@@ -275,7 +271,7 @@ func GetV1Registry() map[string]EventInfo {
 			Consumers:   []Actor{{Service: ServiceBackend, Module: "club"}},
 		},
 		PointsAwardedV1: {
-			Payload:     &sharedtypes.PointsAwardedPayloadV1{},
+			Payload:     &PointsAwardedPayloadV1{},
 			Summary:     "Points Awarded",
 			Description: "Points awarded after round processing.",
 			Producer:    Actor{Service: ServiceBackend, Module: "leaderboard"},
