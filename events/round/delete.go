@@ -167,6 +167,7 @@ type RoundDeleteUnauthorizedPayloadV1 struct {
 type RoundDeletedPayloadV1 struct {
 	GuildID        sharedtypes.GuildID `json:"guild_id"`
 	RoundID        sharedtypes.RoundID `json:"round_id"`
+	ChannelID      string              `json:"channel_id,omitempty"`
 	EventMessageID string              `json:"discord_message_id"`
 	DiscordEventID string              `json:"discord_event_id,omitempty"`
 }

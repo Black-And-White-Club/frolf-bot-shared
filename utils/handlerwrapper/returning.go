@@ -25,6 +25,9 @@ const (
 	CtxKeyResponse         contextKey = "response"
 	CtxKeySubmittedAt      contextKey = "submitted_at"
 	CtxKeyReplyTo          contextKey = "reply_to"
+	CtxKeyGuildID          contextKey = "guild_id"
+	CtxKeyInteractionID    contextKey = "interaction_id"
+	CtxKeyInteractionToken contextKey = "interaction_token"
 )
 
 // DiscordMetadataCarrier identifies payloads that carry a Discord message ID.
@@ -134,13 +137,13 @@ func WrapTransformingTyped[T any](
 // extractMetadataToContext extracts known metadata keys from message to context.
 // Values are stored under both typed keys (for type-safe access) and string keys (for backward compatibility).
 func extractMetadataToContext(ctx context.Context, msg *message.Message) context.Context {
-	if v := msg.Metadata.Get("discord_message_id"); v != "" {
+	if v := msg.Metadata.Get(utils.MetadataMessageID); v != "" {
 		ctx = context.WithValue(ctx, CtxKeyDiscordMessageID, v)
-		ctx = context.WithValue(ctx, "discord_message_id", v) // backward compat
+		ctx = context.WithValue(ctx, utils.MetadataMessageID, v) // backward compat
 	}
-	if v := msg.Metadata.Get("channel_id"); v != "" {
+	if v := msg.Metadata.Get(utils.MetadataChannelID); v != "" {
 		ctx = context.WithValue(ctx, CtxKeyChannelID, v)
-		ctx = context.WithValue(ctx, "channel_id", v) // backward compat
+		ctx = context.WithValue(ctx, utils.MetadataChannelID, v) // backward compat
 	}
 	if v := msg.Metadata.Get("message_id"); v != "" {
 		ctx = context.WithValue(ctx, CtxKeyMessageID, v)
@@ -156,6 +159,16 @@ func extractMetadataToContext(ctx context.Context, msg *message.Message) context
 			ctx = context.WithValue(ctx, "submitted_at", t) // backward compat
 		}
 	}
+	if v := msg.Metadata.Get(utils.MetadataGuildID); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyGuildID, v)
+	}
+	if v := msg.Metadata.Get(utils.MetadataInteractionID); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyInteractionID, v)
+	}
+	if v := msg.Metadata.Get(utils.MetadataInteractionToken); v != "" {
+		ctx = context.WithValue(ctx, CtxKeyInteractionToken, v)
+	}
+
 	// Try standard Watermill/NATS reply keys
 	if v := msg.Metadata.Get("reply_to"); v != "" {
 		ctx = context.WithValue(ctx, CtxKeyReplyTo, v)
@@ -187,8 +200,8 @@ func transformResults(ctx context.Context, origMsg *message.Message, results []R
 			outMsg.Metadata.Set(k, v)
 		}
 
-		// Propagate discord_message_id if not already set
-		applyDiscordMetadata(ctx, outMsg, res.Payload)
+		// Propagate context metadata if not already set
+		applyMetadata(ctx, outMsg, res.Payload)
 
 		logger.DebugContext(ctx, "created result message metadata",
 			attr.String("correlation_id", middleware.MessageCorrelationID(outMsg)),
@@ -201,23 +214,40 @@ func transformResults(ctx context.Context, origMsg *message.Message, results []R
 	return out, nil
 }
 
-// applyDiscordMetadata sets discord_message_id from context or payload carrier.
-func applyDiscordMetadata(ctx context.Context, msg *message.Message, payload any) {
-	// Skip if already set
-	if msg.Metadata.Get("discord_message_id") != "" {
-		return
+// applyMetadata sets recognized metadata from context or payload carrier.
+func applyMetadata(ctx context.Context, msg *message.Message, payload any) {
+	// 1. Handled Typed Keys from Context
+	// Note: CreateResultMessage already propagates metadata FROM the original message.
+	// This function primarily handles metadata that might have been injected into the
+	// context during handler execution, or that is carried by the payload itself.
+	keys := []struct {
+		ctxKey contextKey
+		msgKey string
+	}{
+		{CtxKeyDiscordMessageID, utils.MetadataMessageID},
+		{CtxKeyChannelID, utils.MetadataChannelID},
+		{CtxKeyMessageID, "message_id"},
+		{CtxKeyResponse, "response"},
+		{CtxKeyGuildID, utils.MetadataGuildID},
+		{CtxKeyInteractionID, utils.MetadataInteractionID},
+		{CtxKeyInteractionToken, utils.MetadataInteractionToken},
 	}
 
-	// Try context first
-	if v, ok := ctx.Value(CtxKeyDiscordMessageID).(string); ok && v != "" {
-		msg.Metadata.Set("discord_message_id", v)
-		return
+	for _, k := range keys {
+		// Only set if not already present (to avoid overwriting what CreateResultMessage copied)
+		if msg.Metadata.Get(k.msgKey) == "" {
+			if v, ok := ctx.Value(k.ctxKey).(string); ok && v != "" {
+				msg.Metadata.Set(k.msgKey, v)
+			}
+		}
 	}
 
-	// Try payload carrier interface
-	if carrier, ok := payload.(DiscordMetadataCarrier); ok {
-		if id := carrier.GetEventMessageID(); id != "" {
-			msg.Metadata.Set("discord_message_id", id)
+	// 2. Handle Payload Carrier (Legacy/Fallback)
+	if msg.Metadata.Get(utils.MetadataMessageID) == "" {
+		if carrier, ok := payload.(DiscordMetadataCarrier); ok {
+			if id := carrier.GetEventMessageID(); id != "" {
+				msg.Metadata.Set(utils.MetadataMessageID, id)
+			}
 		}
 	}
 }
