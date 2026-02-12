@@ -19,6 +19,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
+// Current leaderboard update flow remains V1-only during migration.
 package leaderboardevents
 
 import (
@@ -129,11 +130,19 @@ type TagUpdateForScheduledRoundsPayloadV1 struct {
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type LeaderboardUpdateRequestedPayloadV1 struct {
-	GuildID               sharedtypes.GuildID `json:"guild_id"`
-	RoundID               sharedtypes.RoundID `json:"round_id"`
-	SortedParticipantTags []string            `json:"sorted_participant_tags"`
-	Source                string              `json:"source"`
-	UpdateID              string              `json:"update_id"`
+	GuildID               sharedtypes.GuildID       `json:"guild_id"`
+	RoundID               sharedtypes.RoundID       `json:"round_id"`
+	SortedParticipantTags []string                  `json:"sorted_participant_tags"`
+	Participants          []RoundParticipantInputV1 `json:"participants,omitempty"`
+	Source                string                    `json:"source"`
+	UpdateID              string                    `json:"update_id"`
+}
+
+// RoundParticipantInputV1 provides raw finish data for ProcessRound-style handling.
+// When present, this should be preferred over SortedParticipantTags.
+type RoundParticipantInputV1 struct {
+	MemberID   sharedtypes.DiscordID `json:"member_id"`
+	FinishRank int                   `json:"finish_rank"`
 }
 
 // LeaderboardUpdatedPayloadV1 contains leaderboard update success data.

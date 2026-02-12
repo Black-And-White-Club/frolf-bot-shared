@@ -30,6 +30,7 @@
 // # Versioning Strategy
 //
 // All events include a V1 suffix for future schema evolution.
+// Current tag flow remains V1-only during migration.
 package leaderboardevents
 
 import (
