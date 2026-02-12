@@ -266,5 +266,51 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
 		},
+
+		// List Seasons Request-Reply Events
+		LeaderboardListSeasonsRequestedV1: {
+			Payload:     &ListSeasonsRequestPayloadV1{},
+			Summary:     "List Seasons Requested",
+			Description: "Request to list all seasons for a guild (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServicePWA, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardListSeasonsResponseV1: {
+			Payload:     &ListSeasonsResponsePayloadV1{},
+			Summary:     "List Seasons Response",
+			Description: "Seasons list response (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+		LeaderboardListSeasonsFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "List Seasons Failed",
+			Description: "Failed to list seasons (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+
+		// Season Standings Request-Reply Events
+		LeaderboardSeasonStandingsRequestV1: {
+			Payload:     &SeasonStandingsRequestPayloadV1{},
+			Summary:     "Season Standings Request",
+			Description: "Request season standings (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServicePWA, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardSeasonStandingsResponseV1: {
+			Payload:     &SeasonStandingsResponsePayloadV1{},
+			Summary:     "Season Standings Response",
+			Description: "Season standings response (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+		LeaderboardSeasonStandingsFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Season Standings Failed",
+			Description: "Failed to get season standings (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
 	}
 }

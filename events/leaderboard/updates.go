@@ -217,7 +217,8 @@ const GetLeaderboardFailedV1 = "leaderboard.get.failed.v1"
 // Schema History:
 //   - v1.0 (December 2024): Initial version
 type GetLeaderboardRequestedPayloadV1 struct {
-	GuildID sharedtypes.GuildID `json:"guild_id"`
+	GuildID  sharedtypes.GuildID `json:"guild_id"`
+	SeasonID string              `json:"season_id,omitempty"`
 }
 
 // GetLeaderboardResponsePayloadV1 contains leaderboard retrieval response data.

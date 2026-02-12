@@ -200,6 +200,73 @@ const LeaderboardGetSeasonStandingsResponseV1 = "leaderboard.get.season.standing
 const LeaderboardGetSeasonStandingsFailedV1 = "leaderboard.get.season.standings.failed.v1"
 
 // =============================================================================
+// LIST SEASONS REQUEST-REPLY FLOW - Event Constants
+// =============================================================================
+
+// LeaderboardListSeasonsRequestedV1 is the wildcard subject for listing seasons
+// via NATS request-reply. The PWA publishes to this subject with a reply_to inbox.
+//
+// Pattern: Request-Reply (wildcard)
+// Subject: leaderboard.seasons.list.request.v1.>
+// Producer: PWA, discord-service
+// Consumers: leaderboard-service (list handler)
+// Triggers: LeaderboardListSeasonsResponseV1 OR LeaderboardListSeasonsFailedV1
+// Version: v1 (February 2026)
+const LeaderboardListSeasonsRequestedV1 = "leaderboard.seasons.list.request.v1"
+
+// LeaderboardListSeasonsResponseV1 is published as a reply with the seasons list.
+//
+// Pattern: Request-Reply response
+// Subject: (reply_to inbox)
+// Producer: leaderboard-service
+// Consumers: PWA, discord-service
+// Version: v1 (February 2026)
+const LeaderboardListSeasonsResponseV1 = "leaderboard.seasons.list.response.v1"
+
+// LeaderboardListSeasonsFailedV1 is published when listing seasons fails.
+//
+// Pattern: Request-Reply response
+// Subject: (reply_to inbox)
+// Producer: leaderboard-service
+// Consumers: PWA, discord-service
+// Version: v1 (February 2026)
+const LeaderboardListSeasonsFailedV1 = "leaderboard.seasons.list.failed.v1"
+
+// =============================================================================
+// SEASON STANDINGS REQUEST-REPLY FLOW - Event Constants
+// =============================================================================
+
+// LeaderboardSeasonStandingsRequestV1 is the wildcard subject for retrieving
+// season standings via NATS request-reply. Separate from the event-driven
+// GetSeasonStandings flow — this is for PWA historical season browsing.
+//
+// Pattern: Request-Reply (wildcard)
+// Subject: leaderboard.season.standings.request.v1.>
+// Producer: PWA, discord-service
+// Consumers: leaderboard-service (standings handler)
+// Triggers: LeaderboardSeasonStandingsResponseV1 OR LeaderboardSeasonStandingsFailedV1
+// Version: v1 (February 2026)
+const LeaderboardSeasonStandingsRequestV1 = "leaderboard.season.standings.request.v1"
+
+// LeaderboardSeasonStandingsResponseV1 is published as a reply with the standings.
+//
+// Pattern: Request-Reply response
+// Subject: (reply_to inbox)
+// Producer: leaderboard-service
+// Consumers: PWA, discord-service
+// Version: v1 (February 2026)
+const LeaderboardSeasonStandingsResponseV1 = "leaderboard.season.standings.response.v1"
+
+// LeaderboardSeasonStandingsFailedV1 is published when season standings retrieval fails.
+//
+// Pattern: Request-Reply response
+// Subject: (reply_to inbox)
+// Producer: leaderboard-service
+// Consumers: PWA, discord-service
+// Version: v1 (February 2026)
+const LeaderboardSeasonStandingsFailedV1 = "leaderboard.season.standings.failed.v1"
+
+// =============================================================================
 // ADMIN EVENT PAYLOAD TYPES
 // =============================================================================
 
@@ -342,6 +409,63 @@ type SeasonStandingItemV1 struct {
 	CurrentTier   string                `json:"current_tier"`
 	SeasonBestTag int                   `json:"season_best_tag"`
 	RoundsPlayed  int                   `json:"rounds_played"`
+}
+
+// -----------------------------------------------------------------------------
+// List Seasons Request-Reply Payloads
+// -----------------------------------------------------------------------------
+
+// ListSeasonsRequestPayloadV1 requests the list of seasons for a guild.
+// Used by the PWA and Discord bot via NATS request-reply.
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type ListSeasonsRequestPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+}
+
+// ListSeasonsResponsePayloadV1 contains the seasons list response.
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type ListSeasonsResponsePayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+	Seasons []SeasonInfoV1      `json:"seasons"`
+}
+
+// SeasonInfoV1 represents a single season summary for listing.
+type SeasonInfoV1 struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	IsActive  bool    `json:"is_active"`
+	StartDate string  `json:"start_date"`
+	EndDate   *string `json:"end_date"`
+}
+
+// -----------------------------------------------------------------------------
+// Season Standings Request-Reply Payloads
+// -----------------------------------------------------------------------------
+
+// SeasonStandingsRequestPayloadV1 requests standings for a specific season
+// via NATS request-reply. Used by the PWA for historical season browsing.
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type SeasonStandingsRequestPayloadV1 struct {
+	GuildID  sharedtypes.GuildID `json:"guild_id"`
+	SeasonID string              `json:"season_id"`
+}
+
+// SeasonStandingsResponsePayloadV1 contains the standings response for request-reply.
+// Includes SeasonName for display purposes (unlike the event-driven response).
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type SeasonStandingsResponsePayloadV1 struct {
+	GuildID    sharedtypes.GuildID    `json:"guild_id"`
+	SeasonID   string                 `json:"season_id"`
+	SeasonName string                 `json:"season_name"`
+	Standings  []SeasonStandingItemV1 `json:"standings"`
 }
 
 // -----------------------------------------------------------------------------
