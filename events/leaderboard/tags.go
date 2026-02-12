@@ -354,6 +354,137 @@ type LeaderboardTagUpdatedPayloadV1 struct {
 	Reason string `json:"reason"`
 }
 
+// =============================================================================
+// TAG HISTORY REQUEST-REPLY FLOW - Event Constants
+// =============================================================================
+
+// LeaderboardTagHistoryRequestedV1 is published to request tag history data.
+//
+// Pattern: Request-Reply
+// Subject: leaderboard.tag.history.requested.v1
+// Producer: discord-service, PWA
+// Consumers: leaderboard-service (tag history handler)
+// Triggers: LeaderboardTagHistoryResponseV1 OR LeaderboardTagHistoryFailedV1
+// Version: v1 (February 2026)
+const LeaderboardTagHistoryRequestedV1 = "leaderboard.tag.history.requested.v1"
+
+// LeaderboardTagHistoryResponseV1 is published in reply with tag history data.
+const LeaderboardTagHistoryResponseV1 = "leaderboard.tag.history.response.v1"
+
+// LeaderboardTagHistoryFailedV1 is published when tag history request fails.
+const LeaderboardTagHistoryFailedV1 = "leaderboard.tag.history.failed.v1"
+
+// LeaderboardTagGraphRequestedV1 is published to request a PNG tag history chart.
+//
+// Pattern: Request-Reply
+// Subject: leaderboard.tag.graph.requested.v1
+// Producer: discord-service (/history command)
+// Consumers: leaderboard-service (tag graph handler)
+// Triggers: LeaderboardTagGraphResponseV1 OR LeaderboardTagGraphFailedV1
+// Version: v1 (February 2026)
+const LeaderboardTagGraphRequestedV1 = "leaderboard.tag.graph.requested.v1"
+
+// LeaderboardTagGraphResponseV1 is published in reply with PNG chart data.
+const LeaderboardTagGraphResponseV1 = "leaderboard.tag.graph.response.v1"
+
+// LeaderboardTagGraphFailedV1 is published when tag graph generation fails.
+const LeaderboardTagGraphFailedV1 = "leaderboard.tag.graph.failed.v1"
+
+// LeaderboardTagListRequestedV1 is published to request the master tag list.
+//
+// Pattern: Request-Reply
+// Subject: leaderboard.tag.list.requested.v1
+// Producer: PWA
+// Consumers: leaderboard-service (tag list handler)
+// Triggers: LeaderboardTagListResponseV1 OR LeaderboardTagListFailedV1
+// Version: v1 (February 2026)
+const LeaderboardTagListRequestedV1 = "leaderboard.tag.list.requested.v1"
+
+// LeaderboardTagListResponseV1 is published in reply with the tag list.
+const LeaderboardTagListResponseV1 = "leaderboard.tag.list.response.v1"
+
+// LeaderboardTagListFailedV1 is published when tag list request fails.
+const LeaderboardTagListFailedV1 = "leaderboard.tag.list.failed.v1"
+
+// =============================================================================
+// TAG HISTORY - Payload Types
+// =============================================================================
+
+// TagHistoryRequestedPayloadV1 contains the request data for tag history lookup.
+type TagHistoryRequestedPayloadV1 struct {
+	GuildID   string `json:"guild_id"`
+	MemberID  string `json:"member_id,omitempty"`  // empty = all members
+	TagNumber int    `json:"tag_number,omitempty"` // 0 = all tags
+	Limit     int    `json:"limit,omitempty"`      // default 100
+}
+
+// TagHistoryResponsePayloadV1 contains the tag history response data.
+type TagHistoryResponsePayloadV1 struct {
+	GuildID string              `json:"guild_id"`
+	Entries []TagHistoryEntryV1 `json:"entries"`
+}
+
+// TagHistoryEntryV1 represents a single tag history entry in the response.
+type TagHistoryEntryV1 struct {
+	ID          int64  `json:"id"`
+	TagNumber   int    `json:"tag_number"`
+	OldMemberID string `json:"old_member_id,omitempty"`
+	NewMemberID string `json:"new_member_id"`
+	Reason      string `json:"reason"`
+	RoundID     string `json:"round_id,omitempty"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// TagHistoryFailedPayloadV1 contains the failure data for tag history requests.
+type TagHistoryFailedPayloadV1 struct {
+	GuildID string `json:"guild_id"`
+	Reason  string `json:"reason"`
+}
+
+// TagGraphRequestedPayloadV1 contains the request data for tag graph generation.
+type TagGraphRequestedPayloadV1 struct {
+	GuildID  string `json:"guild_id"`
+	MemberID string `json:"member_id"`
+}
+
+// TagGraphResponsePayloadV1 contains the PNG chart data.
+type TagGraphResponsePayloadV1 struct {
+	GuildID  string `json:"guild_id"`
+	MemberID string `json:"member_id"`
+	PNGData  []byte `json:"png_data"`
+}
+
+// TagGraphFailedPayloadV1 contains the failure data for tag graph requests.
+type TagGraphFailedPayloadV1 struct {
+	GuildID  string `json:"guild_id"`
+	MemberID string `json:"member_id"`
+	Reason   string `json:"reason"`
+}
+
+// TagListRequestedPayloadV1 contains the request data for tag list lookup.
+type TagListRequestedPayloadV1 struct {
+	GuildID string `json:"guild_id"`
+}
+
+// TagListResponsePayloadV1 contains the master tag list response.
+type TagListResponsePayloadV1 struct {
+	GuildID string            `json:"guild_id"`
+	Members []TagListMemberV1 `json:"members"`
+}
+
+// TagListMemberV1 represents a member in the tag list.
+type TagListMemberV1 struct {
+	MemberID     string `json:"member_id"`
+	CurrentTag   *int   `json:"current_tag"`
+	LastActiveAt string `json:"last_active_at"`
+}
+
+// TagListFailedPayloadV1 contains the failure data for tag list requests.
+type TagListFailedPayloadV1 struct {
+	GuildID string `json:"guild_id"`
+	Reason  string `json:"reason"`
+}
+
 // -----------------------------------------------------------------------------
 // Interface Implementations for Legacy Compatibility
 // -----------------------------------------------------------------------------

@@ -312,5 +312,74 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
 		},
+
+		// Tag History Request-Reply Events
+		LeaderboardTagHistoryRequestedV1: {
+			Payload:     &TagHistoryRequestedPayloadV1{},
+			Summary:     "Tag History Requested",
+			Description: "Request tag history for a member or tag (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardTagHistoryResponseV1: {
+			Payload:     &TagHistoryResponsePayloadV1{},
+			Summary:     "Tag History Response",
+			Description: "Tag history response (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "leaderboard"}, {Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+		LeaderboardTagHistoryFailedV1: {
+			Payload:     &TagHistoryFailedPayloadV1{},
+			Summary:     "Tag History Failed",
+			Description: "Tag history request failed (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "leaderboard"}, {Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+
+		// Tag Graph Request-Reply Events
+		LeaderboardTagGraphRequestedV1: {
+			Payload:     &TagGraphRequestedPayloadV1{},
+			Summary:     "Tag Graph Requested",
+			Description: "Request PNG tag history chart (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardTagGraphResponseV1: {
+			Payload:     &TagGraphResponsePayloadV1{},
+			Summary:     "Tag Graph Response",
+			Description: "PNG tag history chart response (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "leaderboard"}},
+		},
+		LeaderboardTagGraphFailedV1: {
+			Payload:     &TagGraphFailedPayloadV1{},
+			Summary:     "Tag Graph Failed",
+			Description: "Tag graph generation failed (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "leaderboard"}},
+		},
+
+		// Tag List Request-Reply Events
+		LeaderboardTagListRequestedV1: {
+			Payload:     &TagListRequestedPayloadV1{},
+			Summary:     "Tag List Requested",
+			Description: "Request master tag list (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServicePWA, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardTagListResponseV1: {
+			Payload:     &TagListResponsePayloadV1{},
+			Summary:     "Tag List Response",
+			Description: "Master tag list response (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
+		LeaderboardTagListFailedV1: {
+			Payload:     &TagListFailedPayloadV1{},
+			Summary:     "Tag List Failed",
+			Description: "Tag list request failed (request-reply).",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServicePWA, Module: "leaderboard"}},
+		},
 	}
 }
