@@ -155,5 +155,116 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 		},
 
 		LeaderboardTraceEventV1: {Payload: &sharedevents.TracePayloadV1{}, Summary: "Leaderboard Trace Event", Description: "Tracing/observability event for leaderboard.", Producer: sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+
+		// Admin Events
+		LeaderboardPointHistoryRequestedV1: {
+			Payload:     &PointHistoryRequestedPayloadV1{},
+			Summary:     "Point History Requested",
+			Description: "Request point history for a member.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "admin"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardPointHistoryResponseV1: {
+			Payload:     &PointHistoryResponsePayloadV1{},
+			Summary:     "Point History Response",
+			Description: "Point history response.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+		LeaderboardPointHistoryFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Point History Failed",
+			Description: "Point history request failed.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+
+		LeaderboardManualPointAdjustmentV1: {
+			Payload:     &ManualPointAdjustmentPayloadV1{},
+			Summary:     "Manual Point Adjustment",
+			Description: "Request manual point adjustment.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "admin"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardManualPointAdjustmentSuccessV1: {
+			Payload:     &ManualPointAdjustmentSuccessPayloadV1{},
+			Summary:     "Manual Point Adjustment Success",
+			Description: "Manual point adjustment succeeded.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+		LeaderboardManualPointAdjustmentFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Manual Point Adjustment Failed",
+			Description: "Manual point adjustment failed.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+
+		LeaderboardRecalculateRoundV1: {
+			Payload:     &RecalculateRoundPayloadV1{},
+			Summary:     "Recalculate Round",
+			Description: "Request round recalculation.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "admin"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardRecalculateRoundSuccessV1: {
+			Payload:     &RecalculateRoundSuccessPayloadV1{},
+			Summary:     "Recalculate Round Success",
+			Description: "Round recalculation succeeded.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+		LeaderboardRecalculateRoundFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Recalculate Round Failed",
+			Description: "Round recalculation failed.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+
+		LeaderboardStartNewSeasonV1: {
+			Payload:     &StartNewSeasonPayloadV1{},
+			Summary:     "Start New Season",
+			Description: "Request to start a new season.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "admin"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardStartNewSeasonSuccessV1: {
+			Payload:     &StartNewSeasonSuccessPayloadV1{},
+			Summary:     "Start New Season Success",
+			Description: "New season started successfully.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+		LeaderboardStartNewSeasonFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Start New Season Failed",
+			Description: "Failed to start new season.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+
+		LeaderboardGetSeasonStandingsV1: {
+			Payload:     &GetSeasonStandingsPayloadV1{},
+			Summary:     "Get Season Standings",
+			Description: "Request season standings.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceDiscord, Module: "admin"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "leaderboard"}},
+		},
+		LeaderboardGetSeasonStandingsResponseV1: {
+			Payload:     &GetSeasonStandingsResponsePayloadV1{},
+			Summary:     "Get Season Standings Response",
+			Description: "Season standings response.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
+		LeaderboardGetSeasonStandingsFailedV1: {
+			Payload:     &AdminFailedPayloadV1{},
+			Summary:     "Get Season Standings Failed",
+			Description: "Failed to get season standings.",
+			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
+			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceDiscord, Module: "admin"}},
+		},
 	}
 }
