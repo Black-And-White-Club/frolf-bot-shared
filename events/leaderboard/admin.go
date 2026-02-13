@@ -167,6 +167,34 @@ const LeaderboardStartNewSeasonSuccessV1 = "leaderboard.start.new.season.success
 // Version: v1 (February 2026)
 const LeaderboardStartNewSeasonFailedV1 = "leaderboard.start.new.season.failed.v1"
 
+// LeaderboardEndSeasonV1 is published when a season end is requested.
+//
+// Pattern: Event Notification
+// Subject: leaderboard.end.season.v1
+// Producer: discord-service (admin command)
+// Consumers: leaderboard-service (season handler)
+// Triggers: LeaderboardEndSeasonSuccessV1 OR LeaderboardEndSeasonFailedV1
+// Version: v1 (February 2026)
+const LeaderboardEndSeasonV1 = "leaderboard.end.season.v1"
+
+// LeaderboardEndSeasonSuccessV1 is published when a season end succeeds.
+//
+// Pattern: Event Notification
+// Subject: leaderboard.end.season.success.v1
+// Producer: leaderboard-service
+// Consumers: discord-service (confirmation)
+// Version: v1 (February 2026)
+const LeaderboardEndSeasonSuccessV1 = "leaderboard.end.season.success.v1"
+
+// LeaderboardEndSeasonFailedV1 is published when a season end fails.
+//
+// Pattern: Event Notification
+// Subject: leaderboard.end.season.failed.v1
+// Producer: leaderboard-service
+// Consumers: discord-service (error handler)
+// Version: v1 (February 2026)
+const LeaderboardEndSeasonFailedV1 = "leaderboard.end.season.failed.v1"
+
 // =============================================================================
 // SEASON STANDINGS FLOW - Event Constants
 // =============================================================================
@@ -377,6 +405,22 @@ type StartNewSeasonSuccessPayloadV1 struct {
 	GuildID    sharedtypes.GuildID `json:"guild_id"`
 	SeasonID   string              `json:"season_id"`
 	SeasonName string              `json:"season_name"`
+}
+
+// EndSeasonPayloadV1 requests the current season to be ended.
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type EndSeasonPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
+}
+
+// EndSeasonSuccessPayloadV1 confirms the season was ended.
+//
+// Schema History:
+//   - v1.0 (February 2026): Initial version
+type EndSeasonSuccessPayloadV1 struct {
+	GuildID sharedtypes.GuildID `json:"guild_id"`
 }
 
 // -----------------------------------------------------------------------------
