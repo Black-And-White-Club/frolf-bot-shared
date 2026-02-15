@@ -2,10 +2,12 @@ package observability
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/log"
@@ -18,6 +20,7 @@ import (
 	otlploggrpc "go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	otlpmetricgrpc "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	otlptracegrpc "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"google.golang.org/grpc/credentials"
 
 	// OTEL SDK
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -129,13 +132,13 @@ func setupOTLPLogging(ctx context.Context, cfg Config, res *resource.Resource) (
 		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for logging; use \"grpc\"")
 	}
 
-	exporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(endpoint), otlploggrpc.WithInsecure())
+	exporter, err := otlploggrpc.New(ctx, otlploggrpcOptions(endpoint, cfg)...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create OTLP log exporter: %w", err)
 	}
 
-	// Batch processor (defaults)
-	processor := sdklog.NewBatchProcessor(exporter)
+	// Batch processor (configurable; falls back to SDK defaults when unset).
+	processor := sdklog.NewBatchProcessor(exporter, buildLogBatchOptions(cfg)...)
 
 	// Create logger provider
 	loggerProvider := sdklog.NewLoggerProvider(
@@ -196,13 +199,13 @@ func (h *otelHandler) Handle(ctx context.Context, record slog.Record) error {
 
 	// Add attributes
 	record.Attrs(func(attr slog.Attr) bool {
-		logRecord.AddAttributes(log.String(attr.Key, attr.Value.String()))
+		logRecord.AddAttributes(log.String(attr.Key, redactLogValue(attr.Key, attr.Value.String())))
 		return true
 	})
 
 	// Add handler attrs
 	for _, attr := range h.attrs {
-		logRecord.AddAttributes(log.String(attr.Key, attr.Value.String()))
+		logRecord.AddAttributes(log.String(attr.Key, redactLogValue(attr.Key, attr.Value.String())))
 	}
 
 	// Emit the log (no return value)
@@ -256,15 +259,20 @@ func setupTracing(ctx context.Context, cfg Config, res *resource.Resource) (trac
 		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for tracing in this build; use \"grpc\"")
 	}
 
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(endpoint), otlptracegrpc.WithInsecure())
+	exporter, err := otlptracegrpc.New(ctx, otlptracegrpcOptions(endpoint, cfg)...)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	tp := sdktrace.NewTracerProvider(
+	tpOptions := []sdktrace.TracerProviderOption{
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
-	)
+	}
+	if sampler := buildTraceSampler(cfg.TempoSampleRate); sampler != nil {
+		tpOptions = append(tpOptions, sdktrace.WithSampler(sampler))
+	}
+
+	tp := sdktrace.NewTracerProvider(tpOptions...)
 
 	return tp, tp.Shutdown, nil
 }
@@ -283,7 +291,7 @@ func setupMetrics(ctx context.Context, cfg Config, res *resource.Resource) (metr
 		return nil, nil, fmt.Errorf("OTLPTransport=\"http\" is not supported for metrics in this build; use \"grpc\"")
 	}
 
-	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithEndpoint(endpoint), otlpmetricgrpc.WithInsecure())
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpcOptions(endpoint, cfg)...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -321,4 +329,79 @@ func transportFromConfig(cfg Config) (string, error) {
 func newStdoutLogger(cfg Config) *slog.Logger {
 	l := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: parseLogLevel(cfg)}))
 	return l.With("service", cfg.ServiceName, "version", cfg.Version, "environment", cfg.Environment)
+}
+
+func otlploggrpcOptions(endpoint string, cfg Config) []otlploggrpc.Option {
+	opts := []otlploggrpc.Option{otlploggrpc.WithEndpoint(endpoint)}
+	if cfg.OTLPInsecure {
+		return append(opts, otlploggrpc.WithInsecure())
+	}
+	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	return append(opts, otlploggrpc.WithTLSCredentials(creds))
+}
+
+func otlptracegrpcOptions(endpoint string, cfg Config) []otlptracegrpc.Option {
+	opts := []otlptracegrpc.Option{otlptracegrpc.WithEndpoint(endpoint)}
+	if cfg.OTLPInsecure {
+		return append(opts, otlptracegrpc.WithInsecure())
+	}
+	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	return append(opts, otlptracegrpc.WithTLSCredentials(creds))
+}
+
+func otlpmetricgrpcOptions(endpoint string, cfg Config) []otlpmetricgrpc.Option {
+	opts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithEndpoint(endpoint)}
+	if cfg.OTLPInsecure {
+		return append(opts, otlpmetricgrpc.WithInsecure())
+	}
+	creds := credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS12})
+	return append(opts, otlpmetricgrpc.WithTLSCredentials(creds))
+}
+
+func redactLogValue(key, value string) string {
+	if isSensitiveLogKey(key) {
+		return "[REDACTED]"
+	}
+	return value
+}
+
+func isSensitiveLogKey(key string) bool {
+	k := strings.ToLower(strings.TrimSpace(key))
+	if k == "" {
+		return false
+	}
+	for _, marker := range []string{"token", "authorization", "password", "secret", "api_key", "apikey"} {
+		if strings.Contains(k, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func buildLogBatchOptions(cfg Config) []sdklog.BatchProcessorOption {
+	opts := make([]sdklog.BatchProcessorOption, 0, 4)
+	if cfg.LogBatchMaxQueueSize > 0 {
+		opts = append(opts, sdklog.WithMaxQueueSize(cfg.LogBatchMaxQueueSize))
+	}
+	if cfg.LogBatchMaxExportBatchSize > 0 {
+		opts = append(opts, sdklog.WithExportMaxBatchSize(cfg.LogBatchMaxExportBatchSize))
+	}
+	if cfg.LogBatchTimeoutSeconds > 0 {
+		opts = append(opts, sdklog.WithExportInterval(time.Duration(cfg.LogBatchTimeoutSeconds)*time.Second))
+	}
+	if cfg.LogExportTimeoutSeconds > 0 {
+		opts = append(opts, sdklog.WithExportTimeout(time.Duration(cfg.LogExportTimeoutSeconds)*time.Second))
+	}
+	return opts
+}
+
+func buildTraceSampler(rate float64) sdktrace.Sampler {
+	if rate <= 0 {
+		// Preserve SDK default sampler when no explicit rate is configured.
+		return nil
+	}
+	if rate >= 1 {
+		return sdktrace.ParentBased(sdktrace.AlwaysSample())
+	}
+	return sdktrace.ParentBased(sdktrace.TraceIDRatioBased(rate))
 }

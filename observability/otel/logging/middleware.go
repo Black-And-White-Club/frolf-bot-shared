@@ -40,7 +40,7 @@ func LoggingMiddleware(logger watermill.LoggerAdapter) message.HandlerMiddleware
 
 			ctxLogger := logger.With(baseFields)
 
-			ctxLogger.Info("Received message", nil)
+			ctxLogger.Debug("Received message", nil)
 
 			producedMessages, err := next(msg)
 			duration := time.Since(startTime)
@@ -52,7 +52,7 @@ func LoggingMiddleware(logger watermill.LoggerAdapter) message.HandlerMiddleware
 			if err != nil {
 				ctxLogger.Error("Error processing message", err, fields)
 			} else {
-				ctxLogger.Info("Message processed successfully", fields)
+				ctxLogger.Debug("Message processed successfully", fields)
 			}
 
 			return producedMessages, err

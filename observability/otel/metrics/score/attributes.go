@@ -11,11 +11,13 @@ const (
 
 // Common attributes
 func roundIDAttr(roundID sharedtypes.RoundID) attribute.KeyValue {
-	return attribute.String("round_id", roundID.String())
+	_ = roundID
+	return attribute.String("scope", "all_rounds")
 }
 
 func userIDAttr(userID sharedtypes.DiscordID) attribute.KeyValue {
-	return attribute.String("user_id", string(userID))
+	_ = userID
+	return attribute.String("subject", "user")
 }
 
 func operationAttr(operationName string) attribute.KeyValue {
@@ -67,10 +69,11 @@ func tagAttrs(roundID sharedtypes.RoundID, tagNumber *sharedtypes.TagNumber) []a
 }
 
 func tagMovementAttrs(roundID sharedtypes.RoundID, tagNumber *sharedtypes.TagNumber, fromUserID, toUserID sharedtypes.DiscordID) []attribute.KeyValue {
+	_ = fromUserID
+	_ = toUserID
 	attrs := []attribute.KeyValue{
 		roundIDAttr(roundID),
-		attribute.String("from_user_id", string(fromUserID)),
-		attribute.String("to_user_id", string(toUserID)),
+		attribute.String("movement", "user_to_user"),
 	}
 
 	if tagNumber != nil && *tagNumber != 0 {

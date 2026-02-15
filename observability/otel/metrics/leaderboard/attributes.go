@@ -17,7 +17,8 @@ func sourceAttr(source string) attribute.KeyValue {
 }
 
 func roundIDAttr(roundID sharedtypes.RoundID) attribute.KeyValue {
-	return attribute.String("round_id", roundID.String())
+	_ = roundID
+	return attribute.String("scope", "all_rounds")
 }
 
 func tagNumberAttr(tagNumber sharedtypes.TagNumber) attribute.KeyValue {
@@ -37,11 +38,13 @@ func availableAttr(available bool) attribute.KeyValue {
 }
 
 func requestorIDAttr(requestorID sharedtypes.DiscordID) attribute.KeyValue {
-	return attribute.String("requestor_id", string(requestorID))
+	_ = requestorID
+	return attribute.String("requestor", "present")
 }
 
 func targetIDAttr(targetID sharedtypes.DiscordID) attribute.KeyValue {
-	return attribute.String("target_id", string(targetID))
+	_ = targetID
+	return attribute.String("target", "present")
 }
 
 func reasonAttr(reason string) attribute.KeyValue {
@@ -49,7 +52,8 @@ func reasonAttr(reason string) attribute.KeyValue {
 }
 
 func userIDAttr(userID sharedtypes.DiscordID) attribute.KeyValue {
-	return attribute.String("user_id", string(userID))
+	_ = userID
+	return attribute.String("subject", "user")
 }
 
 func oldTagAttr(oldTag sharedtypes.TagNumber) attribute.KeyValue {

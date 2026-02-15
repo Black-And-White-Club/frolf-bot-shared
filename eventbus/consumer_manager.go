@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -48,14 +49,13 @@ func (cm *ConsumerManager) EnsureConsumer(ctx context.Context, streamName, topic
 	}
 	cm.mu.RUnlock()
 
-	// Need to create/update - acquire write lock
+	// Double-check under write lock before issuing a network call.
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	// Double-check after acquiring write lock
 	if cons, ok := cm.consumers[consumerName]; ok {
+		cm.mu.Unlock()
 		return cons, nil
 	}
+	cm.mu.Unlock()
 
 	ctxLogger := cm.logger.With(
 		"operation", "ensure_consumer",
@@ -68,21 +68,7 @@ func (cm *ConsumerManager) EnsureConsumer(ctx context.Context, streamName, topic
 	// Resolve configuration for this app/topic combination
 	cfg := cm.registry.Resolve(appType, topic)
 
-	consumerConfig := jetstream.ConsumerConfig{
-		Durable:       consumerName,
-		FilterSubject: topic,
-
-		AckPolicy:     jetstream.AckExplicitPolicy,
-		AckWait:       cfg.AckWait,
-		MaxDeliver:    cfg.MaxDeliver,
-		BackOff:       cfg.BackOff,
-		MaxAckPending: cfg.MaxAckPending,
-
-		DeliverPolicy: cfg.DeliverPolicy,
-		ReplayPolicy:  jetstream.ReplayInstantPolicy,
-
-		InactiveThreshold: cfg.InactiveThreshold,
-	}
+	consumerConfig := buildDurableConsumerConfig(consumerName, topic, cfg)
 
 	ctxLogger.DebugContext(ctx, "Creating or updating consumer",
 		"ack_wait", cfg.AckWait,
@@ -97,11 +83,81 @@ func (cm *ConsumerManager) EnsureConsumer(ctx context.Context, streamName, topic
 		return nil, fmt.Errorf("failed to create or update consumer %s on stream %s: %w", consumerName, streamName, err)
 	}
 
-	// Cache the consumer
+	info, err := cons.Info(ctx)
+	if err != nil {
+		ctxLogger.ErrorContext(ctx, "Failed to fetch consumer info after create/update", "error", err)
+		return nil, fmt.Errorf("failed to fetch consumer info %s on stream %s: %w", consumerName, streamName, err)
+	}
+	if err := validateConsumerInfo(info, consumerConfig); err != nil {
+		ctxLogger.ErrorContext(ctx, "Consumer configuration validation failed", "error", err)
+		return nil, fmt.Errorf("consumer %s validation failed: %w", consumerName, err)
+	}
+
+	// Cache the consumer (in case another goroutine created one while we were in-flight,
+	// prefer the first cached instance to keep shared behavior consistent).
+	cm.mu.Lock()
+	if existing, ok := cm.consumers[consumerName]; ok {
+		cm.mu.Unlock()
+		return existing, nil
+	}
 	cm.consumers[consumerName] = cons
+	cm.mu.Unlock()
 
 	ctxLogger.InfoContext(ctx, "Consumer ensured successfully")
 	return cons, nil
+}
+
+func buildDurableConsumerConfig(consumerName, topic string, cfg ConsumerConfig) jetstream.ConsumerConfig {
+	return jetstream.ConsumerConfig{
+		Durable:       consumerName,
+		FilterSubject: topic,
+		AckPolicy:     jetstream.AckExplicitPolicy,
+		AckWait:       cfg.AckWait,
+		MaxDeliver:    cfg.MaxDeliver,
+		BackOff:       cfg.BackOff,
+		MaxAckPending: cfg.MaxAckPending,
+		DeliverPolicy: cfg.DeliverPolicy,
+		ReplayPolicy:  jetstream.ReplayInstantPolicy,
+		// Keep durables replay-safe by default; non-zero enables server-side cleanup.
+		InactiveThreshold: cfg.InactiveThreshold,
+	}
+}
+
+func validateConsumerInfo(info *jetstream.ConsumerInfo, expected jetstream.ConsumerConfig) error {
+	if info == nil {
+		return fmt.Errorf("consumer info is nil")
+	}
+	actual := info.Config
+
+	if actual.Durable != expected.Durable {
+		return fmt.Errorf("durable mismatch: expected %q, got %q", expected.Durable, actual.Durable)
+	}
+	if actual.FilterSubject != expected.FilterSubject {
+		return fmt.Errorf("filter subject mismatch: expected %q, got %q", expected.FilterSubject, actual.FilterSubject)
+	}
+	if actual.DeliverPolicy != expected.DeliverPolicy {
+		return fmt.Errorf("deliver policy mismatch: expected %v, got %v", expected.DeliverPolicy, actual.DeliverPolicy)
+	}
+	if actual.InactiveThreshold != expected.InactiveThreshold {
+		return fmt.Errorf("inactive threshold mismatch: expected %s, got %s", expected.InactiveThreshold, actual.InactiveThreshold)
+	}
+	if actual.AckPolicy != expected.AckPolicy {
+		return fmt.Errorf("ack policy mismatch: expected %v, got %v", expected.AckPolicy, actual.AckPolicy)
+	}
+	if actual.AckWait != expected.AckWait {
+		return fmt.Errorf("ack wait mismatch: expected %s, got %s", expected.AckWait, actual.AckWait)
+	}
+	if actual.MaxDeliver != expected.MaxDeliver {
+		return fmt.Errorf("max deliver mismatch: expected %d, got %d", expected.MaxDeliver, actual.MaxDeliver)
+	}
+	if actual.MaxAckPending != expected.MaxAckPending {
+		return fmt.Errorf("max ack pending mismatch: expected %d, got %d", expected.MaxAckPending, actual.MaxAckPending)
+	}
+	if !reflect.DeepEqual(actual.BackOff, expected.BackOff) {
+		return fmt.Errorf("backoff mismatch: expected %v, got %v", expected.BackOff, actual.BackOff)
+	}
+
+	return nil
 }
 
 // GetConsumerInfo returns information about a cached consumer.

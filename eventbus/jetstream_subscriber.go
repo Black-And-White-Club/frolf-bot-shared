@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"math/rand"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -23,6 +24,10 @@ const (
 
 	// pullExpiry is how long to wait for messages in each pull request.
 	pullExpiry = 5 * time.Second
+
+	// maxAckWaitExtensions bounds how long heartbeats can keep a message in-flight.
+	// After this window, we stop extending AckWait so JetStream can redeliver.
+	maxAckWaitExtensions = 3
 )
 
 // JetStreamSubscriberAdapter implements message.Subscriber using native JetStream pull consumers.
@@ -190,6 +195,8 @@ func (s *JetStreamSubscriberAdapter) messagePump(
 		logger.ErrorContext(ctx, "Failed to ensure consumer", "error", err)
 		return
 	}
+	cfg := s.consumerManager.GetRegistry().Resolve(s.appType, sub.topic)
+	consecutiveFetchErrors := 0
 
 	for {
 		// Respect shutdown
@@ -210,9 +217,12 @@ func (s *JetStreamSubscriberAdapter) messagePump(
 				return
 			}
 
+			consecutiveFetchErrors++
 			logger.WarnContext(ctx, "Fetch failed", "error", err)
+			s.backoffAfterFetchError(ctx, logger, consecutiveFetchErrors)
 			continue
 		}
+		consecutiveFetchErrors = 0
 
 		// Iterate over fetched messages
 		for jsMsg := range msgs.Messages() {
@@ -233,7 +243,7 @@ func (s *JetStreamSubscriberAdapter) messagePump(
 			case ackSem <- struct{}{}:
 				// proceed
 			case <-ctx.Done():
-				if err := jsMsg.Nak(); err != nil {
+				if err := s.nakWithConfiguredDelay(jsMsg, cfg.BackOff); err != nil {
 					logger.ErrorContext(ctx, "Failed to nak during shutdown", "error", err)
 				}
 				return
@@ -249,7 +259,7 @@ func (s *JetStreamSubscriberAdapter) messagePump(
 			case <-ctx.Done():
 				<-ackSem
 				sub.wg.Done()
-				if err := jsMsg.Nak(); err != nil {
+				if err := s.nakWithConfiguredDelay(jsMsg, cfg.BackOff); err != nil {
 					logger.ErrorContext(ctx, "Failed to nak during shutdown", "error", err)
 				}
 				return
@@ -274,52 +284,148 @@ func (s *JetStreamSubscriberAdapter) waitForAck(
 		sub.wg.Done()
 	}()
 
-	// Get configured AckWait to set a reasonable timeout
+	// Resolve consumer config for ack lifecycle and retry policy.
 	cfg := s.consumerManager.GetRegistry().Resolve(s.appType, sub.topic)
-	// Use 80% of AckWait as our timeout to leave room for the actual ACK
-	processTimeout := time.Duration(float64(cfg.AckWait) * 0.8)
+	heartbeatInterval, maxProcessingDuration := ackHeartbeatAndDeadline(cfg.AckWait)
+	heartbeatTicker := time.NewTicker(heartbeatInterval)
+	defer heartbeatTicker.Stop()
+	processingDeadline := time.NewTimer(maxProcessingDuration)
+	defer processingDeadline.Stop()
 
-	ackCtx, cancel := context.WithTimeout(ctx, processTimeout)
-	defer cancel()
-
-	select {
-	case <-wmMsg.Acked():
-		if err := jsMsg.Ack(); err != nil {
-			logger.ErrorContext(ctx, "Failed to ack message", "error", err, "message_id", wmMsg.UUID)
-		} else {
-			logger.DebugContext(ctx, "Message acked", "message_id", wmMsg.UUID)
-		}
-
-	case <-wmMsg.Nacked():
-		// Check if we should terminate instead of retry
-		if s.shouldTerminate(sub.topic) {
-			if err := jsMsg.Term(); err != nil {
-				logger.ErrorContext(ctx, "Failed to terminate message", "error", err, "message_id", wmMsg.UUID)
+	for {
+		select {
+		case <-wmMsg.Acked():
+			if err := jsMsg.Ack(); err != nil {
+				logger.ErrorContext(ctx, "Failed to ack message", "error", err, "message_id", wmMsg.UUID)
 			} else {
-				logger.InfoContext(ctx, "Message terminated (marked for termination)", "message_id", wmMsg.UUID)
+				logger.DebugContext(ctx, "Message acked", "message_id", wmMsg.UUID)
+			}
+			return
+
+		case <-wmMsg.Nacked():
+			// Check if we should terminate instead of retry
+			if s.shouldTerminate(sub.topic) {
+				if err := jsMsg.Term(); err != nil {
+					logger.ErrorContext(ctx, "Failed to terminate message", "error", err, "message_id", wmMsg.UUID)
+				} else {
+					logger.InfoContext(ctx, "Message terminated (marked for termination)", "message_id", wmMsg.UUID)
+				}
+				return
+			}
+
+			if err := s.nakWithConfiguredDelay(jsMsg, cfg.BackOff); err != nil {
+				logger.ErrorContext(ctx, "Failed to nak message", "error", err, "message_id", wmMsg.UUID)
+			} else {
+				logger.DebugContext(ctx, "Message nacked for redelivery", "message_id", wmMsg.UUID)
+			}
+			return
+
+		case <-heartbeatTicker.C:
+			if err := jsMsg.InProgress(); err != nil {
+				logger.WarnContext(ctx, "Failed to extend in-progress ack deadline", "error", err, "message_id", wmMsg.UUID)
+			}
+
+		case <-processingDeadline.C:
+			// Bound in-progress heartbeats. If the handler never ACKs/NACKs, stop extending
+			// AckWait so the server can redeliver instead of keeping this message in-flight forever.
+			logger.WarnContext(ctx, "ACK processing deadline exceeded, allowing redelivery via AckWait",
+				"message_id", wmMsg.UUID,
+				"max_processing_duration", maxProcessingDuration,
+			)
+			return
+
+		case <-ctx.Done():
+			// Graceful shutdown - use delayed NAK based on retry policy.
+			if err := s.nakWithConfiguredDelay(jsMsg, cfg.BackOff); err != nil {
+				logger.ErrorContext(ctx, "Failed to nak message during shutdown", "error", err, "message_id", wmMsg.UUID)
 			}
 			return
 		}
+	}
+}
 
-		if err := jsMsg.Nak(); err != nil {
-			logger.ErrorContext(ctx, "Failed to nak message", "error", err, "message_id", wmMsg.UUID)
-		} else {
-			logger.DebugContext(ctx, "Message nacked for redelivery", "message_id", wmMsg.UUID)
-		}
+func ackHeartbeatAndDeadline(ackWait time.Duration) (time.Duration, time.Duration) {
+	if ackWait <= 0 {
+		ackWait = DefaultConsumerConfig().AckWait
+	}
 
-	case <-ackCtx.Done():
-		// Timeout - let AckWait handle redelivery
-		logger.WarnContext(ctx, "ACK timeout, letting AckWait handle redelivery",
-			"message_id", wmMsg.UUID,
-			"timeout", processTimeout,
-		)
+	heartbeatInterval := ackWait / 3
+	if heartbeatInterval < time.Second {
+		heartbeatInterval = time.Second
+	}
 
+	maxProcessingDuration := ackWait * maxAckWaitExtensions
+	// Overflow guard for very large ackWait values.
+	if maxProcessingDuration <= 0 {
+		maxProcessingDuration = ackWait
+	}
+
+	return heartbeatInterval, maxProcessingDuration
+}
+
+func (s *JetStreamSubscriberAdapter) backoffAfterFetchError(ctx context.Context, logger *slog.Logger, attempts int) {
+	backoff := fetchErrorBackoff(attempts)
+	jitterWindow := backoff / 2
+	jitter := time.Duration(0)
+	if jitterWindow > 0 {
+		jitter = time.Duration(rand.Int63n(int64(jitterWindow)))
+	}
+	delay := jitterWindow + jitter
+	if delay <= 0 {
+		delay = backoff
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
 	case <-ctx.Done():
-		// Graceful shutdown - nak for redelivery
-		if err := jsMsg.Nak(); err != nil {
-			logger.ErrorContext(ctx, "Failed to nak message during shutdown", "error", err, "message_id", wmMsg.UUID)
+	case <-timer.C:
+		logger.DebugContext(ctx, "Retrying fetch after backoff", "delay", delay, "attempt", attempts)
+	}
+}
+
+func fetchErrorBackoff(attempts int) time.Duration {
+	if attempts < 1 {
+		attempts = 1
+	}
+	maxBackoff := 5 * time.Second
+	backoff := 100 * time.Millisecond
+
+	for i := 1; i < attempts; i++ {
+		if backoff >= maxBackoff/2 {
+			return maxBackoff
+		}
+		backoff *= 2
+		if backoff <= 0 || backoff > maxBackoff {
+			return maxBackoff
 		}
 	}
+
+	if backoff <= 0 {
+		return maxBackoff
+	}
+
+	return backoff
+}
+
+func (s *JetStreamSubscriberAdapter) nakWithConfiguredDelay(jsMsg jetstream.Msg, backoff []time.Duration) error {
+	if len(backoff) == 0 {
+		return jsMsg.Nak()
+	}
+
+	meta, err := jsMsg.Metadata()
+	if err != nil {
+		return jsMsg.NakWithDelay(backoff[0])
+	}
+
+	idx := int(meta.NumDelivered) - 1
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(backoff) {
+		idx = len(backoff) - 1
+	}
+	return jsMsg.NakWithDelay(backoff[idx])
 }
 
 // toWatermillMessage converts a JetStream message to a Watermill message.

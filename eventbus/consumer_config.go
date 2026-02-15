@@ -46,8 +46,8 @@ func DefaultConsumerConfig() ConsumerConfig {
 			60 * time.Second,
 		},
 		MaxAckPending:     100,
-		DeliverPolicy:     jetstream.DeliverNewPolicy,
-		InactiveThreshold: 5 * time.Minute,
+		DeliverPolicy:     jetstream.DeliverAllPolicy,
+		InactiveThreshold: 0,
 	}
 }
 
