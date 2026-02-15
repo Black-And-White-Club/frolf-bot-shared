@@ -27,6 +27,7 @@ import (
 type eventBus struct {
 	appType           string
 	publisher         message.Publisher
+	sharedPublisher   bool
 	subscriber        message.Subscriber // Watermill subscriber (kept for compatibility)
 	subscriberAdapter *JetStreamSubscriberAdapter
 	consumerManager   *ConsumerManager
@@ -88,27 +89,24 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 	marshaller := &nats.NATSMarshaler{}
 	watermillLogger := lokifrolfbot.ToWatermillAdapter(logger)
 
-	publisher, err := nats.NewPublisher(
-		nats.PublisherConfig{
-			URL:       natsURL,
-			Marshaler: marshaller,
-			NatsOptions: []nc.Option{
-				nc.RetryOnFailedConnect(true),
-				nc.Timeout(30 * time.Second),
-				nc.ReconnectWait(1 * time.Second),
-				nc.MaxReconnects(-1),
-			},
-			JetStream: nats.JetStreamConfig{
-				Disabled:      false,
-				AutoProvision: false,
-				TrackMsgId:    true,
-				DurablePrefix: "durable",
-				DurableCalculator: func(durablePrefix, topic string) string {
-					sanitizedTopic := strings.ReplaceAll(topic, ".", "_")
-					return fmt.Sprintf("%s-%s", durablePrefix, sanitizedTopic)
-				},
+	publisherCfg := nats.PublisherConfig{
+		Marshaler:         marshaller,
+		SubjectCalculator: nats.DefaultSubjectCalculator,
+		JetStream: nats.JetStreamConfig{
+			Disabled:      false,
+			AutoProvision: false,
+			TrackMsgId:    true,
+			DurablePrefix: "durable",
+			DurableCalculator: func(durablePrefix, topic string) string {
+				sanitizedTopic := strings.ReplaceAll(topic, ".", "_")
+				return fmt.Sprintf("%s-%s", durablePrefix, sanitizedTopic)
 			},
 		},
+	}
+
+	publisher, err := nats.NewPublisherWithNatsConn(
+		natsConn,
+		publisherCfg.GetPublisherPublishConfig(),
 		watermillLogger,
 	)
 	if err != nil {
@@ -135,6 +133,7 @@ func NewEventBus(ctx context.Context, natsURL string, logger *slog.Logger, appTy
 	eventBus := &eventBus{
 		appType:           appType,
 		publisher:         publisher,
+		sharedPublisher:   true,
 		subscriber:        nil, // No longer using Watermill subscriber
 		subscriberAdapter: subscriberAdapter,
 		consumerManager:   consumerManager,
@@ -228,6 +227,10 @@ func (eb *eventBus) publishToTopic(topic string, messages []*message.Message) er
 	// Check if this is an inbox subject (core NATS request-reply pattern)
 	// Inbox subjects start with "_INBOX." and are ephemeral - they don't belong to JetStream
 	if strings.HasPrefix(topic, "_INBOX.") {
+		if err := eb.validateInboxPublish(topic, messages); err != nil {
+			ctxLogger.Error("Inbox publish forbidden", "error", err, "app_type", eb.appType)
+			return err
+		}
 		return eb.publishToInbox(topic, messages, ctxLogger)
 	}
 
@@ -270,7 +273,7 @@ func (eb *eventBus) publishToTopic(topic string, messages []*message.Message) er
 	}
 
 	for _, msg := range messages {
-		ctxLogger.InfoContext(msg.Context(), "Message published",
+		ctxLogger.DebugContext(msg.Context(), "Message published",
 			"message_id", msg.UUID,
 			"correlation_id", middleware.MessageCorrelationID(msg),
 		)
@@ -294,12 +297,31 @@ func (eb *eventBus) publishToInbox(topic string, messages []*message.Message, ct
 			return fmt.Errorf("failed to publish to inbox %s: %w", topic, err)
 		}
 
-		ctxLogger.Info("Message published to inbox",
+		ctxLogger.Debug("Message published to inbox",
 			"message_id", msg.UUID,
 			"inbox", topic,
 		)
 	}
 
+	return nil
+}
+
+func (eb *eventBus) validateInboxPublish(topic string, messages []*message.Message) error {
+	if eb.appType != "backend" {
+		return fmt.Errorf("publishing to inbox topics forbidden for app %q", eb.appType)
+	}
+	if !strings.HasPrefix(topic, "_INBOX.") {
+		return fmt.Errorf("invalid inbox topic %q", topic)
+	}
+	if !regexp.MustCompile(`^_INBOX\.[A-Za-z0-9._-]+$`).MatchString(topic) {
+		return fmt.Errorf("invalid inbox topic format")
+	}
+
+	for i, msg := range messages {
+		if msg == nil {
+			return fmt.Errorf("message[%d] is nil", i)
+		}
+	}
 	return nil
 }
 
@@ -479,12 +501,16 @@ func (eb *eventBus) Close() error {
 		}
 	}
 
-	// Close publisher
+	// Close publisher only when it owns a separate NATS connection.
 	if eb.publisher != nil {
-		if err := eb.publisher.Close(); err != nil {
-			ctxLogger.Error("Error closing publisher", "component", "publisher", "error", err)
+		if eb.sharedPublisher {
+			ctxLogger.Debug("Skipping publisher close; using shared NATS connection", "component", "publisher")
 		} else {
-			ctxLogger.Info("Publisher closed successfully", "component", "publisher")
+			if err := eb.publisher.Close(); err != nil {
+				ctxLogger.Error("Error closing publisher", "component", "publisher", "error", err)
+			} else {
+				ctxLogger.Info("Publisher closed successfully", "component", "publisher")
+			}
 		}
 	}
 
@@ -511,12 +537,12 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 
 	ctxLogger.Info("Creating/Updating stream")
 	eb.streamMutex.Lock()
-	defer eb.streamMutex.Unlock()
-
 	if eb.createdStreams[streamName] {
+		eb.streamMutex.Unlock()
 		ctxLogger.Info("Stream already created in this process")
 		return nil
 	}
+	eb.streamMutex.Unlock()
 
 	var subjects []string
 	switch streamName {
@@ -556,7 +582,7 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 		Discard:      jetstream.DiscardOld,  // Discard old messages when limits hit
 		Storage:      jetstream.FileStorage, // Persistent storage
 		Replicas:     1,                     // Single replica for now
-		MaxConsumers: -1,                    // Unlimited consumers
+		MaxConsumers: 100,                   // Prevent unbounded consumer growth
 		MaxMsgSize:   1024 * 1024,           // 1MB max message size
 	}
 
@@ -570,7 +596,9 @@ func (eb *eventBus) CreateStream(ctx context.Context, streamName string) error {
 	}
 
 	ctxLogger.Info("Stream created or updated successfully", "stream_name", stream.CachedInfo().Config.Name)
+	eb.streamMutex.Lock()
 	eb.createdStreams[streamName] = true
+	eb.streamMutex.Unlock()
 	return nil
 }
 

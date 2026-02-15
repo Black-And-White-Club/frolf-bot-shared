@@ -85,10 +85,12 @@ func gatherCommonAttrs(ctx context.Context, endpoint string, extra ...attribute.
 	attrs = append(attrs, extra...)
 
 	if v, ok := Get(ctx, GuildIDKey); ok {
-		attrs = append(attrs, attribute.String("guild_id", v))
+		_ = v
+		attrs = append(attrs, attribute.String("guild", "present"))
 	}
 	if v, ok := Get(ctx, UserIDKey); ok {
-		attrs = append(attrs, attribute.String("user_id", v))
+		_ = v
+		attrs = append(attrs, attribute.String("user", "present"))
 	}
 	if v, ok := Get(ctx, CommandNameKey); ok {
 		attrs = append(attrs, attribute.String("command", v))
@@ -106,10 +108,12 @@ func enrichMeasureAttrs(ctx context.Context, endpoint string) []metric.Measureme
 	}
 
 	if v, ok := Get(ctx, GuildIDKey); ok {
-		attrs = append(attrs, attribute.String("guild_id", v))
+		_ = v
+		attrs = append(attrs, attribute.String("guild", "present"))
 	}
 	if v, ok := Get(ctx, UserIDKey); ok {
-		attrs = append(attrs, attribute.String("user_id", v))
+		_ = v
+		attrs = append(attrs, attribute.String("user", "present"))
 	}
 	if v, ok := Get(ctx, CommandNameKey); ok {
 		attrs = append(attrs, attribute.String("command", v))

@@ -98,7 +98,7 @@ func WrapTransformingTyped[T any](
 			}()
 		}
 
-		logger.InfoContext(ctx, "handler started", attr.String("handler", handlerName))
+		logger.DebugContext(ctx, "handler started", attr.String("handler", handlerName))
 
 		// Unmarshal payload
 		payload := new(T)
@@ -125,7 +125,7 @@ func WrapTransformingTyped[T any](
 		if metrics != nil {
 			metrics.RecordSuccess(ctx, handlerName)
 		}
-		logger.InfoContext(ctx, "handler completed successfully",
+		logger.DebugContext(ctx, "handler completed successfully",
 			attr.String("handler", handlerName),
 			attr.Int("results_count", len(results)),
 		)

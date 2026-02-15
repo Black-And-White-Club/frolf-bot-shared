@@ -89,7 +89,7 @@ func GetV1Registry() map[string]sharedevents.EventInfo {
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "leaderboard"},
 			Consumers:   []sharedevents.Actor{{Service: sharedevents.ServiceBackend, Module: "user"}, {Service: sharedevents.ServiceDiscord, Module: "leaderboard"}}},
 		LeaderboardBatchTagAssignmentRequestedV1: {
-			Payload:     &LeaderboardBatchTagAssignmentRequestedPayloadV1{},
+			Payload:     &sharedevents.BatchTagAssignmentRequestedPayloadV1{},
 			Summary:     "Leaderboard Batch Tag Assignment Requested",
 			Description: "Batch tag assignment requested.",
 			Producer:    sharedevents.Actor{Service: sharedevents.ServiceBackend, Module: "score"},

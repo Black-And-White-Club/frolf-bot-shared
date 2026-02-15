@@ -18,6 +18,8 @@ type Config struct {
 	TempoInsecure   bool
 	TempoSampleRate float64
 	OTLPEndpoint    string
+	// OTLPInsecure enables plaintext OTLP gRPC transport. Keep false in non-local environments.
+	OTLPInsecure bool
 	// OTLPTransport selects the OTLP transport ("grpc" or "http").
 	// Default is "grpc" when empty. Value is case-insensitive.
 	// Note: current build supports gRPC only; "http" will return an error.

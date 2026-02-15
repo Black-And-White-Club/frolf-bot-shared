@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -49,17 +50,33 @@ func CreateErrorEventPayload(correlationID, message string, err error, ctx ...st
 		fmt.Println("WARNING: runtime.Caller() failed, function context missing")
 	} else {
 		functionName := runtime.FuncForPC(pc).Name()
-		payload.Context += fmt.Sprintf(" | %s (%s:%d)", functionName, file, line)
+		payload.Context += fmt.Sprintf(" | %s", functionName)
+		_ = file
+		_ = line
 	}
 
 	if err != nil {
-		payload.Error = err.Error()
+		payload.Error = sanitizeSensitiveText(err.Error())
 		payload.ErrorType = reflect.TypeOf(err).String()
 	} else {
 		payload.ErrorType = "unknown"
 	}
 
 	return payload
+}
+
+var authorizationPattern = regexp.MustCompile(`(?i)\bauthorization\b\s*[:=]\s*(?:bearer\s+)?[^\s,;]+`)
+var sensitiveKVPattern = regexp.MustCompile(`(?i)\b(token|password|secret|api[_-]?key)\b\s*[:=]\s*([^\s,;]+)`)
+var basicAuthURLPattern = regexp.MustCompile(`(?i)(https?://)([^:@/\s]+):([^@/\s]+)@`)
+
+func sanitizeSensitiveText(input string) string {
+	if strings.TrimSpace(input) == "" {
+		return input
+	}
+	redacted := authorizationPattern.ReplaceAllString(input, "authorization=[REDACTED]")
+	redacted = sensitiveKVPattern.ReplaceAllString(redacted, "$1=[REDACTED]")
+	redacted = basicAuthURLPattern.ReplaceAllString(redacted, "$1[REDACTED]:[REDACTED]@")
+	return redacted
 }
 
 // ErrorReporter handles error reporting.

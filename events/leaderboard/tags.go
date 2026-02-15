@@ -242,16 +242,10 @@ type TagAssignmentInfoV1 struct {
 	TagNumber sharedtypes.TagNumber `json:"tag_number"`
 }
 
-// LeaderboardBatchTagAssignmentRequestedPayloadV1 contains batch assignment request data.
-//
-// Schema History:
-//   - v1.0 (December 2024): Initial version
-type LeaderboardBatchTagAssignmentRequestedPayloadV1 struct {
-	GuildID          sharedtypes.GuildID   `json:"guild_id"`
-	RequestingUserID sharedtypes.DiscordID `json:"requesting_user_id"`
-	BatchID          string                `json:"batch_id"`
-	Assignments      []TagAssignmentInfoV1 `json:"assignments"`
-}
+// LeaderboardBatchTagAssignmentRequestedPayloadV1 is a temporary compatibility
+// alias to the canonical shared payload for
+// leaderboard.batch.tag.assignment.requested.v1.
+type LeaderboardBatchTagAssignmentRequestedPayloadV1 = sharedevents.BatchTagAssignmentRequestedPayloadV1
 
 // LeaderboardBatchTagAssignedPayloadV1 contains batch assignment success data.
 //
