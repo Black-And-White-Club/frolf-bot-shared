@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/nats-io/nats.go/jetstream"
 )
@@ -144,8 +145,9 @@ func validateConsumerInfo(info *jetstream.ConsumerInfo, expected jetstream.Consu
 	if actual.AckPolicy != expected.AckPolicy {
 		return fmt.Errorf("ack policy mismatch: expected %v, got %v", expected.AckPolicy, actual.AckPolicy)
 	}
-	if actual.AckWait != expected.AckWait {
-		return fmt.Errorf("ack wait mismatch: expected %s, got %s", expected.AckWait, actual.AckWait)
+	if !ackWaitMatches(actual, expected) {
+		expectedAckWait := effectiveAckWait(expected)
+		return fmt.Errorf("ack wait mismatch: expected %s, got %s", expectedAckWait, actual.AckWait)
 	}
 	if actual.MaxDeliver != expected.MaxDeliver {
 		return fmt.Errorf("max deliver mismatch: expected %d, got %d", expected.MaxDeliver, actual.MaxDeliver)
@@ -158,6 +160,22 @@ func validateConsumerInfo(info *jetstream.ConsumerInfo, expected jetstream.Consu
 	}
 
 	return nil
+}
+
+// effectiveAckWait returns the effective JetStream AckWait value.
+//
+// When BackOff is configured, JetStream uses the first BackOff entry as AckWait
+// and reports that value in consumer info.
+func effectiveAckWait(cfg jetstream.ConsumerConfig) time.Duration {
+	if len(cfg.BackOff) > 0 {
+		return cfg.BackOff[0]
+	}
+
+	return cfg.AckWait
+}
+
+func ackWaitMatches(actual, expected jetstream.ConsumerConfig) bool {
+	return actual.AckWait == effectiveAckWait(expected)
 }
 
 // GetConsumerInfo returns information about a cached consumer.
