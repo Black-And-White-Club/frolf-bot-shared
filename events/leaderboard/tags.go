@@ -457,7 +457,8 @@ type TagGraphFailedPayloadV1 struct {
 
 // TagListRequestedPayloadV1 contains the request data for tag list lookup.
 type TagListRequestedPayloadV1 struct {
-	GuildID string `json:"guild_id"`
+	GuildID  string  `json:"guild_id"`
+	ClubUUID *string `json:"club_uuid,omitempty"`
 }
 
 // TagListResponsePayloadV1 contains the master tag list response.
